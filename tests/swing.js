@@ -6,7 +6,7 @@ const PAGE = 'file://' + path.join(__dirname, 'page.html');
 // release: 'band' (inside nuke band), 'early' (fill past 70%, before band), 'late' (after leaving band), 'never' (hold until drained)
 // tapAfter: ms after release to tap the ring (ring meets the circle at 0.9 / speed seconds)
 const CASES = [
-  { name: 'nuke, on time', tee: 'black', nuke: true, release: 'band', tapAfter: 1200, expect: 'NUCLEAR' },
+  { name: 'nuke, on time', tee: 'black', nuke: true, release: 'band', tapAfter: 1200, expect: 'NUCLEAR PURE CONTACT' },
   { name: 'nuke, early strike', tee: 'black', nuke: true, release: 'band', tapAfter: 600, expect: 'MELTDOWN' },
   { name: 'nuke armed, let go early', tee: 'black', nuke: true, release: 'early', tapAfter: 1286, expect: 'TOO EARLY' },
   { name: 'nuke armed, let go late', tee: 'black', nuke: true, release: 'late', tapAfter: 1286, expect: 'TOO LATE' },
@@ -20,7 +20,13 @@ async function run(c) {
   const pg = await br.newPage({ viewport: { width: 390, height: 844 }, hasTouch: true, deviceScaleFactor: 2 });
   const errs = []; pg.on('pageerror', e => errs.push(e.message));
   await pg.goto(PAGE); await pg.waitForTimeout(400);
+  // a player with five level rounds: black tees unlocked, every swing upgrade still at Lv 1
+  await pg.evaluate(() => localStorage.setItem('pure-strike-v1', JSON.stringify({ best: {}, putt: { att: [0, 0, 0], made: [0, 0, 0] }, rounds: [0, 0, 0, 0, 0].map(d => ({ d })) })));
+  await pg.reload(); await pg.waitForTimeout(400);
   await pg.tap('.tee-card.' + c.tee); await pg.waitForTimeout(700);
+  // hole 1 is a par 3 (irons, no nuke); score it and play from the par-4 tee
+  await pg.evaluate(() => window.__pureStrike.score(3, 2)); await pg.waitForTimeout(200);
+  await pg.tap('#againBtn'); await pg.waitForTimeout(900);
   if (c.nuke) { await pg.tap('#nukeBtn'); await pg.waitForTimeout(300); }
   await pg.evaluate(({ release, tapAfter }) => new Promise(res => {
     const btn = document.querySelector('#swingBtn'), ev = t => btn.dispatchEvent(new PointerEvent(t, { bubbles: true, pointerId: 1 }));

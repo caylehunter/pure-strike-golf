@@ -21,7 +21,7 @@ Feedback pops: PURE, A TOUCH EARLY/LATE, SLICE/HOOK (tapped early/late), HOLD TO
 - Let go in the band, then strike: **NUCLEAR** (~440–450 yd carry). A bad strike gives **MELTDOWN** (early: nuclear slice, late: nuclear hook).
 - Let go before the band → TOO EARLY; after it → TOO LATE. Both still hit a normal drive.
 
-### Upgrades (to become earned rewards)
+### Upgrade levels (earned; see Rewards)
 
 | Upgrade | Lv 1 | Lv 2 | Lv 3 |
 |---|---|---|---|
@@ -40,15 +40,43 @@ Straight, Draw, Fade, Stinger. Stinger: low flight, less carry, more roll, 35% w
 - Green read options: **Off** (default) or **Slope** (contours plus downhill flow dots). The old "Line" mode was removed because it did the read for the player.
 - Physics: stimp-like friction, slope gravity, cup capture with real lip-outs when too firm or off-center.
 
-## Course and rules
+## The round
 
-- Hole 1: par 5, 555 yd (blue) / 616 yd (black), dogleg left, water right of the nuke landing zone.
+Three holes, par 12. Each hole is data (`HOLES` in `index.html`): centerline, fairway width, green, pin, tees, water, bunkers, green slope, and tree clumps.
+
+| Hole | Par | Blue | Black | Character |
+|---|---|---|---|---|
+| 1 | 3 | 172 | 204 | Forced carry over water to a green that tilts right-to-left |
+| 2 | 4 | 389 | 433 | Dogleg right; trees guard the corner; a black-tee nuke can fly them and reach the green |
+| 3 | 5 | 556 | 616 | Dogleg left; water right of the nuke landing zone |
+
+- A scorecard follows every hole (birdies circled, bogeys boxed) with **Next hole** / **Quit round**.
 - Rough −15%, bunker −30% (sand wedge −8%). Water: +1, drop at the edge. OB: +1, replay. Pick up at 12.
-- Wind: blue 0–7 mph, black 4–15 mph.
+- Wind per hole: blue 0–7 mph, black 4–15 mph.
+
+## Handicap
+
+- Every finished round posts a differential: `(score − rating) × 6`, since 3 holes are a sixth of 18. Ratings: blue 12.0, black 12.8.
+- Handicap = average of the best 40% of the last 10 differentials. Until a player has 5 rounds, the list is padded with 36s, so a new player falls gradually (one −1 round: 36.0 → 15.0).
+- Shown golf-style: a negative number displays as a plus handicap (better than scratch), and the round summary says so.
+
+## Rewards (earned, shown on the menu with how to get each)
+
+| Reward | How |
+|---|---|
+| Swing tempo Lv 2 | Make a birdie |
+| Black tees + nuclear drive | Reach an 18.0 handicap |
+| Nuke target Lv 2 | Hit a NUCLEAR drive |
+| Draw & Fade | Finish a round from the black tees |
+| Swing tempo Lv 3 | Make 10 one-putts |
+| Nuke target Lv 3 | Hit 5 NUCLEAR drives |
+| Stinger | Reach a 9.0 handicap |
+
+Locked shot shapes are struck through; tapping one says how to unlock it. The menu has a **Testing: unlock everything** switch for playtesting.
 
 ## Roadmap
 
-1. Repo + design doc + tests (this).
-2. **The come-back-tomorrow loop:** 3-hole round (par 3, 4, 5), handicap that drops with good rounds, earned upgrades and milestones, black tees unlocked by handicap.
-3. Match play vs. AI with handicap pops.
+1. ~~Repo + design doc + tests.~~
+2. ~~The come-back-tomorrow loop: 3-hole round, handicap, earned rewards, black tees unlocked by handicap.~~
+3. **Match play vs. AI with handicap pops** (next).
 4. Art/audio pass, online match play, app-store packaging.

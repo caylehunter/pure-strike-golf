@@ -15,5 +15,6 @@ npm install
 npm test
 ```
 
+- `tests/round.js` – a full 3-hole round: scorecard, handicap update, unlocks
 - `tests/swing.js` – hold/release swing and strike ring: nuke, meltdown, too early/late, cancel, pure, late hook
 - `tests/putting.js` – distance-scaled putting on the practice green
