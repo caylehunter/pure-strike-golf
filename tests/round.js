@@ -16,6 +16,12 @@ const PAGE = 'file://' + path.join(__dirname, 'page.html');
   check('round starts on hole 1, par 3', (await pg.$eval('#holeVal', e => e.textContent)).startsWith('Par 3'), await pg.$eval('#holeLbl', e => e.textContent));
   const shot = name => pg.screenshot({ path: path.join(__dirname, name) });
   await shot('hole1.png');
+  // a short shot beside the green: the preview must land on the pin, not at the club's full carry
+  const chip = await pg.evaluate(() => { window.__pureStrike.place(-12, 190); return window.__pureStrike.aim(); });
+  const miss = Math.hypot(chip.x - chip.pin.x, chip.y - chip.pin.y);
+  check('chip preview lands on the pin', miss < 1.5, `${chip.club}, lands ${miss.toFixed(1)} yd from pin, mark ${chip.mark}`);
+  check('meter mark says PIN', chip.mark === 'PIN');
+  await pg.waitForTimeout(800); await shot('chip.png');
   // hole 1: birdie 2 with one putt
   await pg.evaluate(() => window.__pureStrike.score(2, 1)); await pg.waitForTimeout(200);
   check('hole card shows birdie', (await pg.$eval('#resName', e => e.textContent)) === 'Birdie');

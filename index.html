@@ -469,7 +469,7 @@ function lieFactor(lie, club) {
 /* ---------- state ---------- */
 const G = {
   mode: 'menu', tee: 'blue', practice: false, strokes: 0, putts: 0, ci: 0, shape: 'straight', nukeArmed: false,
-  aimA: 0, wind: { x: 0, y: 0, mph: 0 }, read: 'off', longest: 0, lastPos: null, F: null,
+  aimA: 0, aimD: 0, wind: { x: 0, y: 0, mph: 0 }, read: 'off', longest: 0, lastPos: null, F: null,
   meter: { p: 0, dir: 1, pmax: 1, lock: 0, n: 0, speed: 1.25 }, trail: [], drag: null, pred: null,
   timers: [], bounce: null, shotFromTee: false, hitstop: 0, putting: false, ballHidden: false, pStart: 0
 };
@@ -603,7 +603,11 @@ function flightPos(F, u) {
   const f = F.carry * u, l = F.off * u + F.curve * u * u;
   return { x: F.sx + F.dx * f + F.rx * l, y: F.sy + F.dy * f + F.ry * l, z: 4 * F.apex * u * (1 - u) };
 }
-const previewShot = nuke => buildShot(nuke ? 1.2 : 1, 0, { nuke, perfect: false, wind: false });
+/* the aim point sets direction and distance; the preview flies to it at the power it needs */
+const fullCarry = () => { const c = club(); return c.carry * lieFactor(surface(b.x, b.y), c) * (G.shape === 'stinger' ? 0.9 : 1); };
+const aimPower = () => clamp(G.aimD / fullCarry(), 0.05, 1);
+const aimAtPin = () => hyp(b.x + Math.sin(G.aimA) * G.aimD - PIN.x, b.y + Math.cos(G.aimA) * G.aimD - PIN.y) < 3;
+const previewShot = nuke => buildShot(nuke ? 1.2 : aimPower(), 0, { nuke, perfect: false, wind: false });
 
 function availableClubs() { return CLUBS.map((c, i) => i).filter(i => i > 0 || onTee()); }
 function autoClub() {
@@ -622,6 +626,7 @@ function defaultAim() {
     for (let y = b.y; y < FW1; y += 1) { const x = cx(y); if (hyp(x - b.x, y - b.y) >= carry) { tx = x; ty = y; break; } }
   }
   G.aimA = Math.atan2(tx - b.x, ty - b.y);
+  G.aimD = Math.min(hyp(tx - b.x, ty - b.y), fullCarry());
 }
 
 /* ---------- rolling ball ---------- */
@@ -957,9 +962,9 @@ function syncUI() {
   sb.classList.toggle('hot', m === 'accuracy');
   sb.classList.toggle('nukey', G.nukeArmed && cn && (aiming || m === 'power'));
   sb.textContent = m === 'power' ? 'Let go to set power' : m === 'accuracy' ? 'Tap!' : 'Hold to swing';
-  const pinOn = d / (c.carry * lieFactor(lie, c)) <= 1;
+  const markName = aimAtPin() ? 'PIN' : 'AIM';
   hint.textContent = aiming ? (G.nukeArmed && cn ? 'Nuke armed · hold swing, let go in the NUKE band' : 'Drag the course to aim · hold swing to power up')
-    : m === 'power' ? (G.nukeArmed && cn ? 'Let go inside the NUKE band' : pinOn ? 'Let go at the PIN mark to reach the pin' : 'Let go to set power')
+    : m === 'power' ? (G.nukeArmed && cn ? 'Let go inside the NUKE band' : `Let go at the ${markName} mark to land on your target`)
     : m === 'accuracy' ? 'Tap when the shrinking ring meets the gold circle' : '\u00a0';
 
   const PW = G.tee === 'blue' || G.practice ? 0.05 : 0.035;
@@ -967,9 +972,9 @@ function syncUI() {
   $('#mOver').className = 'm m-over' + (cn && G.nukeArmed ? '' : ' locked');
   $('#mNuke').hidden = !(cn && G.nukeArmed);
   if (aiming) { $('#mNuke').classList.remove('in'); $('#mFill').classList.remove('over'); }
-  const pinP = d / (c.carry * lieFactor(lie, c));
-  const mp = $('#mPin'); mp.hidden = !(pinP <= 1 && aiming || pinP <= 1 && m === 'power'); mp.style.left = pct(pinP) + '%';
-  $('#lblPin').hidden = mp.hidden; $('#lblPin').style.left = pct(pinP) + '%';
+  const tp = aimPower();
+  const mp = $('#mPin'); mp.hidden = !((aiming || m === 'power') && !(G.nukeArmed && cn)); mp.style.left = pct(tp) + '%';
+  $('#lblPin').hidden = mp.hidden; $('#lblPin').style.left = pct(tp) + '%'; $('#lblPin').textContent = markName;
   $('#lblNuke').hidden = $('#mNuke').hidden; $('#lblNuke').style.left = pct((na + nz) / 2) + '%';
   if (aiming) { setBar($('#mFill'), 0, 0); $('#mNeedle').hidden = true; }
 
@@ -1011,6 +1016,7 @@ cv.addEventListener('pointermove', e => {
   else if (G.mode === 'putt' && G.drag) { G.drag.cx = e.clientX; G.drag.cy = e.clientY; updatePuttDrag(); }
 });
 const endPtr = e => {
+  if (G.aiming && G.mode === 'aim') setupAimCam();
   G.aiming = false;
   if (G.mode === 'putt' && G.drag) {
     const P = puttFromDrag(); G.drag = null; G.pred = null;
@@ -1026,6 +1032,8 @@ function aimAt(e) {
   const [x, y] = s2w(e.clientX, e.clientY);
   if (hyp(x - b.x, y - b.y) < 2) return;
   G.aimA = Math.atan2(x - b.x, y - b.y);
+  G.aimD = clamp(hyp(x - b.x, y - b.y), 3, fullCarry());
+  syncUI();
 }
 /* a full pull rolls about twice the distance to the hole, so short putts get fine control */
 const puttRange = () => clamp(hyp(PIN.x - b.x, PIN.y - b.y) * 2.2 + 1.5, 4, 25);
@@ -1065,7 +1073,7 @@ $('#nukeBtn').onclick = () => { if (G.mode !== 'aim' || !canNuke()) return; G.nu
 $('#shapeSeg').onclick = e => {
   const s = e.target.closest('button'); if (!s || G.mode !== 'aim') return;
   if (!shapeOpen(s.dataset.shape)) { const r = shapeReward(s.dataset.shape); pop('LOCKED', 'small', `${r.how} to unlock ${r.name}`); return; }
-  G.shape = s.dataset.shape; syncUI(); setupAimCam();
+  G.shape = s.dataset.shape; G.aimD = Math.min(G.aimD, fullCarry()); syncUI(); setupAimCam();
 };
 $('#readSeg').onclick = e => { const s = e.target.closest('button'); if (!s) return; G.read = s.dataset.read; flows = []; updatePuttDrag(); syncUI(); };
 document.querySelectorAll('.tee-card').forEach(btn => btn.onclick = () => { if (!btn.disabled) startRound(btn.dataset.tee); });
@@ -1332,6 +1340,8 @@ window.addEventListener('resize', resize);
 loadHole(0); resize(); showMenu();
 /* test hook: lets automated tests score a hole without playing it */
 window.__pureStrike = { score: (strokes, putts) => { G.strokes = strokes; G.putts = putts; finishHole(false); },
+  place: (x, y) => { b.x = x; b.y = y; b.vx = b.vy = 0; enterAim(); },
+  aim: () => { const L = flightPos(previewShot(false), 1); return { x: L.x, y: L.y, pin: PIN, mark: $('#lblPin').textContent, club: club().name }; },
   holeOut: (strokes, putts) => { G.strokes = strokes; G.putts = putts; b.x = PIN.x; b.y = PIN.y; b.inCup = true; finishHole(false); }, state: () => ({ hole: HOLE_I, mode: G.mode, hcp: handicap(), rounds: store.rounds.length, earned: earnedIds() }) };
 cam.x = camT.x; cam.y = camT.y; cam.s = camT.s;
 let last = performance.now();
