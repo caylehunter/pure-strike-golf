@@ -24,8 +24,8 @@ async function run(c) {
   await pg.evaluate(() => localStorage.setItem('pure-strike-v1', JSON.stringify({ best: {}, putt: { att: [0, 0, 0], made: [0, 0, 0] }, rounds: [0, 0, 0, 0, 0].map(d => ({ d })) })));
   await pg.reload(); await pg.waitForTimeout(400);
   await pg.tap('.tee-card.' + c.tee); await pg.waitForTimeout(700);
-  // hole 1 is a par 3 (irons, no nuke); score it and play from the par-4 tee
-  await pg.evaluate(() => window.__pureStrike.score(3, 2)); await pg.waitForTimeout(200);
+  // hole 1 is a par 3 (irons, no nuke); finish it with the ball in the cup, then play from the par-4 tee
+  await pg.evaluate(() => window.__pureStrike.holeOut(3, 2)); await pg.waitForTimeout(200);
   await pg.tap('#againBtn'); await pg.waitForTimeout(900);
   if (c.nuke) { await pg.tap('#nukeBtn'); await pg.waitForTimeout(300); }
   await pg.evaluate(({ release, tapAfter }) => new Promise(res => {
@@ -46,10 +46,10 @@ async function run(c) {
     requestAnimationFrame(loop);
   }), c);
   const seen = new Set();
-  for (let i = 0; i < 25; i++) { await pg.waitForTimeout(100); const t = await pg.$eval('#pops', e => e.innerText.replace(/\s+/g, ' ').trim()); if (t) seen.add(t); }
+  for (let i = 0; i < 70; i++) { await pg.waitForTimeout(100); const t = await pg.$eval('#pops', e => e.innerText.replace(/\s+/g, ' ').trim()); if (t) seen.add(t); }
   await br.close();
   const text = [...seen].join(' | ');
-  const ok = text.includes(c.expect) && !errs.length;
+  const ok = text.includes(c.expect) && !text.includes('LIP OUT') && !errs.length;
   console.log(`${ok ? 'PASS' : 'FAIL'}  ${c.name}: ${text || '(no message)'}${errs.length ? ' ERRORS ' + errs.join('; ') : ''}`);
   return ok;
 }

@@ -674,7 +674,7 @@ function startHole(i) {
   if (!shapeOpen(G.shape)) G.shape = 'straight';
   const mph = G.tee === 'black' ? 4 + Math.random() * 11 : Math.random() * 7, a = Math.random() * TAU;
   G.wind = { x: Math.sin(a) * mph, y: Math.cos(a) * mph, mph };
-  b.x = TEES[G.tee].x; b.y = TEES[G.tee].y; b.z = 0; b.vx = b.vy = 0;
+  b.x = TEES[G.tee].x; b.y = TEES[G.tee].y; b.z = 0; b.vx = b.vy = 0; b.inCup = false; b.lipped = false;
   enterAim(); cam.x = camT.x; cam.y = camT.y; cam.s = camT.s; cam.r = camT.r;
   pop(`HOLE ${i + 1}`, 'yds', `Par ${PAR} · ${TEE_YDS[G.tee]} yds`);
 }
@@ -751,7 +751,7 @@ function strike(n) {
 }
 function land(F, p) {
   const s = surface(p.x, p.y);
-  b.x = p.x; b.y = p.y; b.z = 0; G.F = null;
+  b.x = p.x; b.y = p.y; b.z = 0; G.F = null; b.inCup = false; b.lipped = false;
   if (hyp(p.x - PIN.x, p.y - PIN.y) < CUP_R * 1.6) return holed(true);
   if (s === 'water') return penalty('water');
   if (s === 'oob') return penalty('oob');
@@ -775,7 +775,7 @@ function treeHit(F, p) {
   burst(p.x, p.y, 14, ['#2f6b2a', '#4c8f3a', '#6a4a2a'], 4, 2, 2.2, 0.8);
   pop('TIMBER', 'small');
   const l = hyp(F.dx, F.dy);
-  b.x = p.x; b.y = p.y; b.vx = -F.dx / l * 1.2; b.vy = -F.dy / l * 1.2;
+  b.x = p.x; b.y = p.y; b.vx = -F.dx / l * 1.2; b.vy = -F.dy / l * 1.2; b.inCup = false; b.lipped = false;
   G.bounce = { t: 0, h: Math.min(p.z, 6) }; G.F = null; G.mode = 'roll';
 }
 function penalty(kind) {
@@ -1331,7 +1331,8 @@ function resize() {
 window.addEventListener('resize', resize);
 loadHole(0); resize(); showMenu();
 /* test hook: lets automated tests score a hole without playing it */
-window.__pureStrike = { score: (strokes, putts) => { G.strokes = strokes; G.putts = putts; finishHole(false); }, state: () => ({ hole: HOLE_I, mode: G.mode, hcp: handicap(), rounds: store.rounds.length, earned: earnedIds() }) };
+window.__pureStrike = { score: (strokes, putts) => { G.strokes = strokes; G.putts = putts; finishHole(false); },
+  holeOut: (strokes, putts) => { G.strokes = strokes; G.putts = putts; b.x = PIN.x; b.y = PIN.y; b.inCup = true; finishHole(false); }, state: () => ({ hole: HOLE_I, mode: G.mode, hcp: handicap(), rounds: store.rounds.length, earned: earnedIds() }) };
 cam.x = camT.x; cam.y = camT.y; cam.s = camT.s;
 let last = performance.now();
 function frame(now) { const dt = Math.min(0.05, (now - last) / 1000); last = now; update(dt); draw(); requestAnimationFrame(frame); }
