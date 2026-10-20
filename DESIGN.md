@@ -108,6 +108,29 @@ Asynchronous: each player plays **a whole hole per turn**, unlike the shot-for-s
 
 Needs: a server and accounts (matches, whose turn), push notifications (installed app or web app), turn timers (e.g. 24 h, then the hole is conceded), and server-side score checks (record each shot's inputs and replay them rather than trusting the phone).
 
+## Business model and tournaments (planned, after online play)
+
+**Free:** the whole game, stroke play, the computer ladder, and one-on-one matches against a friend.
+
+**Paid, charged to the organizer only:**
+- **$0.99 per tournament** (4 or more players, match play, one winner).
+- **$4.99 per year for unlimited tournaments** (price to confirm).
+
+**Tournaments**
+- The organizer names the tournament and invites players.
+- Formats to decide: a match-play bracket (4, 8 or 16 players; byes for odd numbers) is the natural fit; a round robin or a stroke-play leaderboard are options.
+- Handicaps and pops apply in every match, so mixed skill levels stay competitive.
+
+**Trophies and the trophy case**
+- Default trophies come with every tournament; the organizer can design a custom one instead.
+- Custom trophies are described in words ("a hockey player swinging a golf club") and generated in the game's art style, with a few tries per tournament.
+- Every player has a profile with a **trophy case** showing the trophies they have won.
+
+**Things to settle before building**
+- App stores take 15–30% of digital purchases, and on iPhone they generally must go through Apple's in-app purchase: $0.99 nets about $0.70–0.84.
+- Custom trophy art needs an image generator (Claude itself writes text and code such as SVG drawings, not photos) plus moderation: no logos or trademarks (team logos, brands), nothing inappropriate. Generation costs a few cents per image, so cap the tries.
+- Depends on online play: accounts, a server, notifications and turn timers (see the online section above).
+
 ## Roadmap
 
 1. ~~Repo + design doc + tests.~~
@@ -116,3 +139,4 @@ Needs: a server and accounts (matches, whose turn), push notifications (installe
 4. ~~Balance pass and visible opponent shots.~~
 5. **Next candidates:** 9-hole course, art/audio pass, playtesting with friends (feedback button).
 6. Online match play, app-store packaging.
+7. Paid tournaments, custom trophies, and the trophy case.
