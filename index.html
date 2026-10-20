@@ -31,7 +31,7 @@ button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 #flash{position:fixed;inset:0;pointer-events:none;opacity:0;background:#fff;z-index:4}
 
 /* scoreboard */
-#hud{position:fixed;top:0;left:0;right:0;z-index:5;display:flex;align-items:center;gap:14px;
+#hud{position:fixed;top:0;left:0;right:0;z-index:5;display:flex;align-items:center;gap:10px;
   padding-top:calc(env(safe-area-inset-top,0px) + 10px);padding-bottom:20px;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
   background:linear-gradient(rgba(7,16,12,.9),rgba(7,16,12,.6) 62%,rgba(7,16,12,0));pointer-events:none}
@@ -192,6 +192,14 @@ button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 .sc .pop{color:var(--gold);font-style:normal;font-size:10px;vertical-align:top;margin-left:2px;letter-spacing:1px}
 .sc .w{color:var(--gold)}
 .sc .l{color:#ff9b8a}
+#pause{background:rgba(6,14,10,.9)}
+.stat .lbl{white-space:nowrap}
+#pauseBtn{all:unset;cursor:pointer;pointer-events:auto;flex:none;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.12);border:1px solid var(--line)}
+#pauseBtn svg{width:16px;height:16px;fill:var(--text)}
+#pauseBtn:focus-visible{outline:2px solid var(--gold)}
+.tee-card.mode .av{flex:none;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font:400 18px/1 var(--display);background:#2c5a40;color:var(--text);box-shadow:0 0 0 2px rgba(255,255,255,.7)}
+.tee-card.mode.match{border-color:rgba(255,207,63,.55)}
+.tee-card.mode.match .av{background:var(--gold);color:#251b00}
 .best{font:600 13px/1.3 var(--cond);letter-spacing:.08em;color:var(--muted);text-transform:uppercase;text-align:center;min-height:1em}
 #result h2{margin:2px 0;font:400 52px/1 var(--display);color:var(--gold);text-wrap:balance;text-shadow:0 4px 0 rgba(0,0,0,.35)}
 .res-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
@@ -206,6 +214,7 @@ button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 <div id="flash"></div>
 
 <header id="hud" hidden>
+  <button id="pauseBtn" aria-label="Pause"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg></button>
   <div class="hole">
     <span class="tee-dot" id="teeDot"></span>
     <div style="min-width:0"><div class="lbl" id="holeLbl">Hole 1</div><div class="val" id="holeVal">Par 5 · 555 yds</div></div>
@@ -267,9 +276,8 @@ button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
       <h1>PURE<br><span>STRIKE</span></h1>
       <p id="menuHcp">Handicap 36.0</p>
     </div>
-    <button class="tee-card blue" data-tee="blue"><span class="dot"></span><span class="tc-main"><b>Blue tees</b><small id="blueInfo">wider sweet spot · calmer wind</small></span></button>
-    <button class="tee-card black" data-tee="black"><span class="dot"></span><span class="tc-main"><b>Black tees</b><small id="blackInfo">nuclear drive · tighter sweet spot · gusty</small></span><span class="tag" id="blackTag">NUKE</span></button>
-    <button class="ghost match-btn" id="matchBtn">Match play vs computer</button>
+    <button class="tee-card mode" id="soloBtn"><span class="av">S</span><span class="tc-main"><b>Stroke play</b><small>Play 3 holes, post a score, lower your handicap</small></span></button>
+    <button class="tee-card mode match" id="matchBtn"><span class="av">M</span><span class="tc-main"><b>Match play</b><small>Beat Dusty, Marge and Ace hole by hole</small></span></button>
     <button class="ghost" id="practiceBtn">Putting practice</button>
     <div class="rewards">
       <div class="rw-head"><b>Rewards</b><small>Earn them by playing</small></div>
@@ -283,6 +291,28 @@ button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
       <li><span><b>Handicap.</b> Every finished round counts. Lower is better, and it unlocks tees and rewards.</span></li>
     </ol>
     <div class="best" id="bestLine"></div>
+  </div>
+</div>
+
+<div class="overlay" id="soloSetup" hidden>
+  <div class="card">
+    <span class="eyebrow">Stroke play · 3 holes · Par 12</span>
+    <h2 class="ms-title">Pick your tees</h2>
+    <p class="ms-note">Your score posts to your handicap when you finish all 3 holes.</p>
+    <button class="tee-card blue" data-tee="blue"><span class="dot"></span><span class="tc-main"><b>Blue tees</b><small id="blueInfo">wider sweet spot · calmer wind</small></span></button>
+    <button class="tee-card black" data-tee="black"><span class="dot"></span><span class="tc-main"><b>Black tees</b><small id="blackInfo">nuclear drive · tighter sweet spot · gusty</small></span><span class="tag" id="blackTag">NUKE</span></button>
+    <button class="ghost" id="soloBack">Back</button>
+  </div>
+</div>
+
+<div class="overlay" id="pause" hidden>
+  <div class="card">
+    <span class="eyebrow" id="pzEyebrow">Hole 1 of 3</span>
+    <h2 class="ms-title">Paused</h2>
+    <p class="ms-note" id="pzNote"></p>
+    <button class="primary" id="pzResume">Resume</button>
+    <button class="ghost" id="pzConcede">Concede this hole</button>
+    <button class="ghost" id="pzQuit">Quit to menu</button>
   </div>
 </div>
 
@@ -747,7 +777,7 @@ function enterPutt() {
   G.mode = 'putt'; G.putting = true; G.drag = null; G.pred = null; G.trail = []; flows = [];
   syncUI(); setupPuttCam();
 }
-function hideOverlays() { $('#menu').hidden = true; $('#result').hidden = true; $('#matchSetup').hidden = true; }
+function hideOverlays() { ['#menu', '#result', '#matchSetup', '#soloSetup', '#pause'].forEach(q => $(q).hidden = true); G.paused = false; }
 const gauss = () => { let u = 0; for (let k = 0; k < 6; k++) u += Math.random(); return (u - 3) / 0.7071; };
 function startMatch(oi, tee) {
   const o = OPPONENTS[oi], my = handicap(), n = matchStrokes(my, o.hcp);
@@ -973,7 +1003,7 @@ function holed(fromAir) {
   later(0.25, () => { sfx('fanfare'); pop(scoreName(G.strokes).toUpperCase(), 'score', sub); });
   later(2.1, () => finishHole(false));
 }
-function finishHole(pickedUp) {
+function finishHole(pickedUp, conceded = false) {
   G.mode = 'done';
   const R = G.round, d = G.strokes - PAR;
   R.scores[HOLE_I] = G.strokes; R.putts[HOLE_I] = G.putts;
@@ -998,10 +1028,10 @@ function finishHole(pickedUp) {
   }
   const M = G.match; let holeRes = '';
   if (M && !M.decided) {
-    const t = holeTarget(HOLE_I), r = G.strokes <= t.win ? 1 : G.strokes === t.halve ? 0 : -1;
+    const t = holeTarget(HOLE_I), r = conceded ? -1 : G.strokes <= t.win ? 1 : G.strokes === t.halve ? 0 : -1;
     M.res[HOLE_I] = r;
     const st = M.res.reduce((x, y) => x + y, 0), left = HOLES.length - 1 - HOLE_I;
-    holeRes = `${r > 0 ? 'Hole won' : r < 0 ? 'Hole lost' : 'Hole halved'} · ${statusTxt(st)}`;
+    holeRes = `${conceded ? 'Hole conceded' : r > 0 ? 'Hole won' : r < 0 ? 'Hole lost' : 'Hole halved'} · ${statusTxt(st)}`;
     if (Math.abs(st) > left || left === 0) {
       M.decided = st > 0 ? 'w' : st < 0 ? 'l' : 'h';
       M.final = st === 0 ? 'halved' : left > 0 ? `${Math.abs(st)} & ${left}` : `${Math.abs(st)} up`;
@@ -1263,6 +1293,29 @@ $('#shapeSeg').onclick = e => {
 $('#readSeg').onclick = e => { const s = e.target.closest('button'); if (!s) return; G.read = s.dataset.read; flows = []; updatePuttDrag(); syncUI(); };
 document.querySelectorAll('.tee-card').forEach(btn => btn.onclick = () => { if (!btn.disabled) startRound(btn.dataset.tee); });
 $('#practiceBtn').onclick = startPractice;
+$('#soloBtn').onclick = () => { renderMenu(); $('#menu').hidden = true; $('#soloSetup').hidden = false; };
+$('#soloBack').onclick = () => { $('#soloSetup').hidden = true; $('#menu').hidden = false; };
+const canConcede = () => G.match && !G.match.decided && !G.practice && !['menu', 'done', 'holed'].includes(G.mode);
+$('#pauseBtn').onclick = () => {
+  if (G.mode === 'menu' || G.mode === 'done') return;
+  G.paused = true;
+  $('#pzEyebrow').textContent = G.practice ? 'Putting practice' : `${G.match ? `Match vs ${G.match.opp.name} · ` : ''}Hole ${HOLE_I + 1} of ${HOLES.length}`;
+  $('#pzNote').textContent = G.practice ? 'Your putting stats are saved as you go.'
+    : G.match ? `Conceding gives ${G.match.opp.name} this hole and moves you to the next tee. Quitting ends the match without a result, and the round won't count toward your handicap.`
+    : "Quitting ends this round. It won't count toward your handicap.";
+  $('#pzConcede').hidden = !canConcede();
+  $('#pause').hidden = false;
+};
+$('#pzResume').onclick = () => { $('#pause').hidden = true; G.paused = false; };
+$('#pzQuit').onclick = showMenu;
+$('#pzConcede').onclick = () => {
+  if (!canConcede()) return;
+  $('#pause').hidden = true; G.paused = false;
+  /* a conceded hole posts net double bogey (or what's already taken, plus one) for the handicap */
+  G.timers = []; G.F = null; G.opp && (G.opp.holed = true); b.vx = b.vy = 0; G.ballHidden = true;
+  G.strokes = Math.max(G.strokes + 1, PAR + 2);
+  finishHole(true, true);
+};
 $('#matchBtn').onclick = () => { G.msTee = G.msTee || 'blue'; renderMatchSetup(); $('#menu').hidden = true; $('#matchSetup').hidden = false; };
 $('#msBack').onclick = () => { $('#matchSetup').hidden = true; $('#menu').hidden = false; };
 $('#msTee').onclick = e => { const x = e.target.closest('button'); if (!x || x.disabled) return; G.msTee = x.dataset.tee; renderMatchSetup(); };
@@ -1285,6 +1338,7 @@ $('#resPractice').onclick = startPractice;
 $('#resMenu').onclick = showMenu;
 $('#exitPractice').onclick = showMenu;
 function showMenu() {
+  hideOverlays();
   G.mode = 'menu'; G.practice = false; G.round = null; G.match = null; G.opp = null; G.timers = []; G.putting = false; G.ballHidden = false; G.tee = G.tee || 'blue';
   if (HOLE_I !== 0 || !HOLE) loadHole(0);
   b.x = TEES.blue.x; b.y = TEES.blue.y; G.ci = 0; G.shape = 'straight'; G.nukeArmed = false; defaultAim();
@@ -1567,7 +1621,7 @@ window.__pureStrike = { score: (strokes, putts) => { G.strokes = strokes; G.putt
   holeOut: (strokes, putts) => { G.strokes = strokes; G.putts = putts; b.x = PIN.x; b.y = PIN.y; b.inCup = true; finishHole(false); }, state: () => ({ hole: HOLE_I, mode: G.mode, hcp: handicap(), rounds: store.rounds.length, earned: earnedIds() }) };
 cam.x = camT.x; cam.y = camT.y; cam.s = camT.s;
 let last = performance.now();
-function frame(now) { const dt = Math.min(0.05, (now - last) / 1000); last = now; update(dt); draw(); requestAnimationFrame(frame); }
+function frame(now) { const dt = Math.min(0.05, (now - last) / 1000); last = now; if (!G.paused) update(dt); draw(); requestAnimationFrame(frame); }
 requestAnimationFrame(frame);
 })();
 </script>
