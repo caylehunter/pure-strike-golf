@@ -200,6 +200,24 @@ button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 .tee-card.mode .av{flex:none;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font:400 18px/1 var(--display);background:#2c5a40;color:var(--text);box-shadow:0 0 0 2px rgba(255,255,255,.7)}
 .tee-card.mode.match{border-color:rgba(255,207,63,.55)}
 .tee-card.mode.match .av{background:var(--gold);color:#251b00}
+.fb-btn{all:unset;cursor:pointer;display:flex;align-items:center;gap:14px;padding:16px;border-radius:16px;background:#2a7fd4;color:#fff;box-shadow:0 4px 0 #1a5596,0 10px 28px rgba(0,0,0,.5);margin-top:4px;position:sticky;bottom:calc(env(safe-area-inset-bottom,0px) + 10px);z-index:2}
+.fb-btn:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.fb-btn:active{transform:translateY(2px);box-shadow:0 2px 0 #1a5596}
+.fb-btn svg{flex:none;width:30px;height:30px;fill:#fff}
+.fb-btn span{display:flex;flex-direction:column;gap:3px}
+.fb-btn b{font:800 20px/1 var(--cond);letter-spacing:.08em;text-transform:uppercase}
+.fb-btn small{font:500 13px/1.3 var(--body);color:#dbeaff}
+.fb-chips{display:flex;flex-wrap:wrap;gap:8px}
+.fb-chips button{all:unset;cursor:pointer;padding:8px 12px;border-radius:99px;border:1px solid var(--line);background:var(--panel);font:700 13px/1 var(--cond);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.fb-chips button.on{background:var(--gold);border-color:var(--gold);color:#251b00}
+.fb-chips button:focus-visible{outline:2px solid var(--gold)}
+.fb-lbl{font:700 12px/1 var(--cond);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+#fbText,#fbName{width:100%;box-sizing:border-box;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.07);color:var(--text);font:500 16px/1.4 var(--body);padding:12px;-webkit-user-select:text;user-select:text}
+#fbText{resize:vertical;min-height:110px}
+#fbText:focus,#fbName:focus{outline:2px solid var(--gold);outline-offset:1px}
+.fb-status{margin:0;min-height:1.3em;font:600 14px/1.4 var(--body);color:#d5e6d9}
+.fb-status.ok{color:#9ff0a6}
+.fb-status.warn{color:#ffd29a}
 .best{font:600 13px/1.3 var(--cond);letter-spacing:.08em;color:var(--muted);text-transform:uppercase;text-align:center;min-height:1em}
 #result h2{margin:2px 0;font:400 52px/1 var(--display);color:var(--gold);text-wrap:balance;text-shadow:0 4px 0 rgba(0,0,0,.35)}
 .res-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
@@ -291,6 +309,7 @@ button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
       <li><span><b>Handicap.</b> Every finished round counts. Lower is better, and it unlocks tees and rewards.</span></li>
     </ol>
     <div class="best" id="bestLine"></div>
+    <button class="fb-btn" id="fbBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-5 4v-4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/></svg><span><b>Send feedback</b><small>Tell us what to fix or what you loved</small></span></button>
   </div>
 </div>
 
@@ -302,6 +321,25 @@ button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
     <button class="tee-card blue" data-tee="blue"><span class="dot"></span><span class="tc-main"><b>Blue tees</b><small id="blueInfo">wider sweet spot · calmer wind</small></span></button>
     <button class="tee-card black" data-tee="black"><span class="dot"></span><span class="tc-main"><b>Black tees</b><small id="blackInfo">nuclear drive · tighter sweet spot · gusty</small></span><span class="tag" id="blackTag">NUKE</span></button>
     <button class="ghost" id="soloBack">Back</button>
+  </div>
+</div>
+
+<div class="overlay" id="feedback" hidden>
+  <div class="card">
+    <span class="eyebrow">Playtest feedback</span>
+    <h2 class="ms-title">What did you think?</h2>
+    <p class="ms-note">Anything helps: what confused you, what felt great, what you would change.</p>
+    <div class="fb-chips" id="fbChips" role="group" aria-label="Quick tags">
+      <button data-tag="Loved it">Loved it</button><button data-tag="Confusing">Confusing</button><button data-tag="Too hard">Too hard</button><button data-tag="Too easy">Too easy</button><button data-tag="Bug">Bug</button><button data-tag="Idea">Idea</button>
+    </div>
+    <label class="fb-lbl" for="fbText">Your feedback</label>
+    <textarea id="fbText" rows="5" placeholder="Example: the nuke was hard to time on hole 2, but putting felt great."></textarea>
+    <label class="fb-lbl" for="fbName">Your name (optional)</label>
+    <input id="fbName" type="text" autocomplete="name" placeholder="So we know who to thank">
+    <p class="fb-status" id="fbStatus" role="status"></p>
+    <button class="primary" id="fbSend">Send feedback</button>
+    <button class="ghost" id="fbCopy" hidden>Copy my feedback</button>
+    <button class="ghost" id="fbBack">Back</button>
   </div>
 </div>
 
@@ -750,7 +788,7 @@ function startHole(i) {
   b.x = TEES[G.tee].x; b.y = TEES[G.tee].y; b.z = 0; b.vx = b.vy = 0; b.inCup = false; b.lipped = false;
   enterAim(); cam.x = camT.x; cam.y = camT.y; cam.s = camT.s; cam.r = camT.r;
   G.opp = null; G.holedOut = false;
-  const M = G.match, live = M && !M.decided;
+  const M = G.match, live = !!M;
   const first = !live ? '' : i === 0 ? (M.honor === 'me' ? ' · you won the toss, tee off first' : ` · ${M.opp.name} won the toss, tees off first`)
     : (M.honor === 'me' ? ' · your honor' : ` · ${M.opp.name}'s honor`);
   pop(`HOLE ${i + 1}`, 'yds', `Par ${PAR} · ${TEE_YDS[G.tee]} yds${first}`);
@@ -780,7 +818,7 @@ function enterPutt() {
   G.mode = 'putt'; G.putting = true; G.drag = null; G.pred = null; G.trail = []; flows = [];
   syncUI(); setupPuttCam();
 }
-function hideOverlays() { ['#menu', '#result', '#matchSetup', '#soloSetup', '#pause'].forEach(q => $(q).hidden = true); G.paused = false; }
+function hideOverlays() { ['#menu', '#result', '#matchSetup', '#soloSetup', '#pause', '#feedback'].forEach(q => $(q).hidden = true); G.paused = false; }
 const gauss = () => { let u = 0; for (let k = 0; k < 6; k++) u += Math.random(); return (u - 3) / 0.7071; };
 function startMatch(oi, tee) {
   const o = OPPONENTS[oi], my = handicap(), n = matchStrokes(my, o.hcp);
@@ -852,7 +890,7 @@ function initOpp() {
 }
 const oppDist = () => hyp(G.opp.ball.x - PIN.x, G.opp.ball.y - PIN.y);
 const myDist = () => hyp(b.x - PIN.x, b.y - PIN.y);
-const turnsLive = () => G.match && !G.match.decided && G.opp;
+const turnsLive = () => G.match && G.opp;
 function playerTurn() { const s = surface(b.x, b.y); if (s === 'green' || s === 'fringe') enterPutt(); else enterAim(); }
 /* who plays next: the honor on the tee, then whoever is farther from the hole */
 function nextTurn() {
@@ -1139,7 +1177,11 @@ function syncUI() {
     const st = MB.res.reduce((x, y) => x + (y || 0), 0);
     $('#mbStatus').textContent = `VS ${MB.opp.name.toUpperCase()} · ${statusTxt(st)}`;
     if (m === 'opp') $('#mbTarget').textContent = `${MB.opp.name} is hitting · tap the course to skip`;
-    else if (MB.decided) $('#mbTarget').textContent = `Match ${MB.decided === 'w' ? 'won' : MB.decided === 'l' ? 'lost' : 'halved'} ${MB.decided === 'h' ? '' : MB.final} · finish for your handicap`;
+    else if (MB.decided) {
+      const O = G.opp, ai = MB.ai[HOLE_I];
+      const them = !O ? '' : O.holed ? ` · ${MB.opp.name} ${madeTxt(ai - PAR)} (${ai})` : ` · ${MB.opp.name}: ${O.k} shot${O.k === 1 ? '' : 's'}`;
+      $('#mbTarget').textContent = `Match ${MB.decided === 'w' ? 'won' : MB.decided === 'l' ? 'lost' : 'halved'}${MB.decided === 'h' ? '' : ' ' + MB.final} · playing out for fun${them}`;
+    }
     else {
       const t = holeTarget(HOLE_I), ai = MB.ai[HOLE_I], next = G.strokes + 1;
       const pops = t.pm ? ` · you get ${strokesTxt(t.pm)}` : t.pa ? ` · ${MB.opp.name} gets ${strokesTxt(t.pa)}` : '';
@@ -1311,6 +1353,41 @@ $('#shapeSeg').onclick = e => {
 $('#readSeg').onclick = e => { const s = e.target.closest('button'); if (!s) return; G.read = s.dataset.read; flows = []; updatePuttDrag(); syncUI(); };
 document.querySelectorAll('.tee-card').forEach(btn => btn.onclick = () => { if (!btn.disabled) startRound(btn.dataset.tee); });
 $('#practiceBtn').onclick = startPractice;
+/* feedback: saved to the artifact's own store when this viewer may write it; otherwise copied for a text message */
+const fbTags = new Set();
+$('#fbBtn').onclick = () => { $('#menu').hidden = true; $('#feedback').hidden = false; $('#fbStatus').textContent = ''; $('#fbStatus').className = 'fb-status'; $('#fbCopy').hidden = true; setTimeout(() => $('#fbText').focus(), 50); };
+$('#fbBack').onclick = () => { $('#feedback').hidden = true; $('#menu').hidden = false; };
+$('#fbChips').onclick = e => { const x = e.target.closest('button'); if (!x) return; fbTags.has(x.dataset.tag) ? fbTags.delete(x.dataset.tag) : fbTags.add(x.dataset.tag); x.classList.toggle('on', fbTags.has(x.dataset.tag)); };
+function fbNote() {
+  const rec = OPPONENTS.map(o => { const r = rec_(o.id); return `${o.name} ${r.w}-${r.l}`; }).join(', ');
+  return { text: $('#fbText').value.trim(), name: $('#fbName').value.trim().slice(0, 60), tags: [...fbTags], at: new Date().toISOString(),
+    context: { handicap: handicap(), rounds: store.rounds.length, match: rec, screen: `${W}x${H}` } };
+}
+const rec_ = id => store.match[id] || { w: 0, l: 0 };
+function fbPlain(n) { return `Pure Strike feedback${n.name ? ' from ' + n.name : ''}\n${n.tags.length ? '[' + n.tags.join(', ') + '] ' : ''}${n.text}\n(handicap ${fmtH(n.context.handicap)}, ${n.context.rounds} rounds)`; }
+function fbShowCopy(msg) { const st = $('#fbStatus'); st.textContent = msg; st.className = 'fb-status warn'; $('#fbCopy').hidden = false; }
+let fbSending = false;
+$('#fbSend').onclick = async () => {
+  const n = fbNote(), st = $('#fbStatus');
+  if (!n.text && !n.tags.length) { st.textContent = 'Type a note or tap a tag first.'; st.className = 'fb-status warn'; $('#fbText').focus(); return; }
+  if (fbSending) return; fbSending = true; st.textContent = 'Sending…'; st.className = 'fb-status';
+  try {
+    const db = window.claude && await window.claude.use('db'), user = db && await window.claude.use('user'), uid = user && await user.id();
+    if (!db || !uid) throw { code: 'not_granted' };
+    const ref = db.doc('feedback/' + uid), cur = await ref.get();
+    const notes = ((cur.exists && cur.data().notes) || []).concat([n]).slice(-50);
+    await ref.set({ notes, updated: n.at });
+    st.textContent = 'Sent. Thank you!'; st.className = 'fb-status ok';
+    $('#fbText').value = ''; fbTags.clear(); document.querySelectorAll('#fbChips button').forEach(x => x.classList.remove('on'));
+  } catch (e) {
+    fbShowCopy("This link can't send feedback directly. Tap Copy, then paste it into a text to the person who shared the game.");
+  } finally { fbSending = false; }
+};
+$('#fbCopy').onclick = async () => {
+  const t = fbPlain(fbNote()), st = $('#fbStatus');
+  try { await navigator.clipboard.writeText(t); st.textContent = 'Copied. Paste it into a text message.'; st.className = 'fb-status ok'; }
+  catch (e) { const ta = $('#fbText'); ta.value = t; ta.focus(); ta.select(); st.textContent = 'Your note is selected in the box above: copy it from there.'; st.className = 'fb-status warn'; }
+};
 $('#soloBtn').onclick = () => { renderMenu(); $('#menu').hidden = true; $('#soloSetup').hidden = false; };
 $('#soloBack').onclick = () => { $('#soloSetup').hidden = true; $('#menu').hidden = false; };
 const canConcede = () => G.match && !G.match.decided && !G.practice && !['menu', 'done', 'holed'].includes(G.mode);

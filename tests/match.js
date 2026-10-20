@@ -48,7 +48,8 @@ const PAGE = 'file://' + path.join(__dirname, 'page.html');
   check('2 up with 1 to play ends the match 2 & 1', (await pg.$eval('#resSub', e => e.textContent)).includes('match won 2 & 1'), await pg.$eval('#resSub', e => e.textContent));
   await pg.tap('#againBtn'); await pg.waitForTimeout(500);
   m = await pg.evaluate(() => window.__pureStrike.match());
-  check('hole 3 bar says finish for your handicap', m.bar.includes('finish for your handicap'), m.bar.replace(/\n/g, ' / '));
+  check('hole 3 after the match is decided: playing out for fun', m.bar.includes('Match won 2 & 1 · playing out for fun'), m.bar.replace(/\n/g, ' / '));
+  check('the opponent still plays the last hole', !!(await pg.evaluate(() => window.__pureStrike.opp())));
   await pg.evaluate(() => window.__pureStrike.score(9, 3)); await pg.waitForTimeout(150);
   check('result stays won 2 & 1', (await pg.$eval('#resName', e => e.textContent)) === 'You won 2 & 1');
   // alternating shots by the rules of golf: honor on the tee, then whoever is away

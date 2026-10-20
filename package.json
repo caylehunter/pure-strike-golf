@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "description": "Phone-first arcade golf prototype",
   "scripts": {
-    "test": "node tests/build-page.js && node tests/round.js && node tests/match.js && node tests/nav.js && node tests/swing.js && node tests/putting.js"
+    "test": "node tests/build-page.js && node tests/round.js && node tests/match.js && node tests/nav.js && node tests/feedback.js && node tests/swing.js && node tests/putting.js"
   },
   "devDependencies": {
     "playwright": "1.56.1"

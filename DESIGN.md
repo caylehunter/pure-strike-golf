@@ -11,6 +11,12 @@ Working name. Arcade golf for phones: big, satisfying drives, a real handicap un
 - **Menu → mode first:** Stroke play or Match play (plus Putting practice). Each opens a setup screen with a Back button; nothing starts until a tee (stroke play) or an opponent (match play) is chosen.
 - **Pause button (II)** at the left of the scoreboard during any round: Resume, Quit to menu (the round doesn't post and the match records no result), and in match play **Concede this hole**. A conceded hole is lost and posts net double bogey (or strokes taken + 1, if higher) to the handicap.
 
+## Playtest feedback
+
+- A big blue **Send feedback** button is pinned to the bottom of the menu. It opens a screen with quick tags (Loved it, Confusing, Too hard, Too easy, Bug, Idea), a note, and an optional name.
+- Notes are saved in the artifact's store at `feedback/<viewer id>` (each person writes only their own; only the owner can read them all), with handicap, rounds and match records attached.
+- Only viewers allowed to edit (the owner, or friends invited by email as Editors) can save. Anyone else gets **Copy my feedback**, which puts the note on the clipboard to text to the owner.
+
 ## Swing (full shots)
 
 1. **Aim:** drag on the course. The preview shows the flight path and carry, with the ring landing on the aim line even when the shot curves.
@@ -88,7 +94,7 @@ Locked shot shapes are struck through; tapping one says how to unlock it. The me
 - **Alternating shots, by the rules of golf:** the hole is played shot for shot. On the tee the **honor** goes first: a coin toss on hole 1, then the winner of the previous hole (a halve keeps the honor). After that, **whoever is farther from the hole plays next**, so a duffed shot that leaves you behind means you hit again. Once one player is in the hole, the other plays out.
 - **The opponent's shots** come from its hole score, turned into shots (full shots along the hole, the last onto the green, then putts) and played one at a time with an orange ball while the camera follows. Their ball stays on the course between shots, tagged with their initial. Shots never finish in water or out of bounds (they lay up short of a pond); Dusty's drift right (his slice). Tap the course to skip a shot.
 - **Match bar while they're still playing:** `Dusty: 2 shots, 14 ft away · you get a stroke · you're away`. Once they hole out it switches to the target: `Dusty made par (4) · 4 wins, 5 halves`.
-- Lower net score wins the hole. Status: ALL SQUARE / n UP / n DOWN. The match ends when one side leads by more than the holes left (e.g. 2 & 1); the round continues so the gross score still posts to the handicap.
+- Lower net score wins the hole. Status: ALL SQUARE / n UP / n DOWN. The match ends when one side leads by more than the holes left (e.g. 2 & 1); both players still play out the remaining holes ("playing out for fun") so the gross score posts to the handicap.
 - Hole cards show the hole result and match status; the final card shows "You won 2 & 1" / "Marge won 1 up" / "Match halved", both totals, and a rematch button.
 
 ## Online match play vs. friends (planned)
