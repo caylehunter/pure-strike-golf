@@ -47,6 +47,10 @@ button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 .wind small{font-size:10px;color:var(--muted);letter-spacing:.08em}
 #lie{position:fixed;left:50%;transform:translateX(-50%);bottom:240px;z-index:5;font:700 12px/1 var(--cond);letter-spacing:.12em;text-transform:uppercase;padding:6px 11px;border-radius:99px;background:rgba(7,16,12,.72);border:1px solid var(--line);pointer-events:none;white-space:nowrap}
 #lie.bad{color:#ffd29a}
+#streak{position:fixed;right:max(16px,env(safe-area-inset-right,0px));z-index:5;font:800 12px/1 var(--cond);letter-spacing:.12em;text-transform:uppercase;padding:6px 10px;border-radius:99px;background:rgba(7,16,12,.72);border:1px solid rgba(255,207,63,.5);color:var(--gold);pointer-events:none;white-space:nowrap}
+#streak.heat{background:rgba(255,150,40,.25);border-color:#ffa53a;color:#ffd08a}
+#streak.fire{background:var(--nuke);border-color:var(--nuke);color:#1d0900;box-shadow:0 0 16px rgba(255,90,31,.7)}
+.pop.heat{color:#ffc46b;text-shadow:0 0 18px #ff8a3a,0 3px 0 rgba(0,0,0,.35)}
 
 /* pops */
 #pops{position:fixed;left:0;right:0;top:26%;z-index:7;display:flex;flex-direction:column;align-items:center;gap:4px;pointer-events:none;text-align:center;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
@@ -247,6 +251,7 @@ button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
   <div class="wind" id="wind" aria-label="Wind"><svg viewBox="0 0 24 24" id="windArrow"><path d="M12 2 L19 11 H14.5 V22 H9.5 V11 H5 Z"/></svg><span id="windVal">0</span><small>MPH</small></div>
 </header>
 <div id="lie" hidden></div>
+<div id="streak" hidden></div>
 <div id="matchBar" hidden><b id="mbStatus"></b><span id="mbTarget"></span></div>
 <div id="pops"></div>
 
@@ -798,6 +803,7 @@ function buildShot(p, err, o) {
   let carry = c.carry * Math.min(p, 1) * lieFactor(lie, c);
   if (o.nuke) carry = c.carry * (1 + clamp((p - 1) / 0.2, 0, 1) * 0.62);
   if (o.perfect) carry *= 1.03;
+  if (o.fire) carry *= 1.05;
   let apex = c.apex * clamp(0.35 + 0.65 * Math.min(p, 1), 0.35, 1), off = 0, curve = 0, rollMul = 1, windMul = 1;
   if (G.shape === 'stinger') { apex *= 0.33; carry *= 0.9; rollMul = 1.45; windMul = 0.35; }
   const sc = carry / 250;
@@ -813,7 +819,7 @@ function buildShot(p, err, o) {
     curve += cross * 1.1 * (carry / 250) * windMul;
   }
   if (o.nuke) { apex *= 1.45; rollMul *= 1.25; }
-  return { sx: b.x, sy: b.y, dx, dy, rx, ry, carry, off, curve, apex, T: 1.15 + carry / 190, t: 0, nuke: !!o.nuke, perfect: !!o.perfect, rollV: c.roll * rollMul, wood: !!c.wood };
+  return { sx: b.x, sy: b.y, dx, dy, rx, ry, carry, off, curve, apex, T: 1.15 + carry / 190, t: 0, nuke: !!o.nuke, fire: !!o.fire, perfect: !!o.perfect, rollV: c.roll * rollMul, wood: !!c.wood };
 }
 function flightPos(F, u) {
   const f = F.carry * u, l = F.off * u + F.curve * u * u;
@@ -887,7 +893,7 @@ function startRound(tee, match = null) {
   audio();
   setRoundHoles(G.len);
   G.match = match;
-  G.tee = tee; G.practice = false; G.longest = 0; G.shape = 'straight';
+  G.tee = tee; G.practice = false; G.longest = 0; G.shape = 'straight'; G.streak = 0;
   G.round = { tee, scores: [], putts: [], over: false, earned: earnedIds(), oppsOpen: OPPONENTS.map((o, i) => oppOpen(i)) };
   hideOverlays(); startHole(0);
 }
@@ -1045,6 +1051,10 @@ function skipOppShot() { if (G.mode === 'opp' && G.opp.moving) G.opp.t = Math.ma
 
 /* the strike ring starts this far out (in meter units) and closes at M.speed */
 const RING_START = 0.9, RING_R = 44, RING_K = 2.4;
+/* NBA Jam heat: 3 pure swings in a row heats you up, 4 sets you on fire until a swing isn't pure */
+const HEAT_AT = 3, FIRE_AT = 4;
+const onFire = () => !G.practice && (G.streak || 0) >= FIRE_AT;
+const perfectWin = () => (G.tee === 'blue' || G.practice ? 0.05 : 0.035) * (onFire() ? 1.6 : 1);
 function swingDown() {
   audio();
   if (G.mode === 'opp') return skipOppShot();
@@ -1065,13 +1075,13 @@ function swingUp() {
   G.mode = 'accuracy'; sfx('tick'); vib(8); syncUI();
 }
 function strike(n) {
-  const M = G.meter, PW = G.tee === 'blue' || G.practice ? 0.05 : 0.035;
+  const M = G.meter, PW = perfectWin(), fire = onFire();
   const perfect = Math.abs(n) <= PW;
   const err = perfect ? 0 : clamp(n / 0.15, -1, 1);
   const armed = G.nukeArmed && canNuke(), nuke = armed && inBand(M.lock);
   G.shotFromTee = onTee(); G.lastPos = { x: b.x, y: b.y };
   const lie = surface(b.x, b.y);
-  G.F = buildShot(nuke ? 1.2 : M.lock, err, { nuke, perfect, wind: true });
+  G.F = buildShot(nuke ? 1.2 : M.lock, err, { nuke, perfect, fire, wind: true });
   G.strokes++; G.mode = 'flight'; G.trail = [];
   if (lie === 'sand') { burst(b.x, b.y, 22, ['#efe0b0', '#d9c48a'], 6, 9, 2.6, 0.8); sfx('sand'); }
   if (nuke) {
@@ -1087,6 +1097,12 @@ function strike(n) {
     }
   }
   if (nuke) { G.nukeArmed = false; if (Math.abs(err) <= 0.5) { store.stats.nukes++; save(); } }
+  const was = G.streak || 0;
+  G.streak = perfect ? was + 1 : 0;
+  if (G.streak === HEAT_AT) later(0.35, () => pop('HEATING UP!', 'heat', 'one more pure swing sets you on fire'));
+  if (G.streak === FIRE_AT) { later(0.35, () => { pop('ON FIRE!', 'nuke', 'bigger sweet spot · more distance · until you miss'); flash('#ff8a3a', 0.4, 300); sfx('fanfare'); }); }
+  if (!perfect && was >= FIRE_AT) later(0.35, () => pop("FIRE'S OUT", 'miss', `${was} pure in a row`));
+  else if (!perfect && was >= HEAT_AT) later(0.35, () => pop('COOLED OFF', 'small'));
   syncUI();
 }
 function land(F, p) {
@@ -1353,6 +1369,10 @@ function syncUI() {
 
   const lie = surface(b.x, b.y);
   lieEl.hidden = !(m === 'aim' || m === 'power' || m === 'accuracy');
+  const sk = $('#streak'), n = G.streak || 0;
+  sk.hidden = lieEl.hidden || G.practice || n === 0;
+  sk.className = n >= FIRE_AT ? 'fire' : n >= HEAT_AT ? 'heat' : '';
+  sk.textContent = n >= FIRE_AT ? `On fire · pure ×${n}` : n >= HEAT_AT ? `Heating up · pure ×${n}` : `Pure ×${n}`;
   lieEl.textContent = LIE_TXT[lie] || lie; lieEl.className = (lie === 'rough' || lie === 'sand') ? 'bad' : '';
 
   const c = club();
@@ -1374,7 +1394,7 @@ function syncUI() {
     : m === 'power' ? (G.nukeArmed && cn ? 'Let go inside the NUKE band' : `Let go at the ${markName} mark to land on your target`)
     : m === 'accuracy' ? 'Tap when the shrinking ring meets the gold circle' : '\u00a0';
 
-  const PW = G.tee === 'blue' || G.practice ? 0.05 : 0.035;
+  const PW = perfectWin();
   setBar($('#mPerfect'), -PW, PW); setBar($('#mGood'), -0.08, 0.08); setBar($('#mOver'), 1.0, VMAX); const [na, nz] = nukeBand(); setBar($('#mNuke'), na, nz);
   $('#mOver').className = 'm m-over' + (cn && G.nukeArmed ? '' : ' locked');
   $('#mNuke').hidden = !(cn && G.nukeArmed);
@@ -1407,7 +1427,7 @@ function layout() {
   viewTop = hr ? hr.bottom - 12 : 0;
   const vb = dr ? dr.top + 18 : H;
   viewH = Math.max(140, vb - viewTop); vcY = viewTop + viewH / 2;
-  if (dr) lieEl.style.bottom = (H - dr.top + 6) + 'px';
+  if (dr) { lieEl.style.bottom = (H - dr.top + 6) + 'px'; $('#streak').style.bottom = (H - dr.top + 36) + 'px'; }
 }
 
 /* ---------- input ---------- */
@@ -1622,7 +1642,7 @@ function update(dt) {
     const u = Math.min(1, F.t / F.T), p = flightPos(F, u);
     b.x = p.x; b.y = p.y; b.z = p.z;
     G.trail.push([p.x, p.y + p.z * 0.6]); if (G.trail.length > (F.nuke ? 70 : 36)) G.trail.shift();
-    if (F.nuke && sdt > 0) for (let i = 0; i < 3; i++) parts.push({ x: p.x + (Math.random() - 0.5) * 1.5, y: p.y + (Math.random() - 0.5) * 1.5, z: p.z, vx: (Math.random() - 0.5) * 4, vy: (Math.random() - 0.5) * 4, vz: -2, life: 0.5, max: 0.5, col: Math.random() < 0.5 ? '#ffcf3f' : '#ff6a2a', r: 2.5 + Math.random() * 2.5, glow: true });
+    if ((F.nuke || F.fire) && sdt > 0) for (let i = 0; i < (F.nuke ? 3 : 2); i++) parts.push({ x: p.x + (Math.random() - 0.5) * 1.5, y: p.y + (Math.random() - 0.5) * 1.5, z: p.z, vx: (Math.random() - 0.5) * 4, vy: (Math.random() - 0.5) * 4, vz: -2, life: 0.5, max: 0.5, col: Math.random() < 0.5 ? '#ffcf3f' : '#ff6a2a', r: 2.5 + Math.random() * 2.5, glow: true });
     let hit = null;
     if (u > 0.04 && u < 1) for (const t of TREES) if (p.z < t.h && Math.abs(t.x - p.x) < t.r && Math.abs(t.y - p.y) < t.r && hyp(t.x - p.x, t.y - p.y) < t.r * 0.85) { hit = t; break; }
     camT.x = p.x + F.dx * 20; camT.y = p.y + F.dy * 20; camT.s = clamp(Math.max(camT.s * 0.995, 2.2), 0.6, 3.4);
@@ -1720,7 +1740,7 @@ function draw() {
   if (G.mode === 'putt') drawPuttAim(px);
 
   if (G.trail.length > 1) {
-    const nk = G.F && G.F.nuke; ctx.lineCap = 'round';
+    const nk = G.F && (G.F.nuke || G.F.fire); ctx.lineCap = 'round';
     if (nk) ctx.globalCompositeOperation = 'lighter';
     for (let i = 1; i < G.trail.length; i++) { const a = i / G.trail.length; ctx.strokeStyle = nk ? `rgba(255,${120 + a * 100},40,${a * 0.85})` : `rgba(255,255,255,${a * 0.55})`; ctx.lineWidth = (nk ? 7 : 2.2) * a * px + (nk ? 1.5 * px : 0); ctx.beginPath(); ctx.moveTo(G.trail[i - 1][0], G.trail[i - 1][1]); ctx.lineTo(G.trail[i][0], G.trail[i][1]); ctx.stroke(); }
     ctx.globalCompositeOperation = 'source-over';
@@ -1736,6 +1756,12 @@ function draw() {
     ctx.fillStyle = 'rgba(0,0,0,.35)'; circle(O.ball.x + z * 0.25, O.ball.y - z * 0.25, r * 1.05);
     ctx.fillStyle = '#ff7a59'; circle(O.ball.x, O.ball.y + z * 0.6, r * (1 + z / 45));
     ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.2 * px; ctx.stroke();
+  }
+  if (!G.ballHidden && !G.practice && (G.streak || 0) >= HEAT_AT && !G.putting) {
+    const z = b.z, gr = (onFire() ? 16 : 11) * px * (1 + 0.12 * Math.sin(performance.now() / 120));
+    const g = ctx.createRadialGradient(b.x, b.y + z * 0.6, 0, b.x, b.y + z * 0.6, gr);
+    g.addColorStop(0, onFire() ? 'rgba(255,170,60,.9)' : 'rgba(255,207,63,.7)'); g.addColorStop(1, 'rgba(255,90,31,0)');
+    ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = g; circle(b.x, b.y + z * 0.6, gr); ctx.globalCompositeOperation = 'source-over';
   }
   if (!G.ballHidden) {
     const r = Math.max(BALL_R, (G.putting ? 4.5 : 3.2) * px), z = b.z;
@@ -1788,7 +1814,7 @@ function draw() {
   }
 }
 function drawStrikeRing() {
-  const M = G.meter, PW = G.tee === 'blue' || G.practice ? 0.05 : 0.035, cx0 = W / 2, cy0 = vcY;
+  const M = G.meter, PW = perfectWin(), cx0 = W / 2, cy0 = vcY;
   const nuke = G.nukeArmed && canNuke() && inBand(M.lock), hue = nuke ? '255,120,50' : '255,207,63';
   const r = Math.max(2, RING_R * (1 + M.n * RING_K)), inPerfect = Math.abs(M.n) <= PW;
   ctx.fillStyle = 'rgba(6,14,10,.5)'; ctx.beginPath(); ctx.arc(cx0, cy0, RING_R * (1 + RING_START * RING_K) + 14, 0, TAU); ctx.fill();
@@ -1863,6 +1889,8 @@ window.__pureStrike = { score: (strokes, putts) => { G.strokes = strokes; G.putt
   holes: () => ALL_HOLES.map((h, i) => { const cur = HOLE_I, rh = HOLES; HOLES = ALL_HOLES; loadHole(i); const r = { name: h.name, par: h.par, blue: TEE_YDS.blue, black: TEE_YDS.black, teeOk: ['blue', 'black'].every(t => surface(TEES[t].x, TEES[t].y) === 'tee'), pinOk: surface(PIN.x, PIN.y) === 'green' }; HOLES = rh; loadHole(Math.min(cur, HOLES.length - 1)); return r; }),
   surface: (x, y) => surface(x, y),
   drop: (x, y) => { const d = dropFromWater(x, y); return { ...d, s: surface(d.x, d.y) }; },
+  strikeAt: n => { if (G.mode !== 'aim') return false; swingDown(); G.meter.p = 0.7; swingUp(); strike(n); return true; },
+  heat: () => ({ streak: G.streak || 0, fire: onFire(), win: perfectWin(), badge: $('#streak').hidden ? '' : $('#streak').textContent, fireShot: !!(G.F && G.F.fire) }),
   holeOut: (strokes, putts) => { G.strokes = strokes; G.putts = putts; b.x = PIN.x; b.y = PIN.y; b.inCup = true; finishHole(false); }, state: () => ({ hole: HOLE_I, mode: G.mode, hcp: handicap(), rounds: store.rounds.length, earned: earnedIds() }) };
 cam.x = camT.x; cam.y = camT.y; cam.s = camT.s;
 let last = performance.now();

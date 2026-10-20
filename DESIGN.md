@@ -25,6 +25,12 @@ Working name. Arcade golf for phones: big, satisfying drives, a real handicap un
 
 Feedback pops: PURE, A TOUCH EARLY/LATE, SLICE/HOOK (tapped early/late), HOLD TO POWER UP, SWING CANCELLED.
 
+## Heating up and on fire (NBA Jam heat)
+
+- Consecutive PURE full swings build a streak across holes; putts neither add to it nor break it. A badge above the controls shows it: `Pure ×2`.
+- **3 in a row → HEATING UP!** A glow around the ball.
+- **4 in a row → ON FIRE!** Flame trail and embers, a perfect window 60% wider, and 5% more carry, until a swing isn't pure ("FIRE'S OUT"). Every round starts cold.
+
 ## Nuclear drive (black tees, driver, tee shot only)
 
 - Arm **Nuke**. The power bar extends past the 100% line straight into the **NUKE band**, which is the top of the meter.
@@ -115,6 +121,12 @@ Asynchronous: each player plays **a whole hole per turn**, unlike the shot-for-s
 3. Each later hole: the honor (last hole's winner; a halve keeps it) plays first, so a hole winner often plays two holes back to back.
 
 Needs: a server and accounts (matches, whose turn), push notifications (installed app or web app), turn timers (e.g. 24 h, then the hole is conceded), and server-side score checks (record each shot's inputs and replay them rather than trusting the phone).
+
+## Ideas from playtesters (planned)
+
+- **Real-time weather:** the host shares approximate location; the match uses the local wind (and maybe rain for softer greens, cold for shorter carry). Needs the app and a weather service, so it comes with online play.
+- **Power-ups** beyond on fire: earned through play (streaks, challenges, rewards), never sold. Only cosmetics are for sale (flame colors, ball trails, trophy styles). In friend matches both players have the same access.
+- **Chat in online matches** (trash talk is part of golf): quick taunts plus free text between friends, a profanity filter players can switch off for their own matches, and block, mute and report (app stores require these).
 
 ## Business model and tournaments (planned, after online play)
 
