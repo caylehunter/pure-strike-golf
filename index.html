@@ -749,9 +749,12 @@ function startHole(i) {
   G.wind = { x: Math.sin(a) * mph, y: Math.cos(a) * mph, mph };
   b.x = TEES[G.tee].x; b.y = TEES[G.tee].y; b.z = 0; b.vx = b.vy = 0; b.inCup = false; b.lipped = false;
   enterAim(); cam.x = camT.x; cam.y = camT.y; cam.s = camT.s; cam.r = camT.r;
-  pop(`HOLE ${i + 1}`, 'yds', `Par ${PAR} · ${TEE_YDS[G.tee]} yds`);
-  G.opp = null;
-  if (G.match && !G.match.decided) startOpp();
+  G.opp = null; G.holedOut = false;
+  const M = G.match, live = M && !M.decided;
+  const first = !live ? '' : i === 0 ? (M.honor === 'me' ? ' · you won the toss, tee off first' : ` · ${M.opp.name} won the toss, tees off first`)
+    : (M.honor === 'me' ? ' · your honor' : ` · ${M.opp.name}'s honor`);
+  pop(`HOLE ${i + 1}`, 'yds', `Par ${PAR} · ${TEE_YDS[G.tee]} yds${first}`);
+  if (live) { initOpp(); nextTurn(); }
 }
 function startPractice() {
   audio();
@@ -785,7 +788,7 @@ function startMatch(oi, tee) {
      and higher handicaps are less consistent */
   const mean = (o.hcp + 3) / 18 + (tee === 'black' ? 0.15 : 0), sd = 0.6 + o.hcp / 60;
   const ai = HOLES.map(h => clamp(h.par + Math.round(mean + gauss() * sd), h.par - 2, h.par + 4));
-  startRound(tee, { oi, opp: o, my, n, meGets: my > o.hcp, ai, res: [], decided: null, final: '' });
+  startRound(tee, { oi, opp: o, my, n, meGets: my > o.hcp, ai, res: [], decided: null, final: '', honor: Math.random() < 0.5 ? 'me' : 'opp' });
 }
 /* what the player needs on hole i: gross scores that win or halve after pops */
 function holeTarget(i) {
@@ -843,14 +846,26 @@ function planOpp(S, o) {
   }
   return shots;
 }
-function startOpp() {
+function initOpp() {
   const M = G.match, t = TEES[G.tee];
-  G.opp = { shots: planOpp(M.ai[HOLE_I], M.opp), k: 0, t: -1.0, ball: { x: t.x, y: t.y, z: 0 }, trail: [], mark: null, holed: false };
-  G.mode = 'opp'; syncUI();
+  G.opp = { shots: planOpp(M.ai[HOLE_I], M.opp), k: 0, t: 0, ball: { x: t.x, y: t.y, z: 0 }, trail: [], holed: false, moving: false };
+}
+const oppDist = () => hyp(G.opp.ball.x - PIN.x, G.opp.ball.y - PIN.y);
+const myDist = () => hyp(b.x - PIN.x, b.y - PIN.y);
+const turnsLive = () => G.match && !G.match.decided && G.opp;
+function playerTurn() { const s = surface(b.x, b.y); if (s === 'green' || s === 'fringe') enterPutt(); else enterAim(); }
+/* who plays next: the honor on the tee, then whoever is farther from the hole */
+function nextTurn() {
+  if (!turnsLive()) return playerTurn();
+  const M = G.match, O = G.opp;
+  if (G.holedOut && O.holed) return finishHole(false);
+  const oppGo = G.holedOut ? true : O.holed ? false : O.k === 0 && G.strokes === 0 ? M.honor === 'opp' : oppDist() > myDist();
+  if (oppGo) { O.moving = true; O.t = -0.45; O.trail = []; G.mode = 'opp'; syncUI(); }
+  else playerTurn();
 }
 function stepOpp(dt) {
   const O = G.opp, sh = O.shots[O.k];
-  if (!sh) return;
+  if (!sh || !O.moving) return;
   O.t += dt;
   if (O.t >= 0 && !sh.started) { sh.started = true; sfx(sh.putt ? 'putt' : 'hit', 0.5); }
   const u = clamp(O.t / sh.T, 0, 1);
@@ -864,26 +879,24 @@ function stepOpp(dt) {
   camT.r = 0;
   if (u >= 1 && O.t >= 0) {
     if (!sh.putt) sfx('land', 0.5);
-    if (O.k === 0 && !sh.holed) O.mark = { ...sh.to };
-    if (sh.holed) { O.holed = true; sfx('cup'); burst(PIN.x, PIN.y, 10, ['#ff7a59', '#ffffff'], 2, 6, 2, 0.8); }
-    O.trail = []; O.k++; O.t = -0.35;
-    if (O.k >= O.shots.length) finishOpp();
+    O.ball = { x: sh.to.x, y: sh.to.y, z: 0 }; O.trail = []; O.k++; O.moving = false;
+    if (sh.holed) {
+      const M = G.match, ai = M.ai[HOLE_I];
+      O.holed = true; sfx('cup'); burst(PIN.x, PIN.y, 10, ['#ff7a59', '#ffffff'], 2, 6, 2, 0.8);
+      pop(`${M.opp.name.toUpperCase()} ${madeTxt(ai - PAR).toUpperCase()}`, 'small', `${ai} stroke${ai === 1 ? '' : 's'}`);
+    }
+    G.mode = 'rest'; syncUI();
+    later(sh.holed ? 1.1 : 0.5, nextTurn);
   }
 }
-/* also the skip: jumps to the end of the opponent's hole */
-function finishOpp() {
-  const M = G.match, O = G.opp, ai = M.ai[HOLE_I];
-  if (!O.mark && O.shots.length > 1) O.mark = { ...O.shots[0].to };
-  O.k = O.shots.length; O.holed = true; O.trail = [];
-  pop(`${M.opp.name.toUpperCase()} ${madeTxt(ai - PAR).toUpperCase()}`, 'small', `${ai} stroke${ai === 1 ? '' : 's'} · your turn`);
-  enterAim();
-}
+/* tap to skip: lands the opponent's current shot immediately */
+function skipOppShot() { if (G.mode === 'opp' && G.opp.moving) G.opp.t = Math.max(G.opp.t, 1e3); }
 
 /* the strike ring starts this far out (in meter units) and closes at M.speed */
 const RING_START = 0.9, RING_R = 44, RING_K = 2.4;
 function swingDown() {
   audio();
-  if (G.mode === 'opp') return finishOpp();
+  if (G.mode === 'opp') return skipOppShot();
   const M = G.meter;
   if (G.mode === 'aim') {
     M.p = 0; M.dir = 1; M.hang = 0; M.pmax = (G.nukeArmed && canNuke()) ? nukeBand()[1] : 1.0;
@@ -976,8 +989,7 @@ function penalty(kind) {
 }
 function afterPenalty() {
   if (G.strokes >= 12) return finishHole(true);
-  const s = surface(b.x, b.y);
-  if (s === 'green' || s === 'fringe') enterPutt(); else enterAim();
+  nextTurn();
 }
 function settle() {
   b.vx = b.vy = 0; b.z = 0; G.bounce = null;
@@ -989,8 +1001,7 @@ function settle() {
   }
   G.shotFromTee = false;
   if (G.strokes >= 12) return finishHole(true);
-  const s = surface(b.x, b.y);
-  if (s === 'green' || s === 'fringe') enterPutt(); else enterAim();
+  nextTurn();
 }
 const NAMES = { '-4': 'Condor', '-3': 'Albatross', '-2': 'Eagle', '-1': 'Birdie', '0': 'Par', '1': 'Bogey', '2': 'Double Bogey', '3': 'Triple Bogey' };
 const scoreName = n => n === 1 ? 'Hole in One' : (NAMES[String(n - PAR)] || `+${n - PAR}`);
@@ -1001,7 +1012,8 @@ function holed(fromAir) {
   if (G.practice) return practiceResult(true);
   const sub = !G.putting ? (fromAir ? 'slam dunk' : 'chip-in') : `${G.strokes} strokes`;
   later(0.25, () => { sfx('fanfare'); pop(scoreName(G.strokes).toUpperCase(), 'score', sub); });
-  later(2.1, () => finishHole(false));
+  G.holedOut = true;
+  later(2.1, () => turnsLive() && !G.opp.holed ? nextTurn() : finishHole(false));
 }
 function finishHole(pickedUp, conceded = false) {
   G.mode = 'done';
@@ -1030,6 +1042,7 @@ function finishHole(pickedUp, conceded = false) {
   if (M && !M.decided) {
     const t = holeTarget(HOLE_I), r = conceded ? -1 : G.strokes <= t.win ? 1 : G.strokes === t.halve ? 0 : -1;
     M.res[HOLE_I] = r;
+    if (r > 0) M.honor = 'me'; else if (r < 0) M.honor = 'opp';
     const st = M.res.reduce((x, y) => x + y, 0), left = HOLES.length - 1 - HOLE_I;
     holeRes = `${conceded ? 'Hole conceded' : r > 0 ? 'Hole won' : r < 0 ? 'Hole lost' : 'Hole halved'} · ${statusTxt(st)}`;
     if (Math.abs(st) > left || left === 0) {
@@ -1125,13 +1138,18 @@ function syncUI() {
   if (!mb.hidden) {
     const st = MB.res.reduce((x, y) => x + (y || 0), 0);
     $('#mbStatus').textContent = `VS ${MB.opp.name.toUpperCase()} · ${statusTxt(st)}`;
-    if (m === 'opp') $('#mbTarget').textContent = `${MB.opp.name} is playing the hole · tap the course to skip`;
+    if (m === 'opp') $('#mbTarget').textContent = `${MB.opp.name} is hitting · tap the course to skip`;
     else if (MB.decided) $('#mbTarget').textContent = `Match ${MB.decided === 'w' ? 'won' : MB.decided === 'l' ? 'lost' : 'halved'} ${MB.decided === 'h' ? '' : MB.final} · finish for your handicap`;
     else {
       const t = holeTarget(HOLE_I), ai = MB.ai[HOLE_I], next = G.strokes + 1;
       const pops = t.pm ? ` · you get ${strokesTxt(t.pm)}` : t.pa ? ` · ${MB.opp.name} gets ${strokesTxt(t.pa)}` : '';
       const need = next <= t.win ? `${t.win === 1 ? 'an ace' : t.win} wins, ${t.halve} halves` : next <= t.halve ? `${t.halve} halves` : 'hole lost';
-      $('#mbTarget').textContent = `${MB.opp.name} ${madeTxt(ai - PAR)} (${ai})${pops} · ${need}`;
+      const O = G.opp;
+      if (!O || O.holed) $('#mbTarget').textContent = `${MB.opp.name} ${madeTxt(ai - PAR)} (${ai})${pops} · ${need}`;
+      else {
+        const od = oppDist(), where = O.k === 0 ? 'on the tee' : /green|fringe/.test(surface(O.ball.x, O.ball.y)) ? `${Math.round(od * 3)} ft away` : `${Math.round(od)} yds away`;
+        $('#mbTarget').textContent = `${MB.opp.name}: ${O.k} shot${O.k === 1 ? '' : 's'}, ${where}${pops} · ${G.holedOut ? "you're in" : m === 'rest' || m === 'holed' ? '…' : O.k > 0 || G.strokes > 0 ? "you're away" : 'your honor'}`;
+      }
     }
   }
   hud.hidden = m === 'menu' || m === 'done';
@@ -1312,7 +1330,7 @@ $('#pzConcede').onclick = () => {
   if (!canConcede()) return;
   $('#pause').hidden = true; G.paused = false;
   /* a conceded hole posts net double bogey (or what's already taken, plus one) for the handicap */
-  G.timers = []; G.F = null; G.opp && (G.opp.holed = true); b.vx = b.vy = 0; G.ballHidden = true;
+  G.timers = []; G.F = null; G.opp && (G.opp.holed = true, G.opp.moving = false); b.vx = b.vy = 0; G.ballHidden = true;
   G.strokes = Math.max(G.strokes + 1, PAR + 2);
   finishHole(true, true);
 };
@@ -1495,7 +1513,7 @@ function draw() {
   ctx.globalAlpha = 1;
   for (const r of rings) { if (r.t < 0) continue; const k = r.t / r.dur; ctx.strokeStyle = r.water ? `rgba(220,245,255,${1 - k})` : `rgba(255,${200 - k * 80},120,${(1 - k) * 0.9})`; ctx.lineWidth = (r.water ? 2 : 6) * (1 - k * 0.6) * px; ctx.beginPath(); ctx.arc(r.x, r.y, r.max * (1 - Math.pow(1 - k, 3)), 0, TAU); ctx.stroke(); }
 
-  if (G.opp && G.mode === 'opp' && !G.opp.holed) {
+  if (G.opp && !G.opp.holed && G.mode !== 'done') {
     const O = G.opp, r = Math.max(BALL_R, 3.4 * px), z = O.ball.z;
     ctx.lineCap = 'round';
     for (let i = 1; i < O.trail.length; i++) { const a = i / O.trail.length; ctx.strokeStyle = `rgba(255,122,89,${a * 0.7})`; ctx.lineWidth = 2.4 * a * px; ctx.beginPath(); ctx.moveTo(O.trail[i - 1][0], O.trail[i - 1][1]); ctx.lineTo(O.trail[i][0], O.trail[i][1]); ctx.stroke(); }
@@ -1524,8 +1542,9 @@ function draw() {
     for (const it of shots) { const L = flightPos(it.F, 1), [sx, sy] = w2s(L.x, L.y), t = `${Math.round(it.F.carry)}`;
       ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,.55)'; ctx.strokeText(t, sx + 13, sy); ctx.fillStyle = it.c; ctx.fillText(t, sx + 13, sy); }
   }
-  if (G.opp && G.opp.mark && G.mode !== 'opp' && G.mode !== 'done' && !G.putting) {
-    const [mx, my] = w2s(G.opp.mark.x, G.opp.mark.y);
+  if (G.opp && !G.opp.holed && !G.opp.moving && G.mode !== 'done') {
+    const [bx, by] = w2s(G.opp.ball.x, G.opp.ball.y), mx = bx, my = by - 16;
+    ctx.strokeStyle = 'rgba(255,122,89,.9)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(bx, by - 4); ctx.lineTo(mx, my + 8); ctx.stroke();
     ctx.fillStyle = 'rgba(255,122,89,.92)'; ctx.beginPath(); ctx.arc(mx, my, 9, 0, TAU); ctx.fill();
     ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.5; ctx.stroke();
     ctx.fillStyle = '#ffffff'; ctx.font = '400 10px "Bowlby One", "Arial Black", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
@@ -1612,11 +1631,16 @@ loadHole(0); resize(); showMenu();
 window.__pureStrike = { score: (strokes, putts) => { G.strokes = strokes; G.putts = putts; finishHole(false); },
   place: (x, y) => { b.x = x; b.y = y; b.vx = b.vy = 0; enterAim(); },
   aim: () => { const L = flightPos(previewShot(false), 1); return { x: L.x, y: L.y, pin: PIN, mark: $('#lblPin').textContent, club: club().name }; },
-  setAi: scores => { G.match.ai = scores; if (G.mode === 'opp') startOpp(); syncUI(); },
-  skipOpp: () => { if (G.mode === 'opp') finishOpp(); },
+  setAi: scores => { G.match.ai = scores; if (G.opp && G.opp.k === 0) { const go = G.mode === 'opp'; initOpp(); if (go) { G.opp.moving = true; G.opp.t = -0.45; } } syncUI(); },
+  skipOpp: skipOppShot,
+  honor: who => { G.match.honor = who; },
+  restartHole: () => { hideOverlays(); startHole(HOLE_I); },
+  sink: () => { G.strokes++; G.putting = true; holed(false); },
+  oppFinish: () => { const O = G.opp; if (!O) return; O.k = O.shots.length; O.ball = { x: PIN.x, y: PIN.y, z: 0 }; O.holed = true; O.moving = false; G.timers = []; if (!G.holedOut) playerTurn(); syncUI(); },
+  shotTo: (x, y) => { G.strokes++; b.x = x; b.y = y; b.vx = b.vy = 0; G.shotFromTee = false; settle(); },
   planOn: (i, S) => { const cur = HOLE_I; loadHole(i); const r = window.__pureStrike.plan(S); loadHole(cur); return r; },
   plan: S => { const sh = planOpp(S, G.match.opp); return { shots: sh.length, putts: sh.filter(x => x.putt).length, onGreen: sh.filter(x => !x.putt).slice(-1).map(x => surface(x.to.x, x.to.y))[0], wet: sh.some(x => /water|oob/.test(surface(x.to.x, x.to.y))) }; },
-  opp: () => G.opp && { shots: G.opp.shots.length, putts: G.opp.shots.filter(x => x.putt).length, mode: G.mode, mark: G.opp.mark, onGreen: G.opp.shots.filter(x => !x.putt).slice(-1).map(x => surface(x.to.x, x.to.y))[0], wet: G.opp.shots.some(x => /water|oob/.test(surface(x.to.x, x.to.y))) },
+  opp: () => G.opp && { shots: G.opp.shots.length, putts: G.opp.shots.filter(x => x.putt).length, mode: G.mode, k: G.opp.k, holed: G.opp.holed, ball: G.opp.ball, onGreen: G.opp.shots.filter(x => !x.putt).slice(-1).map(x => surface(x.to.x, x.to.y))[0], wet: G.opp.shots.some(x => /water|oob/.test(surface(x.to.x, x.to.y))) },
   match: () => G.match && { status: G.match.res.reduce((x, y) => x + (y || 0), 0), res: G.match.res, decided: G.match.decided, final: G.match.final, n: G.match.n, meGets: G.match.meGets, bar: $('#matchBar').innerText },
   holeOut: (strokes, putts) => { G.strokes = strokes; G.putts = putts; b.x = PIN.x; b.y = PIN.y; b.inCup = true; finishHole(false); }, state: () => ({ hole: HOLE_I, mode: G.mode, hcp: handicap(), rounds: store.rounds.length, earned: earnedIds() }) };
 cam.x = camT.x; cam.y = camT.y; cam.s = camT.s;
