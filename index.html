@@ -280,7 +280,7 @@ button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
   <section id="puttUI" hidden>
     <div class="row"><span class="lbl">Green read</span>
       <div class="seg" id="readSeg" role="group" aria-label="Green reading help">
-        <button data-read="off">Off</button><button data-read="arrows">Slope</button>
+        <button data-read="arrows">Slope</button><button data-read="off">Off</button>
       </div>
     </div>
     <div class="putt-read"><div id="puttMain">Pull down, release to putt</div><div id="puttSub"></div></div>
@@ -563,7 +563,7 @@ function lieFactor(lie, club) {
 /* ---------- state ---------- */
 const G = {
   mode: 'menu', tee: 'blue', practice: false, strokes: 0, putts: 0, ci: 0, shape: 'straight', nukeArmed: false,
-  aimA: 0, aimD: 0, wind: { x: 0, y: 0, mph: 0 }, read: 'off', longest: 0, lastPos: null, F: null,
+  aimA: 0, aimD: 0, wind: { x: 0, y: 0, mph: 0 }, read: 'arrows', longest: 0, lastPos: null, F: null,
   meter: { p: 0, dir: 1, pmax: 1, lock: 0, n: 0, speed: 1.25 }, trail: [], drag: null, pred: null,
   timers: [], bounce: null, shotFromTee: false, hitstop: 0, putting: false, ballHidden: false, pStart: 0
 };

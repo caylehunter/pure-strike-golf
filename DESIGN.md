@@ -48,7 +48,7 @@ Straight, Draw, Fade, Stinger. Stinger: low flight, less carry, more roll, 35% w
 - The camera turns so the hole is always straight up; the ball sits in the lower-middle of the screen.
 - **Pull down anywhere** and let go. A full pull rolls about **2.2× the distance to the hole + 1.5 yd** (4–25 yd), so short putts get the finest control.
 - While pulling, a **gold circle with a feet label** shows where the ball stops **on flat ground**, and a top pill reads `PUTT X FT · HOLE Y FT` (green when within 1 ft). The player reads slope and adjusts.
-- Green read options: **Off** (default) or **Slope** (contours plus downhill flow dots). The old "Line" mode was removed because it did the read for the player.
+- Green read options: **Slope** (default: contours plus downhill flow dots) or **Off**. The old "Line" mode was removed because it did the read for the player.
 - Physics: stimp-like friction, slope gravity, cup capture with real lip-outs when too firm or off-center.
 
 ## The round
