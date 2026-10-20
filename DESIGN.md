@@ -59,6 +59,7 @@ Three holes, par 12. Each hole is data (`HOLES` in `index.html`): centerline, fa
 - Every finished round posts a differential: `(score − rating) × 6`, since 3 holes are a sixth of 18. Ratings: blue 12.0, black 12.8.
 - Handicap = average of the best 40% of the last 10 differentials. Until a player has 5 rounds, the list is padded with 36s, so a new player falls gradually (one −1 round: 36.0 → 15.0).
 - Shown golf-style: a negative number displays as a plus handicap (better than scratch), and the round summary says so.
+- **Provisional, then steady:** the first 5 rounds set the handicap freely (menu shows "provisional, 2 of 5 rounds"). After that, a round counts at most 6 strokes away from the current handicap, so one hot round moves it ~3, not 15. The round summary says when a round was capped.
 
 ## Rewards (earned, shown on the menu with how to get each)
 
@@ -78,19 +79,17 @@ Locked shot shapes are struck through; tapping one says how to unlock it. The me
 
 - **Ladder:** Dusty (28), Marge (14), Ace (4). Dusty is always open; beating an opponent unlocks the next. Records (W–L–H) show on each card.
 - **Pops:** a 3-hole match uses a sixth of the 18-hole handicap gap: `round(|myH − oppH| / 6)` strokes to the higher handicap, given by stroke index (hole 2 = 1, hole 1 = 2, hole 3 = 3). Pops show as small dots on the scorecard.
-- **The opponent plays each hole first.** Its score is par + handicap/18 (+0.05 blue, +0.2 black) with a ±0.75-stroke spread, clamped to par −2 … par +4.
+- **The opponent plays each hole first, on the course.** Its score per hole is par + (handicap + 3)/18 (+0.15 from the black tees), since golfers average about 3 over their handicap; the spread is 0.6 + handicap/60 strokes (higher handicaps are less consistent), clamped to par −2 … par +4.
+- **Watching the opponent:** the score is turned into shots (full shots along the hole, the last onto the green, then putts) and played out with an orange ball, the camera following. Shots never finish in water or out of bounds; when water crosses the fairway they lay up short. Dusty's shots drift right (his slice). Tap the course to skip. Their drive stays marked with their initial for the rest of the hole.
 - **The match bar** under the scoreboard always states the objective: `VS MARGE · 1 UP` / `Marge made par (4) · you get a stroke · 4 wins, 5 halves`. It updates to "5 halves" or "hole lost" as strokes add up.
 - Lower net score wins the hole. Status: ALL SQUARE / n UP / n DOWN. The match ends when one side leads by more than the holes left (e.g. 2 & 1); the round continues so the gross score still posts to the handicap.
 - Hole cards show the hole result and match status; the final card shows "You won 2 & 1" / "Marge won 1 up" / "Match halved", both totals, and a rematch button.
-
-### To tune
-
-- One great round moves the handicap a lot (3 holes × 6 scaling). Consider capping how far one round can move it, like the real system's caps.
 
 ## Roadmap
 
 1. ~~Repo + design doc + tests.~~
 2. ~~The come-back-tomorrow loop: 3-hole round, handicap, earned rewards, black tees unlocked by handicap.~~
 3. ~~Match play vs. AI with handicap pops.~~
-4. **Next candidates:** visible opponent shots on the course, more holes, art/audio pass.
-5. Online match play, app-store packaging.
+4. ~~Balance pass and visible opponent shots.~~
+5. **Next candidates:** 9-hole course, art/audio pass, playtesting with friends (feedback button).
+6. Online match play, app-store packaging.

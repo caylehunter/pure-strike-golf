@@ -43,6 +43,14 @@ const PAGE = 'file://' + path.join(__dirname, 'page.html');
   await pg.tap('#resMenu'); await pg.waitForTimeout(400);
   check('menu: black tees playable', !(await pg.$eval('.tee-card.black', e => e.disabled)));
   await shot('menu.png');
+  // an established 15-handicap shoots 9 (-3): rated +18.0 but counts only 6 strokes better
+  await pg.evaluate(() => localStorage.setItem('pure-strike-v1', JSON.stringify({ best: {}, putt: { att: [0, 0, 0], made: [0, 0, 0] }, rounds: [15, 15, 15, 15, 15].map(d => ({ d })) })));
+  await pg.reload(); await pg.waitForTimeout(400);
+  check('menu shows an established handicap', (await pg.$eval('#menuHcp', e => e.textContent)) === 'Handicap 15.0 · 5 rounds played');
+  await pg.tap('.tee-card.blue'); await pg.waitForTimeout(500);
+  for (const [sc, pu] of [[2, 1], [3, 1], [4, 1]]) { await pg.evaluate(([a, b]) => window.__pureStrike.score(a, b), [sc, pu]); await pg.waitForTimeout(150); if (sc !== 4) { await pg.tap('#againBtn'); await pg.waitForTimeout(400); } }
+  const capped = await pg.$eval('#resHcp', e => e.textContent);
+  check('one hot round is capped: 15.0 → 12.0', capped.includes('Handicap 15.0 → 12.0') && capped.includes('counts as 9.0'), capped.slice(0, 90));
   await br.close();
   if (errs.length) { console.log('ERRORS', errs.join('; ')); checks.push(false); }
   if (checks.includes(false)) process.exit(1);
