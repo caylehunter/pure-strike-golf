@@ -114,21 +114,27 @@ Needs: a server and accounts (matches, whose turn), push notifications (installe
 
 **Paid, charged to the organizer only:**
 - **$0.99 per tournament** (4 or more players, match play, one winner).
-- **$4.99 per year for unlimited tournaments** (price to confirm).
+- **$9.99 per year for unlimited tournaments.**
 
 **Tournaments**
 - The organizer names the tournament and invites players.
-- Formats to decide: a match-play bracket (4, 8 or 16 players; byes for odd numbers) is the natural fit; a round robin or a stroke-play leaderboard are options.
+- Format: **match-play bracket** (4, 8 or 16 players; byes when the field isn't full).
+- **Match length is chosen by whoever creates the match or tournament: 3 or 9 holes, the same for everyone.** Online turns are one hole each, so a 9-hole match is nine short sessions, not one long one.
 - Handicaps and pops apply in every match, so mixed skill levels stay competitive.
 
 **Trophies and the trophy case**
-- Default trophies come with every tournament; the organizer can design a custom one instead.
-- Custom trophies are described in words ("a hockey player swinging a golf club") and generated in the game's art style, with a few tries per tournament.
+- Trophies use the default designs to start. Later option: the organizer uploads their own image onto a trophy (uploads need a basic check for inappropriate images). No generated trophy art for now.
 - Every player has a profile with a **trophy case** showing the trophies they have won.
 
-**Things to settle before building**
+**New players invited to a match or tournament**
+
+The first game has to be simple and fun, or the game won't catch on.
+1. **One question:** "Have you played golf before?" Never → Rookie (a high starting handicap, plenty of strokes); A bit → a middle starting handicap; I'm a golfer → enter a real handicap, converted to the game's scale.
+2. **A 60-second guided warm-up hole** that can't go badly: on-screen prompts for hold, let go, and tap when the rings meet; it celebrates the first good strike and first putt, then hands over to the match. The result also fine-tunes the starting handicap.
+3. **Provisional handicap ("P")** shown next to their number until it settles. It updates after every match (stops sandbagging), and strokes for provisional players are capped (at most one per hole).
+
+**Things to keep in mind when building**
 - App stores take 15–30% of digital purchases, and on iPhone they generally must go through Apple's in-app purchase: $0.99 nets about $0.70–0.84.
-- Custom trophy art needs an image generator (Claude itself writes text and code such as SVG drawings, not photos) plus moderation: no logos or trademarks (team logos, brands), nothing inappropriate. Generation costs a few cents per image, so cap the tries.
 - Depends on online play: accounts, a server, notifications and turn timers (see the online section above).
 
 ## Roadmap
