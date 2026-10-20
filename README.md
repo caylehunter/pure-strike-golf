@@ -16,5 +16,6 @@ npm test
 ```
 
 - `tests/round.js` – a full 3-hole round: scorecard, handicap update, unlocks
+- `tests/match.js` – match play: pops, the per-hole target, early finish (2 & 1), ladder unlocks
 - `tests/swing.js` – hold/release swing and strike ring: nuke, meltdown, too early/late, cancel, pure, late hook
 - `tests/putting.js` – distance-scaled putting on the practice green

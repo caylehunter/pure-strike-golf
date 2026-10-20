@@ -74,9 +74,23 @@ Three holes, par 12. Each hole is data (`HOLES` in `index.html`): centerline, fa
 
 Locked shot shapes are struck through; tapping one says how to unlock it. The menu has a **Testing: unlock everything** switch for playtesting.
 
+## Match play vs. the computer
+
+- **Ladder:** Dusty (28), Marge (14), Ace (4). Dusty is always open; beating an opponent unlocks the next. Records (W–L–H) show on each card.
+- **Pops:** a 3-hole match uses a sixth of the 18-hole handicap gap: `round(|myH − oppH| / 6)` strokes to the higher handicap, given by stroke index (hole 2 = 1, hole 1 = 2, hole 3 = 3). Pops show as small dots on the scorecard.
+- **The opponent plays each hole first.** Its score is par + handicap/18 (+0.05 blue, +0.2 black) with a ±0.75-stroke spread, clamped to par −2 … par +4.
+- **The match bar** under the scoreboard always states the objective: `VS MARGE · 1 UP` / `Marge made par (4) · you get a stroke · 4 wins, 5 halves`. It updates to "5 halves" or "hole lost" as strokes add up.
+- Lower net score wins the hole. Status: ALL SQUARE / n UP / n DOWN. The match ends when one side leads by more than the holes left (e.g. 2 & 1); the round continues so the gross score still posts to the handicap.
+- Hole cards show the hole result and match status; the final card shows "You won 2 & 1" / "Marge won 1 up" / "Match halved", both totals, and a rematch button.
+
+### To tune
+
+- One great round moves the handicap a lot (3 holes × 6 scaling). Consider capping how far one round can move it, like the real system's caps.
+
 ## Roadmap
 
 1. ~~Repo + design doc + tests.~~
 2. ~~The come-back-tomorrow loop: 3-hole round, handicap, earned rewards, black tees unlocked by handicap.~~
-3. **Match play vs. AI with handicap pops** (next).
-4. Art/audio pass, online match play, app-store packaging.
+3. ~~Match play vs. AI with handicap pops.~~
+4. **Next candidates:** visible opponent shots on the course, more holes, art/audio pass.
+5. Online match play, app-store packaging.

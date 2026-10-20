@@ -180,6 +180,18 @@ button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 .res-box b{font:800 17px/1.2 var(--cond);letter-spacing:.04em;color:var(--text)}
 .res-box.unlock{border:1px solid rgba(255,207,63,.5);background:rgba(255,207,63,.08)}
 .res-box.unlock b{color:var(--gold)}
+#matchBar{position:fixed;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 64px);z-index:5;width:max-content;max-width:calc(100% - 32px);display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 14px;border-radius:14px;background:rgba(7,16,12,.82);border:1px solid rgba(255,207,63,.45);pointer-events:none;text-align:center}
+#mbStatus{font:800 14px/1 var(--cond);letter-spacing:.14em;color:var(--gold)}
+#mbTarget{font:700 14px/1.25 var(--cond);letter-spacing:.04em;color:var(--text)}
+.match-btn{border-color:rgba(255,207,63,.55);color:var(--gold)}
+.ms-title{margin:2px 0;font:400 34px/1 var(--display);text-shadow:0 3px 0 rgba(0,0,0,.35)}
+.ms-note{margin:0;font:500 14px/1.45 var(--body);color:#d5e6d9}
+#oppList{display:flex;flex-direction:column;gap:10px}
+.opp .av{flex:none;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font:400 18px/1 var(--display);background:#2c5a40;color:var(--text);box-shadow:0 0 0 2px rgba(255,255,255,.7)}
+.opp .tag{background:rgba(255,255,255,.14);color:var(--text)}
+.sc .pop{color:var(--gold);font-style:normal;font-size:10px;vertical-align:top;margin-left:2px;letter-spacing:1px}
+.sc .w{color:var(--gold)}
+.sc .l{color:#ff9b8a}
 .best{font:600 13px/1.3 var(--cond);letter-spacing:.08em;color:var(--muted);text-transform:uppercase;text-align:center;min-height:1em}
 #result h2{margin:2px 0;font:400 52px/1 var(--display);color:var(--gold);text-wrap:balance;text-shadow:0 4px 0 rgba(0,0,0,.35)}
 .res-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
@@ -203,6 +215,7 @@ button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
   <div class="wind" id="wind" aria-label="Wind"><svg viewBox="0 0 24 24" id="windArrow"><path d="M12 2 L19 11 H14.5 V22 H9.5 V11 H5 Z"/></svg><span id="windVal">0</span><small>MPH</small></div>
 </header>
 <div id="lie" hidden></div>
+<div id="matchBar" hidden><b id="mbStatus"></b><span id="mbTarget"></span></div>
 <div id="pops"></div>
 
 <footer id="deck" hidden>
@@ -256,6 +269,7 @@ button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
     </div>
     <button class="tee-card blue" data-tee="blue"><span class="dot"></span><span class="tc-main"><b>Blue tees</b><small id="blueInfo">wider sweet spot · calmer wind</small></span></button>
     <button class="tee-card black" data-tee="black"><span class="dot"></span><span class="tc-main"><b>Black tees</b><small id="blackInfo">nuclear drive · tighter sweet spot · gusty</small></span><span class="tag" id="blackTag">NUKE</span></button>
+    <button class="ghost match-btn" id="matchBtn">Match play vs computer</button>
     <button class="ghost" id="practiceBtn">Putting practice</button>
     <div class="rewards">
       <div class="rw-head"><b>Rewards</b><small>Earn them by playing</small></div>
@@ -269,6 +283,17 @@ button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
       <li><span><b>Handicap.</b> Every finished round counts. Lower is better, and it unlocks tees and rewards.</span></li>
     </ol>
     <div class="best" id="bestLine"></div>
+  </div>
+</div>
+
+<div class="overlay" id="matchSetup" hidden>
+  <div class="card">
+    <span class="eyebrow">Match play · 3 holes</span>
+    <h2 class="ms-title">Pick an opponent</h2>
+    <p class="ms-note">Fewer strokes wins the hole. The higher handicap gets strokes ("pops") on the hardest holes. Your opponent plays each hole first, so you always know what you need.</p>
+    <div class="row"><span class="lbl">Tees</span><div class="seg" id="msTee"><button data-tee="blue">Blue</button><button data-tee="black">Black</button></div></div>
+    <div id="oppList"></div>
+    <button class="ghost" id="msBack">Back</button>
   </div>
 </div>
 
@@ -310,7 +335,7 @@ const CORR = 78, FR = 2.6, CUP_R = 0.11, BALL_R = 0.045;
 /* each hole: centerline cx(y), fairway half-width hw(y), green and pin, hazards, green slope h(u, v) around the green centre */
 const HOLES = [
   {
-    par: 3, fw: [122, 192],
+    par: 3, si: 2, fw: [122, 192],
     cx: y => 7 * smooth(y / 190),
     hw: () => 14,
     green: { x: 7, y: 201, rx: 13, ry: 11 }, pin: { x: 10, y: 204 },
@@ -325,7 +350,7 @@ const HOLES = [
     clumps: []
   },
   {
-    par: 4, fw: [85, 414],
+    par: 4, si: 1, fw: [85, 414],
     cx: y => 38 * smooth((y - 200) / 180),
     hw: y => { let w = 20 + 3 * Math.sin(y / 41); if (y > 380) w = lerp(w, 12, smooth((y - 380) / 32)); if (y < 110) w = lerp(w, 15, smooth((110 - y) / 25)); return w; },
     green: { x: 40, y: 429, rx: 14, ry: 12 }, pin: { x: 36, y: 432 },
@@ -342,7 +367,7 @@ const HOLES = [
     clumps: [[24, 200], [31, 218], [41, 232], [29, 182], [45, 212], [52, 196]]
   },
   {
-    par: 5, fw: [95, 602],
+    par: 5, si: 3, fw: [95, 602],
     cx: y => -42 * smooth((y - 220) / 230) + 18 * smooth((y - 470) / 130),
     hw: y => { let w = 21 + 4 * Math.sin(y / 53); if (y > 555) w = lerp(w, 13, smooth((y - 555) / 45)); if (y < 125) w = lerp(w, 15, smooth((125 - y) / 30)); return w; },
     green: { x: -24, y: 612, rx: 15, ry: 12 }, pin: { x: -20, y: 616 },
@@ -508,6 +533,18 @@ const REWARDS = [
 const earnedIds = () => REWARDS.filter(r => r.got()).map(r => r.id);
 const has = id => store.allUnlocked || REWARDS.find(r => r.id === id).got();
 const shapeOpen = sh => sh === 'draw' || sh === 'fade' ? has('shape') : sh === 'stinger' ? has('stinger') : true;
+/* match play: a ladder of computer opponents; beat one to unlock the next */
+const OPPONENTS = [
+  { id: 'dusty', name: 'Dusty', hcp: 28, blurb: 'Weekend hacker with a big slice' },
+  { id: 'marge', name: 'Marge', hcp: 14, blurb: 'Three-time club champion' },
+  { id: 'ace', name: 'Ace', hcp: 4, blurb: 'Ex-college player, never misses short' }
+];
+store.match = store.match || {};
+const rec = id => store.match[id] || (store.match[id] = { w: 0, l: 0, h: 0 });
+const oppOpen = i => i === 0 || store.allUnlocked || rec(OPPONENTS[i - 1].id).w > 0;
+/* a 3-hole match uses a sixth of the 18-hole handicap gap, given on the hardest holes first */
+const matchStrokes = (myH, oppH) => Math.round(Math.abs(myH - oppH) / 6);
+const popsOn = (n, i) => Math.floor(n / 3) + (HOLES[i].si <= n % 3 ? 1 : 0);
 const shapeReward = sh => REWARDS.find(r => r.id === (sh === 'stinger' ? 'stinger' : 'shape'));
 /* meter runs to 125%; the nuke band sits beyond 100% and widens with the target upgrade */
 const VMAX = 1.15, HANG = 0.08;
@@ -667,10 +704,11 @@ function predictPutt(vx, vy) {
 }
 
 /* ---------- flow ---------- */
-function startRound(tee) {
+function startRound(tee, match = null) {
   audio();
+  G.match = match;
   G.tee = tee; G.practice = false; G.longest = 0; G.shape = 'straight';
-  G.round = { tee, scores: [], putts: [], over: false, earned: earnedIds() };
+  G.round = { tee, scores: [], putts: [], over: false, earned: earnedIds(), oppsOpen: OPPONENTS.map((o, i) => oppOpen(i)) };
   hideOverlays(); startHole(0);
 }
 function startHole(i) {
@@ -707,7 +745,23 @@ function enterPutt() {
   G.mode = 'putt'; G.putting = true; G.drag = null; G.pred = null; G.trail = []; flows = [];
   syncUI(); setupPuttCam();
 }
-function hideOverlays() { $('#menu').hidden = true; $('#result').hidden = true; }
+function hideOverlays() { $('#menu').hidden = true; $('#result').hidden = true; $('#matchSetup').hidden = true; }
+const gauss = () => { let u = 0; for (let k = 0; k < 6; k++) u += Math.random(); return (u - 3) / 0.7071; };
+function startMatch(oi, tee) {
+  const o = OPPONENTS[oi], my = handicap(), n = matchStrokes(my, o.hcp);
+  /* the opponent's hole scores: par plus their handicap per hole, with realistic spread */
+  const ai = HOLES.map(h => clamp(h.par + Math.round(o.hcp / 18 + (tee === 'black' ? 0.2 : 0.05) + gauss() * 0.75), h.par - 2, h.par + 4));
+  startRound(tee, { oi, opp: o, my, n, meGets: my > o.hcp, ai, res: [], decided: null, final: '' });
+}
+/* what the player needs on hole i: gross scores that win or halve after pops */
+function holeTarget(i) {
+  const M = G.match, k = popsOn(M.n, i), pm = M.meGets ? k : 0, pa = M.meGets ? 0 : k;
+  const aiNet = M.ai[i] - pa;
+  return { win: aiNet + pm - 1, halve: aiNet + pm, pm, pa };
+}
+const statusTxt = st => st === 0 ? 'ALL SQUARE' : st > 0 ? `${st} UP` : `${-st} DOWN`;
+const madeTxt = d => ({ '-3': 'made albatross', '-2': 'made eagle', '-1': 'made birdie', '0': 'made par', '1': 'made bogey', '2': 'made double bogey' })[String(d)] || `made +${d}`;
+const strokesTxt = n => n === 1 ? 'a stroke' : `${n} strokes`;
 
 /* the strike ring starts this far out (in meter units) and closes at M.speed */
 const RING_START = 0.9, RING_R = 44, RING_K = 2.4;
@@ -850,14 +904,35 @@ function finishHole(pickedUp) {
     if (!prev || total < prev) store.best[G.tee] = total;
     hcpHtml = `<b>Handicap ${fmtH(h0)} → ${fmtH(h1)}</b><br>This round rated ${fmtH(diff)}${diff < 0 ? ' (a plus number means better than scratch)' : ''}. Your handicap is the average of your best recent rounds, so it moves a little each time. Lower is better.`;
   }
+  const M = G.match; let holeRes = '';
+  if (M && !M.decided) {
+    const t = holeTarget(HOLE_I), r = G.strokes <= t.win ? 1 : G.strokes === t.halve ? 0 : -1;
+    M.res[HOLE_I] = r;
+    const st = M.res.reduce((x, y) => x + y, 0), left = HOLES.length - 1 - HOLE_I;
+    holeRes = `${r > 0 ? 'Hole won' : r < 0 ? 'Hole lost' : 'Hole halved'} · ${statusTxt(st)}`;
+    if (Math.abs(st) > left || left === 0) {
+      M.decided = st > 0 ? 'w' : st < 0 ? 'l' : 'h';
+      M.final = st === 0 ? 'halved' : left > 0 ? `${Math.abs(st)} & ${left}` : `${Math.abs(st)} up`;
+      rec(M.opp.id)[M.decided]++;
+      if (left > 0) holeRes += ` · match ${M.decided === 'w' ? 'won' : 'lost'} ${M.final}`;
+    }
+  }
   save();
   const fresh = earnedIds().filter(id => !R.earned.includes(id)); R.earned = earnedIds();
+  const freshOpps = OPPONENTS.filter((o, i) => oppOpen(i) && !R.oppsOpen[i]); R.oppsOpen = OPPONENTS.map((o, i) => oppOpen(i));
 
   $('#resEyebrow').textContent = last ? `Round complete · ${teeName} tees · Par 12` : `Hole ${HOLE_I + 1} of ${HOLES.length} · ${teeName} tees · Par ${PAR}`;
   $('#resName').textContent = last ? `${total} · ${toPar(total - 12)}` : (pickedUp ? 'Picked up' : scoreName(G.strokes));
   $('#resSub').textContent = last
     ? `${R.putts.reduce((x, y) => x + y, 0)} putts · long drive ${G.longest ? Math.round(G.longest) + ' yds' : '—'}`
     : `${G.strokes} strokes · ${G.putts} putt${G.putts === 1 ? '' : 's'} · round ${toPar(total - parSoFar)}`;
+  if (M) {
+    if (last) {
+      $('#resEyebrow').textContent = `Match vs ${M.opp.name} · ${teeName} tees`;
+      $('#resName').textContent = M.decided === 'w' ? `You won ${M.final}` : M.decided === 'l' ? `${M.opp.name} won ${M.final}` : 'Match halved';
+      $('#resSub').textContent = `You shot ${total} (${toPar(total - 12)}) · ${M.opp.name} shot ${M.ai.reduce((x, y) => x + y, 0)}`;
+    } else if (holeRes) $('#resSub').textContent = `${G.strokes} strokes · ${holeRes}`;
+  }
   const cell = (sc, par, i) => {
     if (sc == null) return '<td>·</td>';
     const k = sc - par <= -2 ? 'eagle' : sc - par === -1 ? 'birdie' : sc - par >= 1 ? 'bogey' : '';
@@ -866,17 +941,21 @@ function finishHole(pickedUp) {
   $('#resCard').innerHTML =
     `<tr><th scope="row">Hole</th>${HOLES.map((h, i) => `<th>${i + 1}</th>`).join('')}<th class="tot">Tot</th></tr>` +
     `<tr><th scope="row">Par</th>${HOLES.map(h => `<td>${h.par}</td>`).join('')}<td class="tot">12</td></tr>` +
-    `<tr><th scope="row">Score</th>${HOLES.map((h, i) => cell(R.scores[i], h.par, i)).join('')}<td class="tot">${total}</td></tr>`;
+    `<tr><th scope="row">${M ? 'You' : 'Score'}</th>${HOLES.map((h, i) => cell(R.scores[i], h.par, i).replace('</td>', M && M.meGets && popsOn(M.n, i) ? `<i class="pop">${'•'.repeat(popsOn(M.n, i))}</i></td>` : '</td>')).join('')}<td class="tot">${total}</td></tr>` +
+    (M ? `<tr><th scope="row">${M.opp.name}</th>${HOLES.map((h, i) => `<td>${R.scores[i] != null ? M.ai[i] : '·'}${!M.meGets && popsOn(M.n, i) ? `<i class="pop">${'•'.repeat(popsOn(M.n, i))}</i>` : ''}</td>`).join('')}<td class="tot">${R.scores.length === HOLES.length ? M.ai.reduce((x, y) => x + y, 0) : ''}</td></tr>` +
+      `<tr><th scope="row">Match</th>${HOLES.map((h, i) => { const r = M.res[i]; return `<td class="${r > 0 ? 'w' : r < 0 ? 'l' : ''}">${r == null ? '·' : r > 0 ? 'W' : r < 0 ? 'L' : '½'}</td>`; }).join('')}<td class="tot">${statusTxt(M.res.reduce((x, y) => x + (y || 0), 0)).replace('ALL SQUARE', 'AS')}</td></tr>` : '');
   $('#resHcp').hidden = !last; $('#resHcp').innerHTML = hcpHtml;
   const un = $('#resUnlock'); un.hidden = !fresh.length;
-  un.innerHTML = fresh.map(id => { const r = REWARDS.find(x => x.id === id); return `<b>Unlocked: ${r.name}</b><br>${r.what}`; }).join('<br>');
-  if (fresh.length) { sfx('fanfare'); }
+  un.innerHTML = fresh.map(id => { const r = REWARDS.find(x => x.id === id); return `<b>Unlocked: ${r.name}</b><br>${r.what}`; })
+    .concat(freshOpps.map(o => `<b>New opponent: ${o.name}</b><br>${o.blurb} · ${o.hcp} handicap`)).join('<br>');
+  un.hidden = !(fresh.length || freshOpps.length);
+  if (fresh.length || freshOpps.length) { sfx('fanfare'); }
 
-  $('#againBtn').textContent = last ? 'Play again' : `Next · Hole ${HOLE_I + 2}`;
-  const sw = $('#switchBtn'); sw.hidden = !last || !has('black');
+  $('#againBtn').textContent = last ? (M ? `Rematch ${M.opp.name}` : 'Play again') : `Next · Hole ${HOLE_I + 2}`;
+  const sw = $('#switchBtn'); sw.hidden = !last || !has('black') || !!M;
   sw.textContent = G.tee === 'black' ? 'Play the blue tees' : 'Play the black tees';
   $('#resPractice').hidden = !last;
-  $('#resMenu').textContent = last ? 'Menu' : 'Quit round';
+  $('#resMenu').textContent = last ? 'Menu' : (M ? 'Concede match' : 'Quit round');
   syncUI(); $('#result').hidden = false;
 }
 function practiceResult(made) {
@@ -919,7 +998,20 @@ const pct = v => ((v + 0.15) / (VMAX + 0.15) * 100);
 function setBar(el, a, bb) { el.style.left = pct(a) + '%'; el.style.width = Math.max(0, pct(bb) - pct(a)) + '%'; }
 function syncUI() {
   const m = G.mode, putting = G.putting && m !== 'aim';
-  hud.hidden = m === 'menu';
+  const MB = G.match, mb = $('#matchBar');
+  mb.hidden = !MB || m === 'menu' || m === 'done';
+  if (!mb.hidden) {
+    const st = MB.res.reduce((x, y) => x + (y || 0), 0);
+    $('#mbStatus').textContent = `VS ${MB.opp.name.toUpperCase()} · ${statusTxt(st)}`;
+    if (MB.decided) $('#mbTarget').textContent = `Match ${MB.decided === 'w' ? 'won' : MB.decided === 'l' ? 'lost' : 'halved'} ${MB.decided === 'h' ? '' : MB.final} · finish for your handicap`;
+    else {
+      const t = holeTarget(HOLE_I), ai = MB.ai[HOLE_I], next = G.strokes + 1;
+      const pops = t.pm ? ` · you get ${strokesTxt(t.pm)}` : t.pa ? ` · ${MB.opp.name} gets ${strokesTxt(t.pa)}` : '';
+      const need = next <= t.win ? `${t.win === 1 ? 'an ace' : t.win} wins, ${t.halve} halves` : next <= t.halve ? `${t.halve} halves` : 'hole lost';
+      $('#mbTarget').textContent = `${MB.opp.name} ${madeTxt(ai - PAR)} (${ai})${pops} · ${need}`;
+    }
+  }
+  hud.hidden = m === 'menu' || m === 'done';
   deck.hidden = m === 'menu' || m === 'done';
   $('#swingUI').hidden = putting; $('#puttUI').hidden = !putting;
   const dot = $('#teeDot'); dot.className = 'tee-dot ' + (G.practice ? 'practice' : G.tee);
@@ -1078,14 +1170,29 @@ $('#shapeSeg').onclick = e => {
 $('#readSeg').onclick = e => { const s = e.target.closest('button'); if (!s) return; G.read = s.dataset.read; flows = []; updatePuttDrag(); syncUI(); };
 document.querySelectorAll('.tee-card').forEach(btn => btn.onclick = () => { if (!btn.disabled) startRound(btn.dataset.tee); });
 $('#practiceBtn').onclick = startPractice;
+$('#matchBtn').onclick = () => { G.msTee = G.msTee || 'blue'; renderMatchSetup(); $('#menu').hidden = true; $('#matchSetup').hidden = false; };
+$('#msBack').onclick = () => { $('#matchSetup').hidden = true; $('#menu').hidden = false; };
+$('#msTee').onclick = e => { const x = e.target.closest('button'); if (!x || x.disabled) return; G.msTee = x.dataset.tee; renderMatchSetup(); };
+$('#oppList').onclick = e => { const x = e.target.closest('button'); if (!x || x.disabled) return; startMatch(+x.dataset.opp, G.msTee); };
+function renderMatchSetup() {
+  if (G.msTee === 'black' && !has('black')) G.msTee = 'blue';
+  document.querySelectorAll('#msTee button').forEach(x => { x.classList.toggle('on', x.dataset.tee === G.msTee); x.disabled = x.dataset.tee === 'black' && !has('black'); x.classList.toggle('locked', x.disabled); });
+  const my = handicap();
+  $('#oppList').innerHTML = OPPONENTS.map((o, i) => {
+    const open = oppOpen(i), n = matchStrokes(my, o.hcp), r = rec(o.id);
+    const pops = n === 0 ? 'no strokes either way' : my > o.hcp ? `you get ${strokesTxt(n)}` : `${o.name} gets ${strokesTxt(n)}`;
+    const info = open ? `${o.hcp} handicap · ${pops}` : `Locked · beat ${OPPONENTS[i - 1].name} to unlock`;
+    return `<button class="tee-card opp" data-opp="${i}"${open ? '' : ' disabled'}><span class="av">${o.name[0]}</span><span class="tc-main"><b>${o.name}</b><small>${o.blurb}<br>${info}</small></span><span class="tag">${open ? `${r.w}–${r.l}${r.h ? '–' + r.h : ''}` : 'LOCKED'}</span></button>`;
+  }).join('');
+}
 $('#unlockAll').onclick = () => { store.allUnlocked = !store.allUnlocked; save(); renderMenu(); };
-$('#againBtn').onclick = () => { if (G.round && !G.round.over) { hideOverlays(); startHole(HOLE_I + 1); } else startRound(G.tee); };
+$('#againBtn').onclick = () => { if (G.round && !G.round.over) { hideOverlays(); startHole(HOLE_I + 1); } else if (G.match) startMatch(G.match.oi, G.tee); else startRound(G.tee); };
 $('#switchBtn').onclick = () => startRound(G.tee === 'black' ? 'blue' : 'black');
 $('#resPractice').onclick = startPractice;
 $('#resMenu').onclick = showMenu;
 $('#exitPractice').onclick = showMenu;
 function showMenu() {
-  G.mode = 'menu'; G.practice = false; G.round = null; G.timers = []; G.putting = false; G.ballHidden = false; G.tee = G.tee || 'blue';
+  G.mode = 'menu'; G.practice = false; G.round = null; G.match = null; G.timers = []; G.putting = false; G.ballHidden = false; G.tee = G.tee || 'blue';
   if (HOLE_I !== 0 || !HOLE) loadHole(0);
   b.x = TEES.blue.x; b.y = TEES.blue.y; G.ci = 0; G.shape = 'straight'; G.nukeArmed = false; defaultAim();
   renderMenu();
@@ -1342,6 +1449,8 @@ loadHole(0); resize(); showMenu();
 window.__pureStrike = { score: (strokes, putts) => { G.strokes = strokes; G.putts = putts; finishHole(false); },
   place: (x, y) => { b.x = x; b.y = y; b.vx = b.vy = 0; enterAim(); },
   aim: () => { const L = flightPos(previewShot(false), 1); return { x: L.x, y: L.y, pin: PIN, mark: $('#lblPin').textContent, club: club().name }; },
+  setAi: scores => { G.match.ai = scores; syncUI(); },
+  match: () => G.match && { status: G.match.res.reduce((x, y) => x + (y || 0), 0), res: G.match.res, decided: G.match.decided, final: G.match.final, n: G.match.n, meGets: G.match.meGets, bar: $('#matchBar').innerText },
   holeOut: (strokes, putts) => { G.strokes = strokes; G.putts = putts; b.x = PIN.x; b.y = PIN.y; b.inCup = true; finishHole(false); }, state: () => ({ hole: HOLE_I, mode: G.mode, hcp: handicap(), rounds: store.rounds.length, earned: earnedIds() }) };
 cam.x = camT.x; cam.y = camT.y; cam.s = camT.s;
 let last = performance.now();
