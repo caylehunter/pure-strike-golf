@@ -176,6 +176,7 @@ button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 .sc .eagle{border:2px solid var(--gold);border-radius:50%;box-shadow:0 0 0 3px var(--panel),0 0 0 5px var(--gold)}
 .sc .bogey{border:2px solid rgba(255,255,255,.5)}
 .sc .now{color:var(--gold)}
+.sc .np{opacity:.45;font-style:italic}
 .res-box{padding:12px 14px;border-radius:14px;background:rgba(255,255,255,.06);font:500 14px/1.45 var(--body);color:#d5e6d9}
 .res-box b{font:800 17px/1.2 var(--cond);letter-spacing:.04em;color:var(--text)}
 .res-box.unlock{border:1px solid rgba(255,207,63,.5);background:rgba(255,207,63,.08)}
@@ -1058,7 +1059,25 @@ function finishHole(pickedUp, conceded = false) {
   const R = G.round, d = G.strokes - PAR;
   R.scores[HOLE_I] = G.strokes; R.putts[HOLE_I] = G.putts;
   if (!pickedUp) { if (d <= -1) store.stats.birdies++; if (d <= -2) store.stats.eagles++; if (G.putts === 1) store.stats.onePutts++; }
-  const last = HOLE_I === HOLES.length - 1, teeName = G.tee === 'black' ? 'Black' : 'Blue';
+  const M = G.match; let holeRes = '', endedEarly = false;
+  if (M && !M.decided) {
+    const t = holeTarget(HOLE_I), r = conceded ? -1 : G.strokes <= t.win ? 1 : G.strokes === t.halve ? 0 : -1;
+    M.res[HOLE_I] = r;
+    if (r > 0) M.honor = 'me'; else if (r < 0) M.honor = 'opp';
+    const st = M.res.reduce((x, y) => x + y, 0), left = HOLES.length - 1 - HOLE_I;
+    holeRes = `${conceded ? 'Hole conceded' : r > 0 ? 'Hole won' : r < 0 ? 'Hole lost' : 'Hole halved'} · ${statusTxt(st)}`;
+    /* a lead bigger than the holes left ends the match (e.g. 2 & 1, or 5 & 4 over nine) */
+    if (Math.abs(st) > left || left === 0) {
+      M.decided = st > 0 ? 'w' : st < 0 ? 'l' : 'h';
+      M.final = st === 0 ? 'halved' : left > 0 ? `${Math.abs(st)} & ${left}` : `${Math.abs(st)} up`;
+      rec(M.opp.id)[M.decided]++;
+      endedEarly = left > 0;
+    }
+  }
+  /* holes a decided match never plays count as net par for the handicap (par plus your pops there) */
+  R.played = HOLE_I + 1;
+  if (endedEarly) for (let j = HOLE_I + 1; j < HOLES.length; j++) { R.scores[j] = HOLES[j].par + (M.meGets ? popsOn(M.n, j) : 0); R.putts[j] = 0; }
+  const last = HOLE_I === HOLES.length - 1 || endedEarly, teeName = G.tee === 'black' ? 'Black' : 'Blue';
   const total = R.scores.reduce((x, y) => x + y, 0), parSoFar = HOLES.slice(0, R.scores.length).reduce((x, h) => x + h.par, 0);
   const toPar = n => n === 0 ? 'E' : n > 0 ? `+${n}` : `${n}`;
   let hcpHtml = '';
@@ -1076,20 +1095,6 @@ function finishHole(pickedUp, conceded = false) {
       + (posted !== diff ? `, and counts as ${fmtH(posted)}: once your handicap is set, one round can move it only so far.` : '.')
       + (n < 5 ? ` Your first 5 rounds set your handicap (${n} of 5 played).` : ' Your handicap is the average of your best recent rounds. Lower is better.');
   }
-  const M = G.match; let holeRes = '';
-  if (M && !M.decided) {
-    const t = holeTarget(HOLE_I), r = conceded ? -1 : G.strokes <= t.win ? 1 : G.strokes === t.halve ? 0 : -1;
-    M.res[HOLE_I] = r;
-    if (r > 0) M.honor = 'me'; else if (r < 0) M.honor = 'opp';
-    const st = M.res.reduce((x, y) => x + y, 0), left = HOLES.length - 1 - HOLE_I;
-    holeRes = `${conceded ? 'Hole conceded' : r > 0 ? 'Hole won' : r < 0 ? 'Hole lost' : 'Hole halved'} · ${statusTxt(st)}`;
-    if (Math.abs(st) > left || left === 0) {
-      M.decided = st > 0 ? 'w' : st < 0 ? 'l' : 'h';
-      M.final = st === 0 ? 'halved' : left > 0 ? `${Math.abs(st)} & ${left}` : `${Math.abs(st)} up`;
-      rec(M.opp.id)[M.decided]++;
-      if (left > 0) holeRes += ` · match ${M.decided === 'w' ? 'won' : 'lost'} ${M.final}`;
-    }
-  }
   save();
   const fresh = earnedIds().filter(id => !R.earned.includes(id)); R.earned = earnedIds();
   const freshOpps = OPPONENTS.filter((o, i) => oppOpen(i) && !R.oppsOpen[i]); R.oppsOpen = OPPONENTS.map((o, i) => oppOpen(i));
@@ -1103,11 +1108,15 @@ function finishHole(pickedUp, conceded = false) {
     if (last) {
       $('#resEyebrow').textContent = `Match vs ${M.opp.name} · ${teeName} tees`;
       $('#resName').textContent = M.decided === 'w' ? `You won ${M.final}` : M.decided === 'l' ? `${M.opp.name} won ${M.final}` : 'Match halved';
-      $('#resSub').textContent = `You shot ${total} (${toPar(total - 12)}) · ${M.opp.name} shot ${M.ai.reduce((x, y) => x + y, 0)}`;
+      const mine = R.scores.slice(0, R.played).reduce((x, y) => x + y, 0), theirs = M.ai.slice(0, R.played).reduce((x, y) => x + y, 0);
+      $('#resSub').textContent = endedEarly
+        ? `${M.decided === 'w' ? `${M.opp.name} concedes the match` : 'You concede the match'} after hole ${R.played} · ${mine} to ${theirs} through ${R.played}`
+        : `You shot ${total} (${toPar(total - 12)}) · ${M.opp.name} shot ${M.ai.reduce((x, y) => x + y, 0)}`;
     } else if (holeRes) $('#resSub').textContent = `${G.strokes} strokes · ${holeRes}`;
   }
   const cell = (sc, par, i) => {
     if (sc == null) return '<td>·</td>';
+    if (i >= R.played) return `<td><span class="mk np" title="not played: net par">${sc}</span></td>`;
     const k = sc - par <= -2 ? 'eagle' : sc - par === -1 ? 'birdie' : sc - par >= 1 ? 'bogey' : '';
     return `<td><span class="mk ${k}${i === HOLE_I && !last ? ' now' : ''}">${sc}</span></td>`;
   };
@@ -1115,8 +1124,9 @@ function finishHole(pickedUp, conceded = false) {
     `<tr><th scope="row">Hole</th>${HOLES.map((h, i) => `<th>${i + 1}</th>`).join('')}<th class="tot">Tot</th></tr>` +
     `<tr><th scope="row">Par</th>${HOLES.map(h => `<td>${h.par}</td>`).join('')}<td class="tot">12</td></tr>` +
     `<tr><th scope="row">${M ? 'You' : 'Score'}</th>${HOLES.map((h, i) => cell(R.scores[i], h.par, i).replace('</td>', M && M.meGets && popsOn(M.n, i) ? `<i class="pop">${'•'.repeat(popsOn(M.n, i))}</i></td>` : '</td>')).join('')}<td class="tot">${total}</td></tr>` +
-    (M ? `<tr><th scope="row">${M.opp.name}</th>${HOLES.map((h, i) => `<td>${R.scores[i] != null ? M.ai[i] : '·'}${!M.meGets && popsOn(M.n, i) ? `<i class="pop">${'•'.repeat(popsOn(M.n, i))}</i>` : ''}</td>`).join('')}<td class="tot">${R.scores.length === HOLES.length ? M.ai.reduce((x, y) => x + y, 0) : ''}</td></tr>` +
+    (M ? `<tr><th scope="row">${M.opp.name}</th>${HOLES.map((h, i) => `<td>${R.scores[i] != null && i < R.played ? M.ai[i] : i < R.played ? '·' : '—'}${!M.meGets && popsOn(M.n, i) ? `<i class="pop">${'•'.repeat(popsOn(M.n, i))}</i>` : ''}</td>`).join('')}<td class="tot">${R.played === HOLES.length ? M.ai.reduce((x, y) => x + y, 0) : ''}</td></tr>` +
       `<tr><th scope="row">Match</th>${HOLES.map((h, i) => { const r = M.res[i]; return `<td class="${r > 0 ? 'w' : r < 0 ? 'l' : ''}">${r == null ? '·' : r > 0 ? 'W' : r < 0 ? 'L' : '½'}</td>`; }).join('')}<td class="tot">${statusTxt(M.res.reduce((x, y) => x + (y || 0), 0)).replace('ALL SQUARE', 'AS')}</td></tr>` : '');
+  if (endedEarly) hcpHtml += `<br>Holes not played count as net par (shown faded on the card).`;
   $('#resHcp').hidden = !last; $('#resHcp').innerHTML = hcpHtml;
   const un = $('#resUnlock'); un.hidden = !fresh.length;
   un.innerHTML = fresh.map(id => { const r = REWARDS.find(x => x.id === id); return `<b>Unlocked: ${r.name}</b><br>${r.what}`; })

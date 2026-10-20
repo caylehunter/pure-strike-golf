@@ -94,7 +94,8 @@ Locked shot shapes are struck through; tapping one says how to unlock it. The me
 - **Alternating shots, by the rules of golf:** the hole is played shot for shot. On the tee the **honor** goes first: a coin toss on hole 1, then the winner of the previous hole (a halve keeps the honor). After that, **whoever is farther from the hole plays next**, so a duffed shot that leaves you behind means you hit again. Once one player is in the hole, the other plays out.
 - **The opponent's shots** come from its hole score, turned into shots (full shots along the hole, the last onto the green, then putts) and played one at a time with an orange ball while the camera follows. Their ball stays on the course between shots, tagged with their initial. Shots never finish in water or out of bounds (they lay up short of a pond); Dusty's drift right (his slice). Tap the course to skip a shot.
 - **Match bar while they're still playing:** `Dusty: 2 shots, 14 ft away · you get a stroke · you're away`. Once they hole out it switches to the target: `Dusty made par (4) · 4 wins, 5 halves`.
-- Lower net score wins the hole. Status: ALL SQUARE / n UP / n DOWN. The match ends when one side leads by more than the holes left (e.g. 2 & 1); both players still play out the remaining holes ("playing out for fun") so the gross score posts to the handicap.
+- Lower net score wins the hole. Status: ALL SQUARE / n UP / n DOWN.
+- **A match ends the moment one side leads by more holes than are left,** and the trailing side concedes: 2 up with 1 to play is "2 & 1"; over nine holes, 5 up with 4 to play is "5 & 4". This works both ways. The round still posts: unplayed holes count as **net par** (par plus the player's pops there), shown faded on the card.
 - Hole cards show the hole result and match status; the final card shows "You won 2 & 1" / "Marge won 1 up" / "Match halved", both totals, and a rematch button.
 
 ## Online match play vs. friends (planned)

@@ -45,13 +45,21 @@ const PAGE = 'file://' + path.join(__dirname, 'page.html');
   await pg.evaluate(() => window.__pureStrike.score(3, 1)); await pg.waitForTimeout(150);
   await pg.tap('#againBtn'); await pg.waitForTimeout(500); await pg.evaluate(() => window.__pureStrike.oppFinish());
   await pg.evaluate(() => window.__pureStrike.score(4, 1)); await pg.waitForTimeout(150);
-  check('2 up with 1 to play ends the match 2 & 1', (await pg.$eval('#resSub', e => e.textContent)).includes('match won 2 & 1'), await pg.$eval('#resSub', e => e.textContent));
+  const r0 = (await pg.evaluate(() => window.__pureStrike.state())).rounds;
+  check('2 up with 1 to play: the match ends at once, 2 & 1', (await pg.$eval('#resName', e => e.textContent)) === 'You won 2 & 1', await pg.$eval('#resName', e => e.textContent));
+  check('Dusty concedes after hole 2', (await pg.$eval('#resSub', e => e.textContent)).includes('Dusty concedes the match after hole 2'), await pg.$eval('#resSub', e => e.textContent));
+  check('no hole 3: the next button is a rematch', (await pg.$eval('#againBtn', e => e.textContent)) === 'Rematch Dusty');
+  check('hole 3 shows faded as net par (5)', (await pg.$eval('#resCard', e => e.querySelector('.np') && e.querySelector('.np').textContent)) === '5');
+  check('the round still posts to the handicap', (await pg.$eval('#resHcp', e => e.textContent)).includes('net par') && !(await pg.$eval('#resHcp', e => e.hidden)));
+  await shot('match-early.png');
+  // and the other way: Dusty goes 2 up with 1 to play
   await pg.tap('#againBtn'); await pg.waitForTimeout(500);
-  m = await pg.evaluate(() => window.__pureStrike.match());
-  check('hole 3 after the match is decided: playing out for fun', m.bar.includes('Match won 2 & 1 · playing out for fun'), m.bar.replace(/\n/g, ' / '));
-  check('the opponent still plays the last hole', !!(await pg.evaluate(() => window.__pureStrike.opp())));
-  await pg.evaluate(() => window.__pureStrike.score(9, 3)); await pg.waitForTimeout(150);
-  check('result stays won 2 & 1', (await pg.$eval('#resName', e => e.textContent)) === 'You won 2 & 1');
+  await pg.evaluate(() => { window.__pureStrike.setAi([2, 3, 4]); window.__pureStrike.oppFinish(); });
+  await pg.evaluate(() => window.__pureStrike.score(5, 2)); await pg.waitForTimeout(150);
+  await pg.tap('#againBtn'); await pg.waitForTimeout(500); await pg.evaluate(() => window.__pureStrike.oppFinish());
+  await pg.evaluate(() => window.__pureStrike.score(6, 2)); await pg.waitForTimeout(150);
+  check('when Dusty is 2 up with 1 to play, you concede: Dusty won 2 & 1', (await pg.$eval('#resName', e => e.textContent)) === 'Dusty won 2 & 1' && (await pg.$eval('#resSub', e => e.textContent)).includes('You concede the match'), await pg.$eval('#resSub', e => e.textContent));
+  check('both early finishes posted a round', (await pg.evaluate(() => window.__pureStrike.state())).rounds === r0 + 1, 'rounds +1 since the first');
   // alternating shots by the rules of golf: honor on the tee, then whoever is away
   await pg.tap('#againBtn'); await pg.waitForTimeout(300);
   await pg.evaluate(() => { window.__pureStrike.honor('opp'); window.__pureStrike.setAi([4, 5, 6]); window.__pureStrike.restartHole(); });
@@ -62,7 +70,7 @@ const PAGE = 'file://' + path.join(__dirname, 'page.html');
   await pg.waitForFunction(() => window.__pureStrike.opp().mode === 'aim', null, { timeout: 15000 });
   o = await pg.evaluate(() => window.__pureStrike.opp());
   let bar = await pg.$eval('#matchBar', e => e.innerText.replace(/\n/g, ' / '));
-  check('after one shot it is your turn, and the bar says where he is', o.k === 1 && /Dusty: 1 shot, \d+ yds away/.test(bar) && bar.includes("you're away"), bar);
+  check('after one shot it is your turn, and the bar says where he is', o.k === 1 && /Dusty: 1 shot, \d+ (yds|ft) away/.test(bar) && bar.includes("you're away"), bar);
   // a duff: 15 yards off the tee leaves you still away, so you play again
   await pg.evaluate(() => window.__pureStrike.shotTo(0, 47)); await pg.waitForTimeout(700);
   o = await pg.evaluate(() => window.__pureStrike.opp());
@@ -92,7 +100,7 @@ const PAGE = 'file://' + path.join(__dirname, 'page.html');
   await pg.tap('#resMenu').catch(() => {});
   await pg.evaluate(() => { document.querySelector('#resMenu').click(); });
   await pg.waitForTimeout(300); await pg.tap('#matchBtn'); await pg.waitForTimeout(200);
-  check('Dusty record shows 2–0', (await pg.$eval('#oppList button[data-opp="0"] .tag', e => e.textContent)) === '2–0');
+  check('Dusty record shows 2–1 (two wins, one loss)', (await pg.$eval('#oppList button[data-opp="0"] .tag', e => e.textContent)) === '2–1', await pg.$eval('#oppList button[data-opp="0"] .tag', e => e.textContent));
   await br.close();
   if (errs.length) { console.log('ERRORS', errs.join('; ')); checks.push(false); }
   if (checks.includes(false)) process.exit(1);
