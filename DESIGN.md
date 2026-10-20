@@ -91,6 +91,16 @@ Locked shot shapes are struck through; tapping one says how to unlock it. The me
 - Lower net score wins the hole. Status: ALL SQUARE / n UP / n DOWN. The match ends when one side leads by more than the holes left (e.g. 2 & 1); the round continues so the gross score still posts to the handicap.
 - Hole cards show the hole result and match status; the final card shows "You won 2 & 1" / "Marge won 1 up" / "Match halved", both totals, and a rematch button.
 
+## Online match play vs. friends (planned)
+
+Asynchronous: each player plays **a whole hole per turn**, unlike the shot-for-shot match against the computer.
+
+1. Hole 1: a coin toss picks who goes first. That player plays the entire hole; the friend gets a notification ("Cayle made par on hole 1 · your turn").
+2. The second player sees a quick replay of the first player's hole, then plays it with the target in the match bar ("4 wins, 5 halves").
+3. Each later hole: the honor (last hole's winner; a halve keeps it) plays first, so a hole winner often plays two holes back to back.
+
+Needs: a server and accounts (matches, whose turn), push notifications (installed app or web app), turn timers (e.g. 24 h, then the hole is conceded), and server-side score checks (record each shot's inputs and replay them rather than trusting the phone).
+
 ## Roadmap
 
 1. ~~Repo + design doc + tests.~~
