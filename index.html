@@ -177,6 +177,10 @@ button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 .sc .bogey{border:2px solid rgba(255,255,255,.5)}
 .sc .now{color:var(--gold)}
 .sc .np{opacity:.45;font-style:italic}
+.sc9{font-size:14px}
+.sc9 th,.sc9 td{padding:8px 1px}
+.sc9 th[scope=row]{padding-left:8px}
+.sc9 .mk{min-width:20px;height:20px}
 .res-box{padding:12px 14px;border-radius:14px;background:rgba(255,255,255,.06);font:500 14px/1.45 var(--body);color:#d5e6d9}
 .res-box b{font:800 17px/1.2 var(--cond);letter-spacing:.04em;color:var(--text)}
 .res-box.unlock{border:1px solid rgba(255,207,63,.5);background:rgba(255,207,63,.08)}
@@ -190,7 +194,7 @@ button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 #oppList{display:flex;flex-direction:column;gap:10px}
 .opp .av{flex:none;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font:400 18px/1 var(--display);background:#2c5a40;color:var(--text);box-shadow:0 0 0 2px rgba(255,255,255,.7)}
 .opp .tag{background:rgba(255,255,255,.14);color:var(--text)}
-.sc .pop{color:var(--gold);font-style:normal;font-size:10px;vertical-align:top;margin-left:2px;letter-spacing:1px}
+.sc .pop{color:var(--gold);font-size:11px;letter-spacing:1px;line-height:1}
 .sc .w{color:var(--gold)}
 .sc .l{color:#ff9b8a}
 #pause{background:rgba(6,14,10,.9)}
@@ -291,11 +295,11 @@ button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 <div class="overlay" id="menu">
   <div class="card">
     <div class="brand">
-      <span class="eyebrow">Prototype · 3 holes · Par 12</span>
+      <span class="eyebrow">Prototype · Pure Strike Links · 9 holes · Par 36</span>
       <h1>PURE<br><span>STRIKE</span></h1>
       <p id="menuHcp">Handicap 36.0</p>
     </div>
-    <button class="tee-card mode" id="soloBtn"><span class="av">S</span><span class="tc-main"><b>Stroke play</b><small>Play 3 holes, post a score, lower your handicap</small></span></button>
+    <button class="tee-card mode" id="soloBtn"><span class="av">S</span><span class="tc-main"><b>Stroke play</b><small>Play 9 holes (or a quick 3), post a score, lower your handicap</small></span></button>
     <button class="tee-card mode match" id="matchBtn"><span class="av">M</span><span class="tc-main"><b>Match play</b><small>Beat Dusty, Marge and Ace hole by hole</small></span></button>
     <button class="ghost" id="practiceBtn">Putting practice</button>
     <div class="rewards">
@@ -316,9 +320,10 @@ button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 
 <div class="overlay" id="soloSetup" hidden>
   <div class="card">
-    <span class="eyebrow">Stroke play · 3 holes · Par 12</span>
+    <span class="eyebrow">Stroke play · Pure Strike Links</span>
     <h2 class="ms-title">Pick your tees</h2>
-    <p class="ms-note">Your score posts to your handicap when you finish all 3 holes.</p>
+    <p class="ms-note" id="soloNote">Your score posts to your handicap when you finish the round.</p>
+    <div class="row"><span class="lbl">Holes</span><div class="seg len-seg"><button data-len="9">9 holes · ~20 min</button><button data-len="3">3 holes · ~7 min</button></div></div>
     <button class="tee-card blue" data-tee="blue"><span class="dot"></span><span class="tc-main"><b>Blue tees</b><small id="blueInfo">wider sweet spot · calmer wind</small></span></button>
     <button class="tee-card black" data-tee="black"><span class="dot"></span><span class="tc-main"><b>Black tees</b><small id="blackInfo">nuclear drive · tighter sweet spot · gusty</small></span><span class="tag" id="blackTag">NUKE</span></button>
     <button class="ghost" id="soloBack">Back</button>
@@ -357,9 +362,10 @@ button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 
 <div class="overlay" id="matchSetup" hidden>
   <div class="card">
-    <span class="eyebrow">Match play · 3 holes</span>
+    <span class="eyebrow">Match play · Pure Strike Links</span>
     <h2 class="ms-title">Pick an opponent</h2>
     <p class="ms-note">Fewer strokes wins the hole. The higher handicap gets strokes ("pops") on the hardest holes. Your opponent plays each hole first, so you always know what you need.</p>
+    <div class="row"><span class="lbl">Holes</span><div class="seg len-seg"><button data-len="9">9 holes · ~20 min</button><button data-len="3">3 holes · ~7 min</button></div></div>
     <div class="row"><span class="lbl">Tees</span><div class="seg" id="msTee"><button data-tee="blue">Blue</button><button data-tee="black">Black</button></div></div>
     <div id="oppList"></div>
     <button class="ghost" id="msBack">Back</button>
@@ -402,9 +408,9 @@ const rnd = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147
 /* ---------- holes (yards; x = right, y = toward the green) ---------- */
 const CORR = 78, FR = 2.6, CUP_R = 0.11, BALL_R = 0.045;
 /* each hole: centerline cx(y), fairway half-width hw(y), green and pin, hazards, green slope h(u, v) around the green centre */
-const HOLES = [
+const ALL_HOLES = [
   {
-    par: 3, si: 2, fw: [122, 192],
+    name: 'Pond Carry', par: 3, rank: 6, fw: [122, 192],
     cx: y => 7 * smooth(y / 190),
     hw: () => 14,
     green: { x: 7, y: 201, rx: 13, ry: 11 }, pin: { x: 10, y: 204 },
@@ -419,7 +425,7 @@ const HOLES = [
     clumps: []
   },
   {
-    par: 4, si: 1, fw: [85, 414],
+    name: 'Corner Trees', par: 4, rank: 1, fw: [85, 414],
     cx: y => 38 * smooth((y - 200) / 180),
     hw: y => { let w = 20 + 3 * Math.sin(y / 41); if (y > 380) w = lerp(w, 12, smooth((y - 380) / 32)); if (y < 110) w = lerp(w, 15, smooth((110 - y) / 25)); return w; },
     green: { x: 40, y: 429, rx: 14, ry: 12 }, pin: { x: 36, y: 432 },
@@ -436,7 +442,7 @@ const HOLES = [
     clumps: [[24, 200], [31, 218], [41, 232], [29, 182], [45, 212], [52, 196]]
   },
   {
-    par: 5, si: 3, fw: [95, 602],
+    name: 'Big Bend', par: 5, rank: 7, fw: [95, 602],
     cx: y => -42 * smooth((y - 220) / 230) + 18 * smooth((y - 470) / 130),
     hw: y => { let w = 21 + 4 * Math.sin(y / 53); if (y > 555) w = lerp(w, 13, smooth((y - 555) / 45)); if (y < 125) w = lerp(w, 15, smooth((125 - y) / 30)); return w; },
     green: { x: -24, y: 612, rx: 15, ry: 12 }, pin: { x: -20, y: 616 },
@@ -452,9 +458,113 @@ const HOLES = [
     /* back-to-front tilt, a crown in the middle, a bowl front-left */
     slope: (u, v) => 0.022 * v + 0.006 * u + 0.18 * Math.exp(-((u - 3) ** 2 + (v + 1) ** 2) / 18) - 0.12 * Math.exp(-((u + 7) ** 2 + (v - 3) ** 2) / 25),
     clumps: [[-44, 232], [-40, 256], [-50, 276], [-38, 296], [-55, 312]]
+  },
+  {
+    /* a perfect blue-tee drive finishes near the green; a black-tee nuke can fly it */
+    name: 'Short Fuse', par: 4, rank: 9, fw: [80, 388],
+    cx: y => 10 * smooth((y - 150) / 220),
+    hw: y => { let w = 19 + 2 * Math.sin(y / 37); if (y > 360) w = lerp(w, 12, smooth((y - 360) / 28)); return w; },
+    green: { x: 10, y: 402, rx: 14, ry: 12 }, pin: { x: 12, y: 405 },
+    tees: { black: { x: 0, y: 0 }, blue: { x: 0, y: 70 } },
+    water: [],
+    bunkers: [
+      { x: -9, y: 290, rx: 5, ry: 4, rot: 0.2 },
+      { x: 27, y: 315, rx: 6, ry: 4.5, rot: -0.3 },
+      { x: -3, y: 388, rx: 6, ry: 3.5, rot: 0.3 },
+      { x: 27, y: 404, rx: 4.5, ry: 7, rot: 0.1 },
+      { x: 10, y: 419, rx: 8, ry: 3, rot: 0 }
+    ],
+    slope: (u, v) => 0.015 * v - 0.01 * u + 0.1 * Math.exp(-((u + 4) ** 2 + (v - 3) ** 2) / 14),
+    clumps: []
+  },
+  {
+    /* island green: the green and its fringe are the only dry land past the tee box */
+    name: 'The Moat', par: 3, rank: 8, fw: [45, 128],
+    cx: () => 0,
+    hw: () => 14,
+    green: { x: 0, y: 160, rx: 12, ry: 10.5 }, pin: { x: 2, y: 162 },
+    tees: { black: { x: 0, y: 0 }, blue: { x: 0, y: 22 } },
+    water: [{ x: 0, y: 160, rx: 31, ry: 24, rot: 0 }],
+    bunkers: [],
+    slope: (u, v) => 0.012 * u + 0.01 * v + 0.09 * Math.exp(-((u + 3) ** 2 + (v + 2) ** 2) / 10),
+    clumps: []
+  },
+  {
+    /* a creek crosses at 480: only a nuke gets home in two */
+    name: 'Long Haul', par: 5, rank: 3, fw: [95, 640],
+    cx: y => 14 * Math.sin(y / 140),
+    hw: y => { let w = 22 + 3 * Math.sin(y / 61); if (y > 600) w = lerp(w, 13, smooth((y - 600) / 40)); if (y < 125) w = lerp(w, 15, smooth((125 - y) / 30)); return w; },
+    green: { x: -14, y: 652, rx: 15, ry: 12 }, pin: { x: -11, y: 655 },
+    tees: { black: { x: 0, y: 0 }, blue: { x: 0, y: 75 } },
+    water: [{ x: 6, y: 480, rx: 74, ry: 6, rot: 0.02 }],
+    bunkers: [
+      { x: 20, y: 300, rx: 8, ry: 5, rot: 0.3 },
+      { x: -22, y: 335, rx: 8, ry: 5, rot: -0.3 },
+      { x: -31, y: 648, rx: 5, ry: 8, rot: 0.1 },
+      { x: 5, y: 662, rx: 5, ry: 7, rot: -0.1 },
+      { x: -14, y: 636, rx: 7, ry: 3, rot: 0 }
+    ],
+    slope: (u, v) => -0.016 * v + 0.008 * u + 0.14 * Math.exp(-((u - 2) ** 2 + (v - 2) ** 2) / 16),
+    clumps: []
+  },
+  {
+    /* a long carry over a ravine of water */
+    name: 'The Ravine', par: 3, rank: 4, fw: [184, 216],
+    cx: y => -6 * smooth(y / 228),
+    hw: () => 13,
+    green: { x: -6, y: 228, rx: 14, ry: 12 }, pin: { x: -4, y: 231 },
+    tees: { black: { x: 0, y: 0 }, blue: { x: 0, y: 35 } },
+    water: [{ x: -3, y: 150, rx: 76, ry: 30, rot: 0 }],
+    bunkers: [
+      { x: -24, y: 232, rx: 5, ry: 7, rot: 0.15 },
+      { x: 14, y: 236, rx: 4.5, ry: 7, rot: -0.15 },
+      { x: -6, y: 246, rx: 7, ry: 3, rot: 0 }
+    ],
+    slope: (u, v) => 0.02 * v + 0.012 * u - 0.1 * Math.exp(-((u - 3) ** 2 + (v + 3) ** 2) / 15),
+    clumps: []
+  },
+  {
+    /* dogleg left; trees guard the corner */
+    name: 'Tall Timber', par: 4, rank: 2, fw: [85, 410],
+    cx: y => -40 * smooth((y - 190) / 170),
+    hw: y => { let w = 20 + 3 * Math.sin(y / 47); if (y > 380) w = lerp(w, 12, smooth((y - 380) / 30)); if (y < 110) w = lerp(w, 15, smooth((110 - y) / 25)); return w; },
+    green: { x: -40, y: 425, rx: 14, ry: 12 }, pin: { x: -37, y: 428 },
+    tees: { black: { x: 0, y: 0 }, blue: { x: 0, y: 45 } },
+    water: [],
+    bunkers: [
+      { x: 18, y: 270, rx: 9, ry: 5.5, rot: -0.4 },
+      { x: -55, y: 422, rx: 4.5, ry: 8, rot: 0.1 },
+      { x: -28, y: 413, rx: 6, ry: 3, rot: -0.3 }
+    ],
+    slope: (u, v) => 0.017 * v - 0.014 * u + 0.11 * Math.exp(-((u + 3) ** 2 + (v - 2) ** 2) / 15),
+    clumps: [[-27, 196], [-29, 220], [-34, 240], [-41, 262], [-25, 176], [-46, 238]]
+  },
+  {
+    /* finishing par 5: a lake runs down the right of the second shot and green */
+    name: 'Home Stretch', par: 5, rank: 5, fw: [90, 572],
+    cx: y => 12 * smooth((y - 250) / 250),
+    hw: y => { let w = 21 + 3 * Math.sin(y / 49); if (y > 540) w = lerp(w, 13, smooth((y - 540) / 32)); if (y < 120) w = lerp(w, 15, smooth((120 - y) / 30)); return w; },
+    green: { x: 12, y: 586, rx: 15, ry: 12 }, pin: { x: 15, y: 589 },
+    tees: { black: { x: 0, y: 0 }, blue: { x: 0, y: 65 } },
+    water: [{ x: 53, y: 470, rx: 16, ry: 100, rot: 0 }, { x: 41, y: 600, rx: 9, ry: 14, rot: 0 }],
+    bunkers: [
+      { x: -14, y: 300, rx: 8, ry: 5, rot: 0.25 },
+      { x: -8, y: 577, rx: 5, ry: 7, rot: 0.1 },
+      { x: 14, y: 604, rx: 8, ry: 3, rot: 0 }
+    ],
+    slope: (u, v) => 0.02 * v - 0.012 * u + 0.12 * Math.exp(-((u - 4) ** 2 + (v + 1) ** 2) / 16),
+    clumps: []
   }
 ];
 const PRACTICE_HOLE = 2;
+/* the round's holes; stroke index (1 = hardest, gets pops first) is the rank order within them */
+let HOLES = [];
+function setRoundHoles(n) {
+  HOLES = ALL_HOLES.slice(0, n);
+  [...HOLES].sort((a, b) => a.rank - b.rank).forEach((h, k) => { h.si = k + 1; });
+}
+setRoundHoles(3);
+const coursePar = () => HOLES.reduce((x, h) => x + h.par, 0);
 
 let HOLE, HOLE_I = 0, cx, hw, FW0, FW1, YEND, GREEN, PIN, TEES, TEE_YDS, PAR, WATER, BUNKERS;
 let TREES = [], FOREST = [], PATCHES = [], fwPath, corrPath, GREEN_IMG;
@@ -581,7 +691,7 @@ if (typeof store.best.blue === 'number' && store.best.blue < 6) store.best = {};
 /* handicap: average of the best 40% of the last 10 round differentials.
    a 3-hole round is a sixth of 18, so its differential is (score - rating) x 6.
    new players are padded with 36s so the number falls over a few rounds instead of one */
-const RATING = { blue: 12, black: 12.8 };
+const rating = tee => coursePar() + (tee === 'black' ? 0.8 * HOLES.length / 3 : 0);
 function handicap() {
   const d = store.rounds.slice(-10).map(r => r.d);
   while (d.length < 5) d.push(36);
@@ -611,9 +721,9 @@ const OPPONENTS = [
 store.match = store.match || {};
 const rec = id => store.match[id] || (store.match[id] = { w: 0, l: 0, h: 0 });
 const oppOpen = i => i === 0 || store.allUnlocked || rec(OPPONENTS[i - 1].id).w > 0;
-/* a 3-hole match uses a sixth of the 18-hole handicap gap, given on the hardest holes first */
-const matchStrokes = (myH, oppH) => Math.round(Math.abs(myH - oppH) / 6);
-const popsOn = (n, i) => Math.floor(n / 3) + (HOLES[i].si <= n % 3 ? 1 : 0);
+/* a match uses the handicap gap scaled to its length (a sixth over 3 holes, half over 9), given on the hardest holes first */
+const matchStrokes = (myH, oppH, n = HOLES.length) => Math.round(Math.abs(myH - oppH) * n / 18);
+const popsOn = (n, i) => { const L = HOLES.length; return Math.floor(n / L) + (HOLES[i].si <= n % L ? 1 : 0); };
 const shapeReward = sh => REWARDS.find(r => r.id === (sh === 'stinger' ? 'stinger' : 'shape'));
 /* meter runs to 125%; the nuke band sits beyond 100% and widens with the target upgrade */
 const VMAX = 1.15, HANG = 0.08;
@@ -775,6 +885,7 @@ function predictPutt(vx, vy) {
 /* ---------- flow ---------- */
 function startRound(tee, match = null) {
   audio();
+  setRoundHoles(G.len);
   G.match = match;
   G.tee = tee; G.practice = false; G.longest = 0; G.shape = 'straight';
   G.round = { tee, scores: [], putts: [], over: false, earned: earnedIds(), oppsOpen: OPPONENTS.map((o, i) => oppOpen(i)) };
@@ -792,7 +903,7 @@ function startHole(i) {
   const M = G.match, live = !!M;
   const first = !live ? '' : i === 0 ? (M.honor === 'me' ? ' · you won the toss, tee off first' : ` · ${M.opp.name} won the toss, tees off first`)
     : (M.honor === 'me' ? ' · your honor' : ` · ${M.opp.name}'s honor`);
-  pop(`HOLE ${i + 1}`, 'yds', `Par ${PAR} · ${TEE_YDS[G.tee]} yds${first}`);
+  pop(`HOLE ${i + 1}`, 'yds', `${HOLE.name} · Par ${PAR} · ${TEE_YDS[G.tee]} yds${first}`);
   if (live) { initOpp(); nextTurn(); }
 }
 function startPractice() {
@@ -822,6 +933,7 @@ function enterPutt() {
 function hideOverlays() { ['#menu', '#result', '#matchSetup', '#soloSetup', '#pause', '#feedback'].forEach(q => $(q).hidden = true); G.paused = false; }
 const gauss = () => { let u = 0; for (let k = 0; k < 6; k++) u += Math.random(); return (u - 3) / 0.7071; };
 function startMatch(oi, tee) {
+  setRoundHoles(G.len);
   const o = OPPONENTS[oi], my = handicap(), n = matchStrokes(my, o.hcp);
   /* the opponent's hole scores: golfers average about 3 over their handicap per 18,
      and higher handicaps are less consistent */
@@ -1016,15 +1128,23 @@ function penalty(kind) {
     pop('SPLASH', 'water', '+1 stroke · drop at the edge');
     G.ballHidden = true;
     later(1.4, () => {
-      const tx = cx(b.y); let x = b.x; const y = b.y, dir = Math.sign(tx - x) || -1;
-      for (let i = 0; i < 160 && surface(x, y) === 'water'; i++) x += dir;
-      b.x = x + dir * 3; b.y = y; G.ballHidden = false; afterPenalty();
+      const d = dropFromWater(b.x, b.y); b.x = d.x; b.y = d.y; G.ballHidden = false; afterPenalty();
     });
   } else {
     pop('OUT OF BOUNDS', 'miss', '+1 stroke · replay from the last spot');
     G.ballHidden = true;
     later(1.4, () => { b.x = G.lastPos.x; b.y = G.lastPos.y; G.ballHidden = false; afterPenalty(); });
   }
+}
+/* beside the water when dry land is close (about 15 yards); across the hole or around an island green, behind it */
+function dropFromWater(x0, y0) {
+  const dir = Math.sign(cx(y0) - x0) || -1; let x = x0;
+  for (let i = 0; i < 160 && surface(x, y0) === 'water'; i++) x += dir;
+  x += dir * 3;
+  if (Math.abs(x - x0) <= 15 && !/water|green|fringe|oob|sand/.test(surface(x, y0))) return { x, y: y0 };
+  let y = y0;
+  for (let i = 0; i < 300 && /water|green|fringe/.test(surface(cx(y), y)); i++) y -= 2;
+  return { x: cx(y), y: y - 3 };
 }
 function afterPenalty() {
   if (G.strokes >= 12) return finishHole(true);
@@ -1083,13 +1203,13 @@ function finishHole(pickedUp, conceded = false) {
   let hcpHtml = '';
   if (last) {
     R.over = true;
-    const h0 = handicap(), diff = Math.round((total - RATING[G.tee]) * 6 * 10) / 10;
+    const h0 = handicap(), diff = Math.round((total - rating(G.tee)) * (18 / HOLES.length) * 10) / 10;
     /* the first 5 rounds set the handicap freely; after that one round counts at most 6 strokes from it */
     const established = store.rounds.length >= 5, posted = established ? clamp(diff, h0 - 6, h0 + 6) : diff;
     store.rounds.push({ d: posted, raw: diff, tee: G.tee, total, t: Date.now() }); store.rounds = store.rounds.slice(-20);
     if (G.tee === 'black') store.stats.blackRounds++;
-    const h1 = handicap(), prev = store.best[G.tee];
-    if (!prev || total < prev) store.best[G.tee] = total;
+    const bk = HOLES.length === 9 ? G.tee + '9' : G.tee, h1 = handicap(), prev = store.best[bk];
+    if (!prev || total < prev) store.best[bk] = total;
     const n = store.rounds.length;
     hcpHtml = `<b>Handicap ${fmtH(h0)} → ${fmtH(h1)}</b><br>This round rated ${fmtH(diff)}${diff < 0 ? ' (a plus number means better than scratch)' : ''}`
       + (posted !== diff ? `, and counts as ${fmtH(posted)}: once your handicap is set, one round can move it only so far.` : '.')
@@ -1099,8 +1219,8 @@ function finishHole(pickedUp, conceded = false) {
   const fresh = earnedIds().filter(id => !R.earned.includes(id)); R.earned = earnedIds();
   const freshOpps = OPPONENTS.filter((o, i) => oppOpen(i) && !R.oppsOpen[i]); R.oppsOpen = OPPONENTS.map((o, i) => oppOpen(i));
 
-  $('#resEyebrow').textContent = last ? `Round complete · ${teeName} tees · Par 12` : `Hole ${HOLE_I + 1} of ${HOLES.length} · ${teeName} tees · Par ${PAR}`;
-  $('#resName').textContent = last ? `${total} · ${toPar(total - 12)}` : (pickedUp ? 'Picked up' : scoreName(G.strokes));
+  $('#resEyebrow').textContent = last ? `Round complete · ${HOLES.length} holes · ${teeName} tees · Par ${coursePar()}` : `Hole ${HOLE_I + 1} of ${HOLES.length} · ${teeName} tees · Par ${PAR}`;
+  $('#resName').textContent = last ? `${total} · ${toPar(total - coursePar())}` : (pickedUp ? 'Picked up' : scoreName(G.strokes));
   $('#resSub').textContent = last
     ? `${R.putts.reduce((x, y) => x + y, 0)} putts · long drive ${G.longest ? Math.round(G.longest) + ' yds' : '—'}`
     : `${G.strokes} strokes · ${G.putts} putt${G.putts === 1 ? '' : 's'} · round ${toPar(total - parSoFar)}`;
@@ -1111,7 +1231,7 @@ function finishHole(pickedUp, conceded = false) {
       const mine = R.scores.slice(0, R.played).reduce((x, y) => x + y, 0), theirs = M.ai.slice(0, R.played).reduce((x, y) => x + y, 0);
       $('#resSub').textContent = endedEarly
         ? `${M.decided === 'w' ? `${M.opp.name} concedes the match` : 'You concede the match'} after hole ${R.played} · ${mine} to ${theirs} through ${R.played}`
-        : `You shot ${total} (${toPar(total - 12)}) · ${M.opp.name} shot ${M.ai.reduce((x, y) => x + y, 0)}`;
+        : `You shot ${total} (${toPar(total - coursePar())}) · ${M.opp.name} shot ${M.ai.reduce((x, y) => x + y, 0)}`;
     } else if (holeRes) $('#resSub').textContent = `${G.strokes} strokes · ${holeRes}`;
   }
   const cell = (sc, par, i) => {
@@ -1120,11 +1240,13 @@ function finishHole(pickedUp, conceded = false) {
     const k = sc - par <= -2 ? 'eagle' : sc - par === -1 ? 'birdie' : sc - par >= 1 ? 'bogey' : '';
     return `<td><span class="mk ${k}${i === HOLE_I && !last ? ' now' : ''}">${sc}</span></td>`;
   };
+  $('#resCard').classList.toggle('sc9', HOLES.length > 3);
   $('#resCard').innerHTML =
     `<tr><th scope="row">Hole</th>${HOLES.map((h, i) => `<th>${i + 1}</th>`).join('')}<th class="tot">Tot</th></tr>` +
-    `<tr><th scope="row">Par</th>${HOLES.map(h => `<td>${h.par}</td>`).join('')}<td class="tot">12</td></tr>` +
-    `<tr><th scope="row">${M ? 'You' : 'Score'}</th>${HOLES.map((h, i) => cell(R.scores[i], h.par, i).replace('</td>', M && M.meGets && popsOn(M.n, i) ? `<i class="pop">${'•'.repeat(popsOn(M.n, i))}</i></td>` : '</td>')).join('')}<td class="tot">${total}</td></tr>` +
-    (M ? `<tr><th scope="row">${M.opp.name}</th>${HOLES.map((h, i) => `<td>${R.scores[i] != null && i < R.played ? M.ai[i] : i < R.played ? '·' : '—'}${!M.meGets && popsOn(M.n, i) ? `<i class="pop">${'•'.repeat(popsOn(M.n, i))}</i>` : ''}</td>`).join('')}<td class="tot">${R.played === HOLES.length ? M.ai.reduce((x, y) => x + y, 0) : ''}</td></tr>` +
+    `<tr><th scope="row">Par</th>${HOLES.map(h => `<td>${h.par}</td>`).join('')}<td class="tot">${coursePar()}</td></tr>` +
+    `<tr><th scope="row">${M ? 'You' : 'Score'}</th>${HOLES.map((h, i) => cell(R.scores[i], h.par, i)).join('')}<td class="tot">${total}</td></tr>` +
+    (M ? `<tr><th scope="row">${M.opp.name}</th>${HOLES.map((h, i) => `<td>${R.scores[i] != null && i < R.played ? M.ai[i] : i < R.played ? '·' : '—'}</td>`).join('')}<td class="tot">${R.played === HOLES.length ? M.ai.reduce((x, y) => x + y, 0) : ''}</td></tr>` +
+      (M.n ? `<tr><th scope="row">${M.meGets ? 'Your' : `${M.opp.name}'s`} pops</th>${HOLES.map((h, i) => `<td class="pop">${'•'.repeat(popsOn(M.n, i))}</td>`).join('')}<td class="tot">${M.n}</td></tr>` : '') +
       `<tr><th scope="row">Match</th>${HOLES.map((h, i) => { const r = M.res[i]; return `<td class="${r > 0 ? 'w' : r < 0 ? 'l' : ''}">${r == null ? '·' : r > 0 ? 'W' : r < 0 ? 'L' : '½'}</td>`; }).join('')}<td class="tot">${statusTxt(M.res.reduce((x, y) => x + (y || 0), 0)).replace('ALL SQUARE', 'AS')}</td></tr>` : '');
   if (endedEarly) hcpHtml += `<br>Holes not played count as net par (shown faded on the card).`;
   $('#resHcp').hidden = !last; $('#resHcp').innerHTML = hcpHtml;
@@ -1398,7 +1520,7 @@ $('#fbCopy').onclick = async () => {
   try { await navigator.clipboard.writeText(t); st.textContent = 'Copied. Paste it into a text message.'; st.className = 'fb-status ok'; }
   catch (e) { const ta = $('#fbText'); ta.value = t; ta.focus(); ta.select(); st.textContent = 'Your note is selected in the box above: copy it from there.'; st.className = 'fb-status warn'; }
 };
-$('#soloBtn').onclick = () => { renderMenu(); $('#menu').hidden = true; $('#soloSetup').hidden = false; };
+$('#soloBtn').onclick = () => { renderLen(); renderMenu(); $('#menu').hidden = true; $('#soloSetup').hidden = false; };
 $('#soloBack').onclick = () => { $('#soloSetup').hidden = true; $('#menu').hidden = false; };
 const canConcede = () => G.match && !G.match.decided && !G.practice && !['menu', 'done', 'holed'].includes(G.mode);
 $('#pauseBtn').onclick = () => {
@@ -1421,16 +1543,23 @@ $('#pzConcede').onclick = () => {
   G.strokes = Math.max(G.strokes + 1, PAR + 2);
   finishHole(true, true);
 };
-$('#matchBtn').onclick = () => { G.msTee = G.msTee || 'blue'; renderMatchSetup(); $('#menu').hidden = true; $('#matchSetup').hidden = false; };
+$('#matchBtn').onclick = () => { G.msTee = G.msTee || 'blue'; renderLen(); renderMatchSetup(); $('#menu').hidden = true; $('#matchSetup').hidden = false; };
 $('#msBack').onclick = () => { $('#matchSetup').hidden = true; $('#menu').hidden = false; };
 $('#msTee').onclick = e => { const x = e.target.closest('button'); if (!x || x.disabled) return; G.msTee = x.dataset.tee; renderMatchSetup(); };
 $('#oppList').onclick = e => { const x = e.target.closest('button'); if (!x || x.disabled) return; startMatch(+x.dataset.opp, G.msTee); };
+/* round length: 9 by default, remembered on this device */
+G.len = store.len === 3 ? 3 : 9;
+function renderLen() { document.querySelectorAll('.len-seg button').forEach(x => x.classList.toggle('on', +x.dataset.len === G.len)); }
+document.querySelectorAll('.len-seg').forEach(sg => sg.onclick = e => {
+  const x = e.target.closest('button'); if (!x) return;
+  G.len = +x.dataset.len; store.len = G.len; save(); renderLen(); renderMenu(); renderMatchSetup();
+});
 function renderMatchSetup() {
   if (G.msTee === 'black' && !has('black')) G.msTee = 'blue';
   document.querySelectorAll('#msTee button').forEach(x => { x.classList.toggle('on', x.dataset.tee === G.msTee); x.disabled = x.dataset.tee === 'black' && !has('black'); x.classList.toggle('locked', x.disabled); });
   const my = handicap();
   $('#oppList').innerHTML = OPPONENTS.map((o, i) => {
-    const open = oppOpen(i), n = matchStrokes(my, o.hcp), r = rec(o.id);
+    const open = oppOpen(i), n = matchStrokes(my, o.hcp, G.len), r = rec(o.id);
     const pops = n === 0 ? 'no strokes either way' : my > o.hcp ? `you get ${strokesTxt(n)}` : `${o.name} gets ${strokesTxt(n)}`;
     const info = open ? `${o.hcp} handicap · ${pops}` : `Locked · beat ${OPPONENTS[i - 1].name} to unlock`;
     return `<button class="tee-card opp" data-opp="${i}"${open ? '' : ' disabled'}><span class="av">${o.name[0]}</span><span class="tc-main"><b>${o.name}</b><small>${o.blurb}<br>${info}</small></span><span class="tag">${open ? `${r.w}–${r.l}${r.h ? '–' + r.h : ''}` : 'LOCKED'}</span></button>`;
@@ -1454,8 +1583,8 @@ function showMenu() {
 function renderMenu() {
   const h = handicap(), n = store.rounds.length;
   $('#menuHcp').textContent = `Handicap ${fmtH(h)} · ${!n ? 'play a round to start lowering it' : n < 5 ? `provisional, ${n} of 5 rounds` : `${n} rounds played`}`;
-  const yds = tee => HOLES.reduce((x, H) => x + Math.round(hyp(H.pin.x - H.tees[tee].x, H.pin.y - H.tees[tee].y)), 0).toLocaleString('en-US');
-  $('#blueInfo').textContent = `${yds('blue')} yds · wider sweet spot · calmer wind`;
+  const yds = tee => ALL_HOLES.slice(0, G.len).reduce((x, H) => x + Math.round(hyp(H.pin.x - H.tees[tee].x, H.pin.y - H.tees[tee].y)), 0).toLocaleString('en-US');
+  $('#blueInfo').textContent = `${yds('blue')} yds · par ${ALL_HOLES.slice(0, G.len).reduce((x, h) => x + h.par, 0)} · wider sweet spot · calmer wind`;
   const open = has('black'), bc = $('.tee-card.black');
   bc.disabled = !open;
   $('#blackInfo').textContent = open ? `${yds('black')} yds · nuclear drive · tighter sweet spot · gusty` : `Locked · reach an 18.0 handicap (you: ${fmtH(h)})`;
@@ -1466,7 +1595,7 @@ function renderMenu() {
   }).join('');
   $('#unlockAll').setAttribute('aria-pressed', String(!!store.allUnlocked));
   const bb = store.best, a = store.putt.att.reduce((x, y) => x + y, 0), md = store.putt.made.reduce((x, y) => x + y, 0);
-  const bits = []; if (bb.blue) bits.push(`Blue best ${bb.blue}`); if (bb.black) bits.push(`Black best ${bb.black}`); if (a) bits.push(`Putting ${md}/${a}`);
+  const bits = []; if (bb.blue9) bits.push(`Blue 9 best ${bb.blue9}`); if (bb.black9) bits.push(`Black 9 best ${bb.black9}`); if (bb.blue) bits.push(`Blue 3 best ${bb.blue}`); if (bb.black) bits.push(`Black 3 best ${bb.black}`); if (a) bits.push(`Putting ${md}/${a}`);
   $('#bestLine').textContent = bits.join(' · ');
 }
 
@@ -1728,7 +1857,12 @@ window.__pureStrike = { score: (strokes, putts) => { G.strokes = strokes; G.putt
   planOn: (i, S) => { const cur = HOLE_I; loadHole(i); const r = window.__pureStrike.plan(S); loadHole(cur); return r; },
   plan: S => { const sh = planOpp(S, G.match.opp); return { shots: sh.length, putts: sh.filter(x => x.putt).length, onGreen: sh.filter(x => !x.putt).slice(-1).map(x => surface(x.to.x, x.to.y))[0], wet: sh.some(x => /water|oob/.test(surface(x.to.x, x.to.y))) }; },
   opp: () => G.opp && { shots: G.opp.shots.length, putts: G.opp.shots.filter(x => x.putt).length, mode: G.mode, k: G.opp.k, holed: G.opp.holed, ball: G.opp.ball, onGreen: G.opp.shots.filter(x => !x.putt).slice(-1).map(x => surface(x.to.x, x.to.y))[0], wet: G.opp.shots.some(x => /water|oob/.test(surface(x.to.x, x.to.y))) },
+  popsTotal: () => G.match ? HOLES.reduce((x, h, i) => x + popsOn(G.match.n, i), 0) : 0,
   match: () => G.match && { status: G.match.res.reduce((x, y) => x + (y || 0), 0), res: G.match.res, decided: G.match.decided, final: G.match.final, n: G.match.n, meGets: G.match.meGets, bar: $('#matchBar').innerText },
+  setLen: n => { G.len = n; renderLen(); },
+  holes: () => ALL_HOLES.map((h, i) => { const cur = HOLE_I, rh = HOLES; HOLES = ALL_HOLES; loadHole(i); const r = { name: h.name, par: h.par, blue: TEE_YDS.blue, black: TEE_YDS.black, teeOk: ['blue', 'black'].every(t => surface(TEES[t].x, TEES[t].y) === 'tee'), pinOk: surface(PIN.x, PIN.y) === 'green' }; HOLES = rh; loadHole(Math.min(cur, HOLES.length - 1)); return r; }),
+  surface: (x, y) => surface(x, y),
+  drop: (x, y) => { const d = dropFromWater(x, y); return { ...d, s: surface(d.x, d.y) }; },
   holeOut: (strokes, putts) => { G.strokes = strokes; G.putts = putts; b.x = PIN.x; b.y = PIN.y; b.inCup = true; finishHole(false); }, state: () => ({ hole: HOLE_I, mode: G.mode, hcp: handicap(), rounds: store.rounds.length, earned: earnedIds() }) };
 cam.x = camT.x; cam.y = camT.y; cam.s = camT.s;
 let last = performance.now();

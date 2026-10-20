@@ -51,23 +51,31 @@ Straight, Draw, Fade, Stinger. Stinger: low flight, less carry, more roll, 35% w
 - Green read options: **Slope** (default: contours plus downhill flow dots) or **Off**. The old "Line" mode was removed because it did the read for the player.
 - Physics: stimp-like friction, slope gravity, cup capture with real lip-outs when too firm or off-center.
 
-## The round
+## The course: Pure Strike Links
 
-Three holes, par 12. Each hole is data (`HOLES` in `index.html`): centerline, fairway width, green, pin, tees, water, bunkers, green slope, and tree clumps.
+Nine holes, par 36. A round plays **all 9 (default, about 20 minutes) or the first 3 (about 7 minutes)**, chosen on the stroke play and match play setup screens and remembered on the device. Each hole is data (`ALL_HOLES` in `index.html`): name, par, stroke-index rank, centerline, fairway width, green, pin, tees, water, bunkers, green slope, and tree clumps.
 
-| Hole | Par | Blue | Black | Character |
-|---|---|---|---|---|
-| 1 | 3 | 172 | 204 | Forced carry over water to a green that tilts right-to-left |
-| 2 | 4 | 389 | 433 | Dogleg right; trees guard the corner; a black-tee nuke can fly them and reach the green |
-| 3 | 5 | 556 | 616 | Dogleg left; water right of the nuke landing zone |
+| Hole | Name | Par | Blue | Black | Rank | Character |
+|---|---|---|---|---|---|---|
+| 1 | Pond Carry | 3 | 172 | 204 | 6 | Forced carry over water to a green that tilts right-to-left |
+| 2 | Corner Trees | 4 | 389 | 433 | 1 | Dogleg right; trees guard the corner; a nuke can fly them and reach the green |
+| 3 | Big Bend | 5 | 556 | 616 | 7 | Dogleg left; water right of the nuke landing zone |
+| 4 | Short Fuse | 4 | 335 | 405 | 9 | A pure blue-tee drive finishes near the green; a black-tee nuke flies it |
+| 5 | The Moat | 3 | 140 | 162 | 8 | Island green |
+| 6 | Long Haul | 5 | 580 | 655 | 3 | A creek crosses at 480; only a nuke gets home in two |
+| 7 | The Ravine | 3 | 196 | 231 | 4 | Long carry over a ravine of water |
+| 8 | Tall Timber | 4 | 385 | 430 | 2 | Dogleg left; trees guard the corner |
+| 9 | Home Stretch | 5 | 524 | 589 | 5 | Lake down the right of the second shot and green |
 
+- Stroke index (who gets pops first) is the rank order of the holes in the round, so a 3-hole round still ranks 1–3.
 - A scorecard follows every hole (birdies circled, bogeys boxed) with **Next hole** / **Quit round**.
-- Rough −15%, bunker −30% (sand wedge −8%). Water: +1, drop at the edge. OB: +1, replay. Pick up at 12.
+- Rough −15%, bunker −30% (sand wedge −8%). OB: +1, replay. Pick up at 12.
+- **Water:** +1. The drop is beside the water when dry land is within about 15 yards; across the hole or around the island green it is behind the water, on the line back toward the tee.
 - Wind per hole: blue 0–7 mph, black 4–15 mph.
 
 ## Handicap
 
-- Every finished round posts a differential: `(score − rating) × 6`, since 3 holes are a sixth of 18. Ratings: blue 12.0, black 12.8.
+- Every finished round posts a differential: `(score − rating) × 18 / holes` (× 6 for 3 holes, × 2 for 9). Rating = par, plus 0.8 per 3 holes from the black tees.
 - Handicap = average of the best 40% of the last 10 differentials. Until a player has 5 rounds, the list is padded with 36s, so a new player falls gradually (one −1 round: 36.0 → 15.0).
 - Shown golf-style: a negative number displays as a plus handicap (better than scratch), and the round summary says so.
 - **Provisional, then steady:** the first 5 rounds set the handicap freely (menu shows "provisional, 2 of 5 rounds"). After that, a round counts at most 6 strokes away from the current handicap, so one hot round moves it ~3, not 15. The round summary says when a round was capped.
@@ -89,7 +97,7 @@ Locked shot shapes are struck through; tapping one says how to unlock it. The me
 ## Match play vs. the computer
 
 - **Ladder:** Dusty (28), Marge (14), Ace (4). Dusty is always open; beating an opponent unlocks the next. Records (W–L–H) show on each card.
-- **Pops:** a 3-hole match uses a sixth of the 18-hole handicap gap: `round(|myH − oppH| / 6)` strokes to the higher handicap, given by stroke index (hole 2 = 1, hole 1 = 2, hole 3 = 3). Pops show as small dots on the scorecard.
+- **Pops:** the handicap gap scaled to the match length: `round(|myH − oppH| × holes / 18)` strokes to the higher handicap (a sixth over 3 holes, half over 9), spread by stroke index, one per hole before any hole gets a second. The scorecard shows them in their own row.
 - **Opponent scoring:** its score per hole is par + (handicap + 3)/18 (+0.15 from the black tees), since golfers average about 3 over their handicap; the spread is 0.6 + handicap/60 strokes (higher handicaps are less consistent), clamped to par −2 … par +4.
 - **Alternating shots, by the rules of golf:** the hole is played shot for shot. On the tee the **honor** goes first: a coin toss on hole 1, then the winner of the previous hole (a halve keeps the honor). After that, **whoever is farther from the hole plays next**, so a duffed shot that leaves you behind means you hit again. Once one player is in the hole, the other plays out.
 - **The opponent's shots** come from its hole score, turned into shots (full shots along the hole, the last onto the green, then putts) and played one at a time with an orange ball while the camera follows. Their ball stays on the course between shots, tagged with their initial. Shots never finish in water or out of bounds (they lay up short of a pond); Dusty's drift right (his slice). Tap the course to skip a shot.
@@ -143,6 +151,7 @@ The first game has to be simple and fun, or the game won't catch on.
 2. ~~The come-back-tomorrow loop: 3-hole round, handicap, earned rewards, black tees unlocked by handicap.~~
 3. ~~Match play vs. AI with handicap pops.~~
 4. ~~Balance pass and visible opponent shots.~~
-5. **Next candidates:** 9-hole course, art/audio pass, playtesting with friends (feedback button).
+5. ~~9-hole course.~~
+   **Next candidates:** art/audio pass, guided warm-up for new players, online one-on-one matches.
 6. Online match play, app-store packaging.
 7. Paid tournaments, custom trophies, and the trophy case.

@@ -13,7 +13,7 @@ const PAGE = 'file://' + path.join(__dirname, 'page.html');
   const shot = name => pg.screenshot({ path: path.join(__dirname, name) });
   await pg.goto(PAGE);
   await pg.evaluate(() => localStorage.setItem('pure-strike-v1', JSON.stringify({ best: {}, putt: { att: [0, 0, 0], made: [0, 0, 0] }, rounds: [15, 15, 15, 15, 15].map(d => ({ d })) })));
-  await pg.reload(); await pg.waitForTimeout(400);
+  await pg.reload(); await pg.waitForTimeout(400); await pg.evaluate(() => window.__pureStrike.setLen(3));
   await shot('nav-menu.png');
 
   check('menu offers modes, not tees', await vis('#soloBtn') && await vis('#matchBtn') && !(await pg.$eval('.tee-card.blue', e => e.offsetParent !== null)));

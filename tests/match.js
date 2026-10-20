@@ -13,7 +13,7 @@ const PAGE = 'file://' + path.join(__dirname, 'page.html');
   // a 15-handicap player (five rounds rated 15)
   await pg.goto(PAGE);
   await pg.evaluate(() => localStorage.setItem('pure-strike-v1', JSON.stringify({ best: {}, putt: { att: [0, 0, 0], made: [0, 0, 0] }, rounds: [15, 15, 15, 15, 15].map(d => ({ d })) })));
-  await pg.reload(); await pg.waitForTimeout(400);
+  await pg.reload(); await pg.waitForTimeout(400); await pg.evaluate(() => window.__pureStrike.setLen(3));
 
   await pg.tap('#matchBtn'); await pg.waitForTimeout(200);
   const opps = await pg.$$eval('#oppList button', b => b.map(x => ({ t: x.innerText.replace(/\s+/g, ' '), off: x.disabled })));

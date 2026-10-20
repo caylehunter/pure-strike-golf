@@ -7,7 +7,7 @@ const PAGE = 'file://' + path.join(__dirname, 'page.html');
   const br = await chromium.launch();
   const pg = await br.newPage({ viewport: { width: 390, height: 844 }, hasTouch: true, deviceScaleFactor: 2 });
   const errs = []; pg.on('pageerror', e => errs.push(e.message));
-  await pg.goto(PAGE); await pg.evaluate(() => localStorage.clear()); await pg.reload(); await pg.waitForTimeout(400);
+  await pg.goto(PAGE); await pg.evaluate(() => localStorage.clear()); await pg.reload(); await pg.waitForTimeout(400); await pg.evaluate(() => window.__pureStrike.setLen(3)); await pg.evaluate(() => window.__pureStrike.setLen(3));
   const checks = [];
   const check = (name, ok, info = '') => { checks.push(ok); console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}${info ? ': ' + info : ''}`); };
 
@@ -46,7 +46,7 @@ const PAGE = 'file://' + path.join(__dirname, 'page.html');
   await shot('menu.png');
   // an established 15-handicap shoots 9 (-3): rated +18.0 but counts only 6 strokes better
   await pg.evaluate(() => localStorage.setItem('pure-strike-v1', JSON.stringify({ best: {}, putt: { att: [0, 0, 0], made: [0, 0, 0] }, rounds: [15, 15, 15, 15, 15].map(d => ({ d })) })));
-  await pg.reload(); await pg.waitForTimeout(400);
+  await pg.reload(); await pg.waitForTimeout(400); await pg.evaluate(() => window.__pureStrike.setLen(3));
   check('menu shows an established handicap', (await pg.$eval('#menuHcp', e => e.textContent)) === 'Handicap 15.0 · 5 rounds played');
   await pg.tap('#soloBtn'); await pg.tap('.tee-card.blue'); await pg.waitForTimeout(500);
   for (const [sc, pu] of [[2, 1], [3, 1], [4, 1]]) { await pg.evaluate(([a, b]) => window.__pureStrike.score(a, b), [sc, pu]); await pg.waitForTimeout(150); if (sc !== 4) { await pg.tap('#againBtn'); await pg.waitForTimeout(400); } }

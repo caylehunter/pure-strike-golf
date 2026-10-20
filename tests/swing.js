@@ -22,7 +22,7 @@ async function run(c) {
   await pg.goto(PAGE); await pg.waitForTimeout(400);
   // a player with five level rounds: black tees unlocked, every swing upgrade still at Lv 1
   await pg.evaluate(() => localStorage.setItem('pure-strike-v1', JSON.stringify({ best: {}, putt: { att: [0, 0, 0], made: [0, 0, 0] }, rounds: [0, 0, 0, 0, 0].map(d => ({ d })) })));
-  await pg.reload(); await pg.waitForTimeout(400);
+  await pg.reload(); await pg.waitForTimeout(400); await pg.evaluate(() => window.__pureStrike.setLen(3));
   await pg.tap('#soloBtn'); await pg.tap('.tee-card.' + c.tee); await pg.waitForTimeout(700);
   // hole 1 is a par 3 (irons, no nuke); finish it with the ball in the cup, then play from the par-4 tee
   await pg.evaluate(() => window.__pureStrike.holeOut(3, 2)); await pg.waitForTimeout(200);
