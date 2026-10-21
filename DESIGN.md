@@ -100,7 +100,7 @@ Nine holes, par 36. A round plays **all 9 (default, about 20 minutes) or the fir
 | Hole | Name | Par | Blue | Black | Rank | Character |
 |---|---|---|---|---|---|---|
 | 1 | Pond Carry | 3 | 172 | 204 | 6 | Forced carry over water to a green that tilts right-to-left |
-| 2 | The Cape | 4 | 395 | 440 | 1 | **Signature.** Dogleg right around a lake. The default line goes left of it (about 130 in); a full drive carried over the lake leaves about 95. Short on that line, or a 3 wood, is wet |
+| 2 | The Cape | 4 | 395 | 439 | 1 | **Signature.** Dogleg right around a lake. The default line goes left of it (about 130 in); a full drive carried over the lake leaves about 95. Short on that line, or a 3 wood, is wet |
 | 3 | Big Bend | 5 | 556 | 616 | 7 | Dogleg left; water right of the nuke landing zone |
 | 4 | The Gamble | 4 | 291 | 321 | 9 | **Signature.** Drivable par 4: a pond guards the front-left of the green. Default aim is a layup (about 100 in); a pure driver at the flag finishes on the green; a 90% driver splashes. From the black tees it takes a tailwind or being on fire |
 | 5 | The Moat | 3 | 140 | 162 | 8 | Island green |
