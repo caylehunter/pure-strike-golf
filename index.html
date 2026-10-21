@@ -1118,8 +1118,8 @@ function renderCoach() {
   c.hidden = !line;
   if (line) { $('#coachStep').textContent = line[0]; $('#coachText').textContent = line[1]; }
   $('#swingBtn').classList.toggle('coach-pulse', !!G.tutorial && G.mode === 'aim');
-  /* keep pop-ups clear of the coach card */
-  $('#pops').style.top = G.tutorial || teeCamOn() ? '44%' : '';
+  /* keep pop-ups clear of the coach card, and on the green clear of the hole (below the ball) */
+  $('#pops').style.top = G.putting && G.puttPopY ? G.puttPopY + 'px' : G.tutorial || teeCamOn() ? '44%' : '';
 }
 function startPractice() {
   audio();
@@ -1521,11 +1521,22 @@ function setupAimCam() {
   camT.s = clamp(Math.min(viewH * 0.92 / span, W / Math.max(50, span * 0.42)), 0.6, 12);
   camT.x = (b.x + L.x) / 2; camT.y = (b.y + L.y) / 2 + 6; camT.r = 0;
 }
+/* the lowest edge of whatever sits over the top of the green: the match bar or the coach card */
+function puttClearTop() {
+  let y = viewTop;
+  for (const q of ['#matchBar', '#coach']) { const el = $(q); if (!el.hidden) y = Math.max(y, el.getBoundingClientRect().bottom); }
+  return y;
+}
 function setupPuttCam() {
   const d = hyp(PIN.x - b.x, PIN.y - b.y);
   camT.r = d > 0.05 ? Math.atan2(PIN.x - b.x, PIN.y - b.y) : 0;
-  camT.s = clamp(viewH * 0.5 / Math.max(d, 2.5), 10, 60);
-  const lift = viewH * 0.2 / camT.s;
+  /* the hole sits below the overlays and the PUTT/HOLE pill, so nothing ever covers it */
+  const holeY = Math.max(viewTop + viewH * 0.2, puttClearTop() + 8 + 38 + 30);
+  const ballY = Math.max(viewTop + viewH * 0.7, Math.min(holeY + 140, viewTop + viewH - 40));
+  camT.s = clamp((ballY - holeY) / Math.max(d, 2.5), 6, 60);
+  G.puttPopY = Math.round(ballY + 24);
+  $('#pops').style.top = G.puttPopY + 'px';
+  const lift = (ballY - vcY) / camT.s;
   camT.x = b.x + Math.sin(camT.r) * lift; camT.y = b.y + Math.cos(camT.r) * lift;
   if (hyp(cam.x - camT.x, cam.y - camT.y) > 40) { cam.x = camT.x; cam.y = camT.y; cam.s = camT.s; cam.r = camT.r; }
 }
@@ -2072,7 +2083,7 @@ function draw() {
       ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(0,0,0,.6)'; ctx.strokeText(`${pft} ft`, mx + 16, my); ctx.fillStyle = '#ffcf3f'; ctx.fillText(`${pft} ft`, mx + 16, my);
       const txt = `PUTT ${pft} FT  ·  HOLE ${hft} FT`;
       ctx.font = '800 20px "Barlow Condensed", "Arial Narrow", sans-serif'; ctx.textAlign = 'center';
-      const tw = ctx.measureText(txt).width + 32, ty = viewTop + 34;
+      const tw = ctx.measureText(txt).width + 32, ty = puttClearTop() + 8 + 19;
       ctx.fillStyle = match ? 'rgba(40,120,50,.92)' : 'rgba(7,16,12,.85)'; ctx.beginPath();
       if (ctx.roundRect) ctx.roundRect(W / 2 - tw / 2, ty - 19, tw, 38, 19); else ctx.rect(W / 2 - tw / 2, ty - 19, tw, 38);
       ctx.fill(); ctx.fillStyle = '#ffffff'; ctx.fillText(txt, W / 2, ty + 1);
@@ -2227,6 +2238,8 @@ window.__pureStrike = { score: (strokes, putts) => { G.strokes = strokes; G.putt
   pop: (t, c, s) => pop(t, c, s),
   sound: () => ({ ctx: !!AC, charging: !!charge.o, on: soundOn(), voice: voiceOn(), fireEdge: $('#fireEdge').className, confetti: $('#confetti').children.length }),
   strikeP: (p, n) => { if (G.mode !== 'aim') return false; swingDown(); G.meter.p = p; swingUp(); strike(n); return true; },
+  puttView: () => { const [hx, hy] = w2s(PIN.x, PIN.y), [bx, by] = w2s(b.x, b.y), box = q => { const el = $(q); if (el.hidden) return null; const r = el.getBoundingClientRect(); return { top: r.top, bottom: r.bottom, left: r.left, right: r.right }; };
+    return { hole: { x: hx, y: hy }, ball: { x: bx, y: by }, clearTop: puttClearTop(), coach: box('#coach'), matchBar: box('#matchBar'), pops: [...document.querySelectorAll('#pops .pop')].map(e => { const r = e.getBoundingClientRect(); return { top: r.top, bottom: r.bottom, left: r.left, right: r.right }; }) }; },
   holeOut: (strokes, putts) => { G.strokes = strokes; G.putts = putts; b.x = PIN.x; b.y = PIN.y; b.inCup = true; finishHole(false); }, state: () => ({ hole: HOLE_I, mode: G.mode, hcp: handicap(), rounds: store.rounds.length, earned: earnedIds() }) };
 cam.x = camT.x; cam.y = camT.y; cam.s = camT.s;
 let last = performance.now();
