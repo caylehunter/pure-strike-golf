@@ -25,5 +25,5 @@ npm test
 - `tests/viaduct.js` – hole 8: only a pure Stinger fits the arch, CLANG off the wall, the tee cam's verdict, hide/show
 - `tests/swing.js` – hold/release swing and strike ring: nuke, meltdown, too early/late, cancel, pure, late hook
 - `tests/putting.js` – distance-scaled putting on the practice green
-- `tests/puttview.js` – putting view on two phone sizes: the coach card, match bar, putt pill and pop-ups never cover the hole
+- `tests/puttview.js` – putting view on two phone sizes: the coach card, match bar, putt pill and pop-ups never cover the hole; a full-length putt pull fits on phones and laptops
 - `tests/polish.js` – look and sound: swing hum, fire glow, big callout and confetti, Sound/Announcer switches remembered

@@ -88,6 +88,7 @@ Straight, Draw, Fade, Stinger. Stinger: low flight, less carry, more roll, 35% w
 - The camera turns so the hole is always straight up; the ball sits in the lower-middle of the screen.
 - **Nothing covers the hole.** The camera frames the hole below whatever is showing at the top (the match bar, the warm-up coach card) and below the PUTT/HOLE pill, which itself sits under those. Pop-ups move below the ball while putting. (Playtest: "the putting instruction bubbles can cover the hole.")
 - **Pull down anywhere** and let go. A full pull rolls about **2.2× the distance to the hole + 1.5 yd** (4–25 yd), so short putts get the finest control.
+- A full pull is about 42% of the view's **height** (at least 200 px), never its width, so a laptop or landscape screen has room below the ball for the longest putt. (Playtest: "on laptop I don't have enough room in backswing for longer putts.")
 - While pulling, a **gold circle with a feet label** shows where the ball stops **on flat ground**, and a top pill reads `PUTT X FT · HOLE Y FT` (green when within 1 ft). The player reads slope and adjusts.
 - Green read options: **Slope** (default: contours plus downhill flow dots) or **Off**. The old "Line" mode was removed because it did the read for the player.
 - Physics: stimp-like friction, slope gravity, cup capture with real lip-outs when too firm or off-center.

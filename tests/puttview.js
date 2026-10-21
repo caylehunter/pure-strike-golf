@@ -40,6 +40,21 @@ const PILL = 8 + 38; // the PUTT/HOLE pill sits this far below the lowest top ov
     }
     await pg.close();
   }
+  // laptops and phones alike: pulling from the ball to the bottom of the window reaches a full-strength putt
+  for (const vp of [{ width: 390, height: 844, name: 'iPhone 15' }, { width: 375, height: 667, name: 'iPhone SE' }, { width: 1440, height: 800, name: 'laptop 1440x800' }, { width: 1366, height: 650, name: 'short laptop window 1366x650' }]) {
+    const pg = await br.newPage({ viewport: { width: vp.width, height: vp.height } });
+    pg.on('pageerror', e => errs.push(e.message));
+    await pg.goto(PAGE); await pg.evaluate(() => localStorage.setItem('pure-strike-v1', JSON.stringify({ best: {}, putt: { att: [0, 0, 0], made: [0, 0, 0] }, onboarded: true }))); await pg.reload(); await pg.waitForTimeout(300);
+    await pg.evaluate(() => window.__pureStrike.setLen(3)); await pg.click('#soloBtn'); await pg.click('.tee-card.blue'); await pg.waitForTimeout(500);
+    const pin = await pg.evaluate(() => window.__pureStrike.aim().pin);
+    await pg.evaluate(([x, y]) => window.__pureStrike.shotTo(x, y), [pin.x + 1, pin.y - 13]); await pg.waitForTimeout(2000);
+    const v = await pg.evaluate(() => window.__pureStrike.puttView()), full = +(await pg.$eval('#puttSub', e => e.textContent)).match(/full pull ≈ (\d+)/)[1];
+    await pg.mouse.move(v.ball.x, v.ball.y); await pg.mouse.down(); await pg.mouse.move(v.ball.x, vp.height - 2, { steps: 8 });
+    const got = +(await pg.$eval('#puttMain', e => e.textContent)).match(/(\d+) ft/)[1];
+    await pg.mouse.up();
+    check(`${vp.name}: pulling from the ball to the bottom edge reaches a full putt`, got >= full, `${got} of ${full} ft`);
+    await pg.close();
+  }
   await br.close();
   if (errs.length) { console.log('ERRORS', errs.join('; ')); checks.push(false); }
   if (checks.includes(false)) process.exit(1);

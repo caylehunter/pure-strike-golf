@@ -1709,7 +1709,8 @@ function puttFromDrag() {
   const d = G.drag; if (!d) return null;
   const dxs = d.sx - d.cx, dys = d.sy - d.cy, L = hyp(dxs, dys);
   if (L < 6) return null;
-  const Lmax = Math.max(220, 0.42 * Math.max(W, viewH)), flat = clamp(L / Lmax, 0, 1) * puttRange(), v = Math.sqrt(2 * DECEL.green * flat);
+  /* a full pull is measured against the view's height, never its width: on a wide laptop screen the width would ask for more pull than there is room below the ball */
+  const Lmax = Math.max(200, 0.42 * viewH), flat = clamp(L / Lmax, 0, 1) * puttRange(), v = Math.sqrt(2 * DECEL.green * flat);
   const c = Math.cos(cam.r), n = Math.sin(cam.r), u = dxs / L, w = -dys / L;
   return { vx: (c * u + n * w) * v, vy: (-n * u + c * w) * v, flat };
 }
