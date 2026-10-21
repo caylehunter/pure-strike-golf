@@ -47,6 +47,8 @@ button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 .wind small{font-size:10px;color:var(--muted);letter-spacing:.08em}
 #lie{position:fixed;left:50%;transform:translateX(-50%);bottom:240px;z-index:5;font:700 12px/1 var(--cond);letter-spacing:.12em;text-transform:uppercase;padding:6px 11px;border-radius:99px;background:rgba(7,16,12,.72);border:1px solid var(--line);pointer-events:none;white-space:nowrap}
 #lie.bad{color:#ffd29a}
+#camBtn{all:unset;cursor:pointer;position:fixed;left:max(16px,env(safe-area-inset-left,0px));z-index:6;font:800 12px/1 var(--cond);letter-spacing:.12em;text-transform:uppercase;padding:7px 11px;border-radius:99px;background:rgba(7,16,12,.78);border:1px solid rgba(255,207,63,.5);color:var(--gold)}
+#camBtn:focus-visible{outline:2px solid var(--gold)}
 #coach{position:fixed;left:max(16px,env(safe-area-inset-left,0px));right:max(16px,env(safe-area-inset-right,0px));top:calc(env(safe-area-inset-top,0px) + 64px);z-index:7;max-width:520px;margin:0 auto;display:flex;flex-direction:column;gap:6px;padding:14px 16px;border-radius:16px;background:rgba(10,24,18,.94);border:2px solid var(--gold);box-shadow:0 10px 30px rgba(0,0,0,.45)}
 .coach-step{font:800 12px/1 var(--cond);letter-spacing:.16em;text-transform:uppercase;color:var(--gold)}
 #coachText{font:600 18px/1.35 var(--body);color:var(--text)}
@@ -264,6 +266,7 @@ button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
   <div class="wind" id="wind" aria-label="Wind"><svg viewBox="0 0 24 24" id="windArrow"><path d="M12 2 L19 11 H14.5 V22 H9.5 V11 H5 Z"/></svg><span id="windVal">0</span><small>MPH</small></div>
 </header>
 <div id="lie" hidden></div>
+<button id="camBtn" hidden>Tee cam</button>
 <div id="coach" hidden><span class="coach-step" id="coachStep"></span><span id="coachText"></span><button id="coachSkip">Skip warm-up</button></div>
 <div id="streak" hidden></div>
 <div id="matchBar" hidden><b id="mbStatus"></b><span id="mbTarget"></span></div>
@@ -570,7 +573,9 @@ const ALL_HOLES = [
   },
   {
     /* dogleg left; trees guard the corner */
-    name: 'Tall Timber', par: 4, rank: 2, fw: [85, 410],
+    /* a stone viaduct crosses in front of the tee: only a pure Stinger fits through its arch */
+    name: 'The Viaduct', par: 4, rank: 2, fw: [112, 410],
+    bridge: { y: 100, x: 0, halfW: 3, h: 12, wall: 60 },
     cx: y => -40 * smooth((y - 190) / 170),
     hw: y => { let w = 20 + 3 * Math.sin(y / 47); if (y > 380) w = lerp(w, 12, smooth((y - 380) / 30)); if (y < 110) w = lerp(w, 15, smooth((110 - y) / 25)); return w; },
     green: { x: -40, y: 425, rx: 14, ry: 12 }, pin: { x: -37, y: 428 },
@@ -756,7 +761,7 @@ const REWARDS = [
 ];
 const earnedIds = () => REWARDS.filter(r => r.got()).map(r => r.id);
 const has = id => store.allUnlocked || REWARDS.find(r => r.id === id).got();
-const shapeOpen = sh => sh === 'draw' || sh === 'fade' ? has('shape') : sh === 'stinger' ? has('stinger') : true;
+const shapeOpen = sh => sh === 'draw' || sh === 'fade' ? has('shape') : sh === 'stinger' ? has('stinger') || !!(HOLE && HOLE.bridge) : true;
 /* match play: a ladder of computer opponents; beat one to unlock the next */
 const OPPONENTS = [
   { id: 'dusty', name: 'Dusty', hcp: 28, blurb: 'Weekend hacker with a big slice' },
@@ -852,6 +857,8 @@ function buildShot(p, err, o) {
   const base = G.aimA - Math.atan2(off + curve, carry);
   const em = c.err * (o.nuke ? 1.9 : 1) * (lie === 'rough' ? 1.3 : lie === 'sand' ? 1.2 : 1);
   off += err * em * 7 * sc; curve += err * em * 26 * sc;
+  /* a mishit stinger balloons */
+  if (G.shape === 'stinger') apex *= 1 + Math.abs(err) * 1.2;
   const dx = Math.sin(base), dy = Math.cos(base), rx = Math.cos(base), ry = -Math.sin(base);
   if (o.wind) {
     const w = G.wind, along = w.x * dx + w.y * dy, cross = w.x * rx + w.y * ry;
@@ -889,6 +896,31 @@ function defaultAim() {
   }
   G.aimA = Math.atan2(tx - b.x, ty - b.y);
   G.aimD = Math.min(hyp(tx - b.x, ty - b.y), fullCarry());
+  const B = HOLE.bridge;
+  if (B && b.y < B.y - 1 && !nuke) G.aimA = Math.atan2(B.x - b.x, B.y - b.y);
+}
+/* where a flight crosses the viaduct: height and side offset there, and whether it fits the arch */
+function bridgeCross(F) {
+  const B = HOLE.bridge; if (!B || F.sy >= B.y) return null;
+  let prev = flightPos(F, 0);
+  for (let k = 1; k <= 240; k++) {
+    const p = flightPos(F, k / 240);
+    if (prev.y < B.y && p.y >= B.y) {
+      const t = (B.y - prev.y) / (p.y - prev.y), x = lerp(prev.x, p.x, t), z = lerp(prev.z, p.z, t);
+      return { u: (k - 1 + t) / 240, x, z, ok: Math.abs(x - B.x) < B.halfW - 0.3 && z < B.h - 0.6, high: z >= B.h - 0.6 };
+    }
+    prev = p;
+  }
+  return null;
+}
+function bridgeHit(F, c) {
+  const B = HOLE.bridge;
+  sfx('tree'); sfx('land', 1); vib(20); shake(4);
+  burst(c.x, B.y - 1, 16, ['#a29b88', '#7d776a', '#cfc8b4'], 4, 4, 2.2, 0.8);
+  pop('CLANG', 'miss', c.high ? 'too high for the arch: hit a pure Stinger' : 'missed the arch: aim through the gap');
+  const l = hyp(F.dx, F.dy);
+  b.x = c.x; b.y = B.y - 1.5; b.z = 0; b.vx = -F.dx / l * 2; b.vy = -F.dy / l * 2; b.inCup = false; b.lipped = false;
+  G.bounce = { t: 0, h: Math.min(c.z, 5) }; G.F = null; G.mode = 'roll';
 }
 
 /* ---------- rolling ball ---------- */
@@ -941,6 +973,7 @@ function startHole(i) {
   loadHole(i);
   G.strokes = 0; G.putts = 0; G.nukeArmed = false; G.ballHidden = false; G.timers = []; G.trail = []; parts = []; rings = [];
   if (!shapeOpen(G.shape)) G.shape = 'straight';
+  if (HOLE.bridge) G.shape = 'stinger';
   const mph = G.tee === 'black' ? 4 + Math.random() * 11 : Math.random() * 7, a = Math.random() * TAU;
   G.wind = { x: Math.sin(a) * mph, y: Math.cos(a) * mph, mph };
   b.x = TEES[G.tee].x; b.y = TEES[G.tee].y; b.z = 0; b.vx = b.vy = 0; b.inCup = false; b.lipped = false;
@@ -950,7 +983,7 @@ function startHole(i) {
   const first = !live ? '' : i === 0 ? (M.honor === 'me' ? ' · you won the toss, tee off first' : ` · ${M.opp.name} won the toss, tees off first`)
     : (M.honor === 'me' ? ' · your honor' : ` · ${M.opp.name}'s honor`);
   if (G.tutorial) pop('WARM-UP', 'yds', `${HOLE.name} · Par ${PAR} · ${TEE_YDS[G.tee]} yds · no wind`);
-  else pop(`HOLE ${i + 1}`, 'yds', `${HOLE.name} · Par ${PAR} · ${TEE_YDS[G.tee]} yds${first}`);
+  else pop(`HOLE ${i + 1}`, 'yds', `${HOLE.name} · Par ${PAR} · ${TEE_YDS[G.tee]} yds${HOLE.bridge ? ' · stinger through the arch' : ''}${first}`);
   if (live) { initOpp(); nextTurn(); }
 }
 /* ---------- first-time warm-up: one guided, forgiving hole ---------- */
@@ -990,7 +1023,7 @@ function renderCoach() {
   if (line) { $('#coachStep').textContent = line[0]; $('#coachText').textContent = line[1]; }
   $('#swingBtn').classList.toggle('coach-pulse', !!G.tutorial && G.mode === 'aim');
   /* keep pop-ups clear of the coach card */
-  $('#pops').style.top = G.tutorial ? '44%' : '';
+  $('#pops').style.top = G.tutorial || teeCamOn() ? '44%' : '';
 }
 function startPractice() {
   audio();
@@ -1512,7 +1545,7 @@ function layout() {
   viewTop = hr ? hr.bottom - 12 : 0;
   const vb = dr ? dr.top + 18 : H;
   viewH = Math.max(140, vb - viewTop); vcY = viewTop + viewH / 2;
-  if (dr) { lieEl.style.bottom = (H - dr.top + 6) + 'px'; $('#streak').style.bottom = (H - dr.top + 36) + 'px'; }
+  if (dr) { lieEl.style.bottom = (H - dr.top + 6) + 'px'; $('#streak').style.bottom = (H - dr.top + 36) + 'px'; $('#camBtn').style.bottom = (H - dr.top + 36) + 'px'; }
 }
 
 /* ---------- input ---------- */
@@ -1590,6 +1623,7 @@ $('#shapeSeg').onclick = e => {
 $('#readSeg').onclick = e => { const s = e.target.closest('button'); if (!s) return; G.read = s.dataset.read; flows = []; updatePuttDrag(); syncUI(); };
 document.querySelectorAll('.tee-card').forEach(btn => btn.onclick = () => { if (!btn.disabled) startRound(btn.dataset.tee); });
 $('#practiceBtn').onclick = startPractice;
+$('#camBtn').onclick = () => { G.camOff = !G.camOff; };
 $('#howBtn').onclick = startTutorial;
 $('#coachSkip').onclick = showMenu;
 $('#tutMenu').onclick = showMenu;
@@ -1748,10 +1782,14 @@ function update(dt) {
     let hit = null;
     if (u > 0.04 && u < 1) for (const t of TREES) if (p.z < t.h && Math.abs(t.x - p.x) < t.r && Math.abs(t.y - p.y) < t.r && hyp(t.x - p.x, t.y - p.y) < t.r * 0.85) { hit = t; break; }
     camT.x = p.x + F.dx * 20; camT.y = p.y + F.dy * 20; camT.s = clamp(Math.max(camT.s * 0.995, 2.2), 0.6, 3.4);
-    if (hit) treeHit(F, p);
+    if (F.cross === undefined) F.cross = bridgeCross(F);
+    if (F.cross && !F.cross.ok && u >= F.cross.u) bridgeHit(F, F.cross);
+    else if (hit) treeHit(F, p);
     else if (u >= 1) land(F, p);
   } else if (G.mode === 'roll') {
-    const r = sdt > 0 ? advanceRoll(b, sdt * (G.putting ? 1.5 : 2.5)) : null;
+    const by0 = b.y, r = sdt > 0 ? advanceRoll(b, sdt * (G.putting ? 1.5 : 2.5)) : null;
+    const Bw = HOLE.bridge;
+    if (Bw && by0 < Bw.y && b.y >= Bw.y && Math.abs(b.x - Bw.x) >= Bw.halfW) { b.y = Bw.y - 0.6; b.vy = -Math.abs(b.vy) * 0.3; }
     if (G.bounce) { G.bounce.t += sdt; const t = G.bounce.t; b.z = G.bounce.h * Math.abs(Math.sin(t * 9)) * Math.exp(-t * 5); if (t > 0.9) { G.bounce = null; b.z = 0; } }
     if (G.trail.length) G.trail.shift();
     if (b.lipped) { b.lipped = false; sfx('lip'); pop('LIP OUT', 'miss'); }
@@ -1837,6 +1875,16 @@ function draw() {
   ctx.fillStyle = '#0c0f0c'; circle(PIN.x, PIN.y, Math.max(CUP_R, 3 * px));
 
   for (const t of TREES) if (vis(t.x, t.y, t.r + 2)) drawTree(t, px);
+  if (HOLE.bridge) {
+    const B = HOLE.bridge, x0 = cx(B.y) - CORR - 40, x1 = cx(B.y) + CORR + 40;
+    ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.fillRect(x0, B.y - 5.5, x1 - x0, 3);
+    ctx.fillStyle = '#8f8878'; ctx.fillRect(x0, B.y - 2.5, x1 - x0, 5);
+    ctx.fillStyle = '#a9a291'; ctx.fillRect(x0, B.y + 1.2, x1 - x0, 1.3);
+    ctx.strokeStyle = 'rgba(60,55,45,.5)'; ctx.lineWidth = Math.max(0.3, 1 * px);
+    for (let x = x0; x < x1; x += 4) { ctx.beginPath(); ctx.moveTo(x, B.y - 2.5); ctx.lineTo(x, B.y + 2.5); ctx.stroke(); }
+    ctx.fillStyle = '#2b2a24'; ctx.fillRect(B.x - B.halfW, B.y - 2.5, B.halfW * 2, 5);
+    ctx.fillStyle = 'rgba(120,200,110,.35)'; ctx.fillRect(B.x - B.halfW + 0.6, B.y - 2.5, B.halfW * 2 - 1.2, 5);
+  }
 
   if (G.mode === 'aim' || G.mode === 'power' || G.mode === 'accuracy' || G.mode === 'menu') drawAim(px);
   if (G.mode === 'putt') drawPuttAim(px);
@@ -1894,6 +1942,7 @@ function draw() {
     ctx.fillStyle = '#ffffff'; ctx.font = '400 10px "Bowlby One", "Arial Black", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText(G.match.opp.name[0], mx, my + 0.5);
   }
+  drawTeeCam();
   if (G.mode === 'accuracy') drawStrikeRing();
   if (G.mode === 'putt' && G.drag) {
     const d = G.drag;
@@ -1914,6 +1963,64 @@ function draw() {
       ctx.fill(); ctx.fillStyle = '#ffffff'; ctx.fillText(txt, W / 2, ty + 1);
     }
   }
+}
+function teeCamOn() {
+  const B = HOLE && HOLE.bridge;
+  if (!B || G.camOff || G.practice || G.tutorial) return false;
+  if (G.mode === 'aim' || G.mode === 'power' || G.mode === 'accuracy') return b.y < B.y - 1;
+  return G.mode === 'flight' && G.F && G.F.sy < B.y && b.y < B.y + 25;
+}
+function drawTeeCam() {
+  /* the toggle shows whenever the cam could show; the cam itself also respects the toggle */
+  const camOff = G.camOff; G.camOff = false; const could = teeCamOn(); G.camOff = camOff;
+  $('#camBtn').hidden = !could; $('#camBtn').textContent = camOff ? 'Show tee cam' : 'Hide tee cam';
+  if (!could || camOff) return;
+  const B = HOLE.bridge, flying = G.mode === 'flight';
+  const F = flying ? G.F : previewShot(false), cross = bridgeCross(F);
+  const pw = Math.min(W - 32, 520), ph = Math.round(Math.min(190, pw * 0.5)), px0 = (W - pw) / 2, py0 = viewTop + 10;
+  const a = Math.atan2(F.dx, F.dy), dx = Math.sin(a), dy = Math.cos(a), rx = Math.cos(a), ry = -Math.sin(a);
+  const camX = F.sx - dx * 7, camY = F.sy - dy * 7, camZ = 1.7, hor = py0 + ph * 0.66, ccx = px0 + pw / 2;
+  /* zoom so the top of the viaduct sits just above the panel: the arch reads clearly at any distance */
+  const dW = (B.y - camY) * dy + (B.x - camX) * dx, f = (hor - py0) * 1.15 * dW / (B.h + 9 - camZ);
+  const proj = (x, y, z) => { const ex = x - camX, ey = y - camY, d = ex * dx + ey * dy; if (d < 0.5) return null; return [ccx + f * (ex * rx + ey * ry) / d, hor - f * (z - camZ) / d, d]; };
+  ctx.save();
+  ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(px0, py0, pw, ph, 14); else ctx.rect(px0, py0, pw, ph); ctx.clip();
+  let g = ctx.createLinearGradient(0, py0, 0, hor); g.addColorStop(0, '#7f8b96'); g.addColorStop(1, '#c9cdc8'); ctx.fillStyle = g; ctx.fillRect(px0, py0, pw, hor - py0);
+  g = ctx.createLinearGradient(0, hor, 0, py0 + ph); g.addColorStop(0, '#4f8a3c'); g.addColorStop(1, '#6fae55'); ctx.fillStyle = g; ctx.fillRect(px0, hor, pw, py0 + ph - hor);
+  const dWall = (B.y - camY) * dy + (B.x - camX) * dx;
+  /* tree line behind the viaduct */
+  ctx.fillStyle = '#2f5a33';
+  for (let k = -14; k <= 14; k++) { const q = proj(camX + rx * k * 9 + dx * (dWall + 40), camY + ry * k * 9 + dy * (dWall + 40), 0); if (!q) continue; const r = f * (7 + (k * 37 % 5)) / q[2]; ctx.beginPath(); ctx.arc(q[0], q[1] - r * 0.9, r, 0, Math.PI * 2); ctx.fill(); }
+  /* the viaduct: a wall with one arch */
+  const wl = proj(B.x - 70, B.y, 0), wr = proj(B.x + 70, B.y, 0), top = proj(B.x, B.y, B.h + 9);
+  const al = proj(B.x - B.halfW, B.y, 0), ar = proj(B.x + B.halfW, B.y, 0), spring = proj(B.x, B.y, B.h - B.halfW);
+  if (wl && wr && top && al && ar && spring) {
+    ctx.fillStyle = '#8f8878'; ctx.fillRect(Math.min(wl[0], wr[0]) - 400, top[1], 2000, wl[1] - top[1]);
+    ctx.fillStyle = '#6f6a5d'; ctx.fillRect(Math.min(wl[0], wr[0]) - 400, top[1], 2000, (wl[1] - top[1]) * 0.08);
+    ctx.strokeStyle = 'rgba(60,55,45,.45)'; ctx.lineWidth = 1;
+    for (let k = 1; k < 6; k++) { const yy = top[1] + (wl[1] - top[1]) * k / 6; ctx.beginPath(); ctx.moveTo(px0, yy); ctx.lineTo(px0 + pw, yy); ctx.stroke(); }
+    const rad = (ar[0] - al[0]) / 2;
+    g = ctx.createLinearGradient(0, spring[1] - rad, 0, al[1]); g.addColorStop(0, '#cfd6cc'); g.addColorStop(0.6, '#8fbf72'); g.addColorStop(1, '#5f9a4a');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(al[0], al[1]); ctx.lineTo(al[0], spring[1]); ctx.arc((al[0] + ar[0]) / 2, spring[1], rad, Math.PI, 0); ctx.lineTo(ar[0], ar[1]); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#5c574b'; ctx.lineWidth = 2; ctx.stroke();
+  }
+  /* the planned (or live) flight */
+  const cu = cross ? cross.u : 2;
+  for (let k = 1; k <= 60; k++) {
+    const u = k / 60, p = flightPos(F, u), q = proj(p.x, p.y, p.z); if (!q) continue;
+    const blocked = cross && !cross.ok && u > cu; if (blocked && u > cu + 0.08) break;
+    const behind = cross && u > cu && q[2] > dWall;
+    ctx.fillStyle = blocked ? 'rgba(255,90,70,.95)' : behind ? 'rgba(255,255,255,.55)' : '#ffffff';
+    ctx.beginPath(); ctx.arc(q[0], q[1], Math.max(1.2, 70 / q[2]), 0, Math.PI * 2); ctx.fill();
+  }
+  if (flying) { const q = proj(b.x, b.y, b.z); if (q) { ctx.fillStyle = '#fff'; ctx.strokeStyle = '#000'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(q[0], q[1], Math.max(2.5, 140 / q[2]), 0, Math.PI * 2); ctx.fill(); ctx.stroke(); } }
+  ctx.restore();
+  /* label */
+  ctx.font = '800 12px "Barlow Condensed", "Arial Narrow", sans-serif'; ctx.textBaseline = 'top'; ctx.textAlign = 'left';
+  ctx.fillStyle = 'rgba(7,16,12,.75)'; ctx.fillRect(px0 + 8, py0 + 8, 74, 20); ctx.fillStyle = '#ffcf3f'; ctx.fillText('TEE CAM', px0 + 15, py0 + 12);
+  const msg = !cross ? '' : cross.ok ? `Fits the arch · ${cross.z.toFixed(0)} yds high there` : cross.high ? `Too high for the arch (${B.h} yds): Stinger, pure` : 'Off line: aim through the arch';
+  if (msg && !flying) { ctx.textAlign = 'right'; const tw = ctx.measureText(msg).width + 16; ctx.fillStyle = cross.ok ? 'rgba(30,110,50,.9)' : 'rgba(150,40,30,.92)'; ctx.fillRect(px0 + pw - 8 - tw, py0 + 8, tw, 20); ctx.fillStyle = '#fff'; ctx.fillText(msg, px0 + pw - 16, py0 + 12); }
+  ctx.strokeStyle = 'rgba(255,207,63,.7)'; ctx.lineWidth = 1.5; ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(px0, py0, pw, ph, 14); else ctx.rect(px0, py0, pw, ph); ctx.stroke();
 }
 function drawStrikeRing() {
   const M = G.meter, PW = perfectWin(), cx0 = W / 2, cy0 = vcY;
@@ -1998,6 +2105,10 @@ window.__pureStrike = { score: (strokes, putts) => { G.strokes = strokes; G.putt
   strikeAt: n => { if (G.mode !== 'aim') return false; swingDown(); G.meter.p = 0.7; swingUp(); strike(n); return true; },
   heat: () => ({ streak: G.streak || 0, fire: onFire(), win: perfectWin(), badge: $('#streak').hidden ? '' : $('#streak').textContent, fireShot: !!(G.F && G.F.fire) }),
   coach: () => ({ shown: !$('#coach').hidden, step: $('#coachStep').textContent, text: $('#coachText').textContent, tutorial: !!G.tutorial }),
+  bridge: () => { const F = previewShot(false); return { shape: G.shape, cross: bridgeCross(F), cam: teeCamOn(), hole: HOLE.name }; },
+  setShape: sh => { G.shape = sh; defaultAim(); syncUI(); },
+  ballY: () => b.y,
+  strikeP: (p, n) => { if (G.mode !== 'aim') return false; swingDown(); G.meter.p = p; swingUp(); strike(n); return true; },
   holeOut: (strokes, putts) => { G.strokes = strokes; G.putts = putts; b.x = PIN.x; b.y = PIN.y; b.inCup = true; finishHole(false); }, state: () => ({ hole: HOLE_I, mode: G.mode, hcp: handicap(), rounds: store.rounds.length, earned: earnedIds() }) };
 cam.x = camT.x; cam.y = camT.y; cam.s = camT.s;
 let last = performance.now();

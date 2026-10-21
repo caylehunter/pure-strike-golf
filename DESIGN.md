@@ -34,6 +34,14 @@ Working name. Arcade golf for phones: big, satisfying drives, a real handicap un
 
 Feedback pops: PURE, A TOUCH EARLY/LATE, SLICE/HOOK (tapped early/late), HOLD TO POWER UP, SWING CANCELLED.
 
+## The Viaduct and the tee cam
+
+- A viaduct crosses hole 8 at 100 yards (55 from the blue tees, 100 from the black). It is too tall to fly over; one arch is **6 yards wide and 12 high**.
+- A normal drive reaches the wall about 20 yards high (30 from the black tees): **CLANG**, the ball bounces back. A pure Stinger crosses at about 7 (blue) or 10 (black) yards. A mishit Stinger **balloons** (apex × 1 + 1.2 × error), so the black tees need a pure strike; the blue tees forgive a touch.
+- On a hole with a bridge, Stinger is available to everyone (even before it's unlocked), selected on the tee, and the aim lines up through the arch.
+- **Tee cam:** while the ball is short of the viaduct, a panel at the top shows a behind-the-ball view (sky, tree line, the viaduct and arch in perspective) with the planned flight drawn into it, and says "Fits the arch" or "Too high for the arch" before the swing. During the shot the ball flies through it live. **Hide tee cam** turns it off.
+- Bridges are hole data (`bridge: { y, x, halfW, h }`), so more holes like this are easy to add.
+
 ## Heating up and on fire (NBA Jam heat)
 
 - Consecutive PURE full swings build a streak across holes; putts neither add to it nor break it. A badge above the controls shows it: `Pure ×2`.
@@ -79,7 +87,7 @@ Nine holes, par 36. A round plays **all 9 (default, about 20 minutes) or the fir
 | 5 | The Moat | 3 | 140 | 162 | 8 | Island green |
 | 6 | Long Haul | 5 | 580 | 655 | 3 | A creek crosses at 480; only a nuke gets home in two |
 | 7 | The Ravine | 3 | 196 | 231 | 4 | Long carry over a ravine of water |
-| 8 | Tall Timber | 4 | 385 | 430 | 2 | Dogleg left; trees guard the corner |
+| 8 | The Viaduct | 4 | 385 | 430 | 2 | A stone viaduct crosses in front of the tee; only a pure Stinger fits through its arch. Then a dogleg left with trees at the corner |
 | 9 | Home Stretch | 5 | 524 | 589 | 5 | Lake down the right of the second shot and green |
 
 - Stroke index (who gets pops first) is the rank order of the holes in the round, so a 3-hole round still ranks 1–3.
