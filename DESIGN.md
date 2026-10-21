@@ -63,6 +63,22 @@ Feedback pops: PURE, A TOUCH EARLY/LATE, SLICE/HOOK (tapped early/late), HOLD TO
 | Nuke target (band width past 100%) | 0.06 | 0.09 | 0.13 |
 | Swing tempo (meter + ring speed) | 1.0× | 0.84× | 0.70× |
 
+## Look and sound
+
+Big moments should feel like NBA Jam: loud, quick, and never in the way of the next swing.
+
+- **Callouts** (PURE, NUCLEAR, BIRDIE, …) slam in big and tilted, then settle and float off. NUCLEAR, birdie-or-better and HEATING UP get a spinning starburst behind them.
+- **Swing hum:** holding the swing plays a tone that rises with power and buzzes inside the nuke band, so you can hear where the bar is. It stops when you let go.
+- **Crowd:** roars for a nuke, a holed shot, a birdie or a putt over 20 ft ("drained it"); claps politely for a par; says "ooh" for an approach stuffed inside 12 ft (STUFFED IT); groans at a lip-out, a splash, a CLANG off the viaduct, or when the fire goes out.
+- **Announcer:** the phone's own voice calls the biggest moments: "Nuclear!", "You're heating up!", "You're on fire!", "Birdie!", "Drained it!", "Slam dunk!", "That's the match!". At most one call every 0.7 s.
+- **Fire glow:** the screen edge glows orange while heating up and flickers while on fire.
+- **Trails and rings:** a pure shot leaves a gold trail and a small white ring at the ball; a nuke gets a shock ring at launch and another on landing.
+- **CLANG** off the viaduct is a metal ring with a white flash.
+- **Match:** a chime when you win a hole, a low two-note sound when you lose one; winning the match gets a fanfare, the crowd, applause and confetti; losing gets a sad trombone.
+- **Confetti** for birdie or better, any holed shot from off the green, and winning a match.
+- **Switches:** Sound and Announcer on the pause screen, remembered. Turning Sound off silences everything, including the announcer.
+- Reduced-motion settings soften the shake, flashes, slams and confetti.
+
 ## Shot shaping
 
 Straight, Draw, Fade, Stinger. Stinger: low flight, less carry, more roll, 35% wind effect. Planned as ball-control rewards from hard courses.
