@@ -199,6 +199,11 @@ The first game has to be simple and fun, or the game won't catch on.
 4. ~~Balance pass and visible opponent shots.~~
 5. ~~9-hole course.~~
    ~~Heating up / on fire; guided warm-up for new players.~~
-   **Next candidates:** art/audio pass, plan for the real app (online one-on-one matches).
-6. Online match play, app-store packaging.
-7. Paid tournaments, custom trophies, and the trophy case.
+   ~~Look and sound pass.~~
+6. The real app, planned in the "Pure Strike: Real App Plan" doc (about 17 weeks):
+   - Phase 0, engine rebuild (~2 wks): modules + TypeScript, seeded randomness, every shot replayable from its inputs.
+   - Phase 1, real app (~3 wks): Capacitor iPhone app, sign-in, cloud save, TestFlight.
+   - Phase 2, matches vs friends (~4 wks): invites, async one-hole turns, push, server turn checker.
+   - Phase 3, chat and safety (~2 wks): in-match chat, block/mute/report, account deletion.
+   - Phase 4, tournaments (~4 wks): brackets, $0.99 / $9.99 organizer purchases, trophies.
+   - Phase 5, launch (~2 wks): store listings, privacy policy, recorded announcer, App Review.
