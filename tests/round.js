@@ -20,7 +20,9 @@ const PAGE = 'file://' + path.join(__dirname, 'page.html');
   const chip = await pg.evaluate(() => { window.__pureStrike.place(-12, 190); return window.__pureStrike.aim(); });
   const miss = Math.hypot(chip.x - chip.pin.x, chip.y - chip.pin.y);
   check('chip preview lands on the pin', miss < 1.5, `${chip.club}, lands ${miss.toFixed(1)} yd from pin, mark ${chip.mark}`);
-  check('meter mark says PIN', chip.mark === 'PIN');
+  check('meter mark says PIN and its yardage', /^PIN \d+$/.test(chip.mark), chip.mark);
+  const lbls = await pg.evaluate(() => ({ max: document.querySelector('#mMaxLbl').textContent, nuke: document.querySelector('#lblNuke').textContent }));
+  check('meter shows full-power carry and the nuke carry before the swing', /^\d+$/.test(lbls.max) && /^NUKE \d+$/.test(lbls.nuke), `max ${lbls.max}, ${lbls.nuke}`);
   await pg.waitForTimeout(800); await shot('chip.png');
   // hole 1: birdie 2 with one putt
   await pg.evaluate(() => window.__pureStrike.score(2, 1)); await pg.waitForTimeout(200);

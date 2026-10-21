@@ -119,6 +119,8 @@ button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 #meterLbl span{position:absolute;bottom:0;transform:translateX(-50%);font:800 11px/1 var(--cond);letter-spacing:.12em;white-space:nowrap}
 #lblPin{color:#ff6b6b}
 #lblNuke{color:#ffb38f}
+.m-maxlbl{display:grid;place-items:center;font:800 11px/1 var(--cond);letter-spacing:.04em;color:rgba(255,255,255,.75);font-variant-numeric:tabular-nums}
+.nuke small{font:700 11px/1 var(--cond);letter-spacing:.06em;opacity:.85}
 #swingBtn{all:unset;cursor:pointer;text-align:center;height:58px;border-radius:16px;background:var(--gold);color:#251b00;font:400 23px/58px var(--display);letter-spacing:.05em;box-shadow:0 4px 0 var(--gold-deep),0 10px 24px rgba(0,0,0,.35);touch-action:manipulation}
 #swingBtn:focus-visible{outline:2px solid #fff;outline-offset:3px}
 #swingBtn:active{transform:translateY(2px);box-shadow:0 2px 0 var(--gold-deep)}
@@ -282,7 +284,7 @@ button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
       </div>
       <button id="nukeBtn" class="nuke" aria-pressed="false">
         <svg viewBox="-12 -12 24 24" aria-hidden="true"><circle r="2.3"/><path d="M-1.75 -3.03 L-5 -8.66 A10 10 0 0 1 5 -8.66 L1.75 -3.03 A3.5 3.5 0 0 0 -1.75 -3.03Z"/><path d="M3.5 0 L10 0 A10 10 0 0 1 5 8.66 L1.75 3.03 A3.5 3.5 0 0 0 3.5 0Z"/><path d="M-1.75 3.03 L-5 8.66 A10 10 0 0 1 -10 0 L-3.5 0 A3.5 3.5 0 0 0 -1.75 3.03Z"/></svg>
-        <span>Nuke</span>
+        <span>Nuke</span><small id="nukeYds"></small>
       </button>
     </div>
     <div class="seg" id="shapeSeg" role="group" aria-label="Shot shape">
@@ -296,6 +298,7 @@ button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
       <div class="m m-perfect" id="mPerfect" hidden></div>
       <div class="m m-tick" style="left:30.77%"></div><div class="m m-tick" style="left:50%"></div><div class="m m-tick" style="left:69.23%"></div>
       <div class="m m-max" style="left:88.46%"></div>
+      <div class="m m-maxlbl" id="mMaxLbl"></div>
       <div class="m m-nuke" id="mNuke"></div>
       <div class="m m-pin" id="mPin" hidden></div>
       <div class="m m-needle" id="mNeedle" hidden></div>
@@ -1519,8 +1522,11 @@ function syncUI() {
   if (aiming) { $('#mNuke').classList.remove('in'); $('#mFill').classList.remove('over'); }
   const tp = aimPower();
   const mp = $('#mPin'); mp.hidden = !((aiming || m === 'power') && !(G.nukeArmed && cn)); mp.style.left = pct(tp) + '%';
-  $('#lblPin').hidden = mp.hidden; $('#lblPin').style.left = pct(tp) + '%'; $('#lblPin').textContent = markName;
-  $('#lblNuke').hidden = $('#mNuke').hidden; $('#lblNuke').style.left = pct((na + nz) / 2) + '%';
+  $('#lblPin').hidden = mp.hidden; $('#lblPin').style.left = pct(tp) + '%'; $('#lblPin').textContent = `${markName} ${Math.round(G.aimD)}`;
+  const nukeYds = Math.round(c.carry * 1.62), armedNow = G.nukeArmed && cn;
+  setBar($('#mMaxLbl'), 1.0, VMAX); $('#mMaxLbl').textContent = Math.round(fullCarry()); $('#mMaxLbl').hidden = armedNow || mp.hidden;
+  $('#nukeYds').textContent = cn ? `${nukeYds}` : '';
+  $('#lblNuke').hidden = $('#mNuke').hidden; $('#lblNuke').style.left = pct((na + nz) / 2) + '%'; $('#lblNuke').textContent = `NUKE ${nukeYds}`;
   if (aiming) { setBar($('#mFill'), 0, 0); $('#mNeedle').hidden = true; }
 
   if (putting) {
@@ -1977,7 +1983,8 @@ function drawTeeCam() {
   if (!could || camOff) return;
   const B = HOLE.bridge, flying = G.mode === 'flight';
   const F = flying ? G.F : previewShot(false), cross = bridgeCross(F);
-  const pw = Math.min(W - 32, 520), ph = Math.round(Math.min(190, pw * 0.5)), px0 = (W - pw) / 2, py0 = viewTop + 10;
+  const mbEl = $('#matchBar'), mbBottom = mbEl.hidden ? 0 : mbEl.getBoundingClientRect().bottom;
+  const pw = Math.min(W - 32, 520), ph = Math.round(Math.min(190, pw * 0.5)), px0 = (W - pw) / 2, py0 = Math.max(viewTop + 10, mbBottom + 8);
   const a = Math.atan2(F.dx, F.dy), dx = Math.sin(a), dy = Math.cos(a), rx = Math.cos(a), ry = -Math.sin(a);
   const camX = F.sx - dx * 7, camY = F.sy - dy * 7, camZ = 1.7, hor = py0 + ph * 0.66, ccx = px0 + pw / 2;
   /* zoom so the top of the viaduct sits just above the panel: the arch reads clearly at any distance */

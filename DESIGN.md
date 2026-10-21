@@ -39,7 +39,7 @@ Feedback pops: PURE, A TOUCH EARLY/LATE, SLICE/HOOK (tapped early/late), HOLD TO
 - A viaduct crosses hole 8 at 100 yards (55 from the blue tees, 100 from the black). It is too tall to fly over; one arch is **6 yards wide and 12 high**.
 - A normal drive reaches the wall about 20 yards high (30 from the black tees): **CLANG**, the ball bounces back. A pure Stinger crosses at about 7 (blue) or 10 (black) yards. A mishit Stinger **balloons** (apex × 1 + 1.2 × error), so the black tees need a pure strike; the blue tees forgive a touch.
 - On a hole with a bridge, Stinger is available to everyone (even before it's unlocked), selected on the tee, and the aim lines up through the arch.
-- **Tee cam:** while the ball is short of the viaduct, a panel at the top shows a behind-the-ball view (sky, tree line, the viaduct and arch in perspective) with the planned flight drawn into it, and says "Fits the arch" or "Too high for the arch" before the swing. During the shot the ball flies through it live. **Hide tee cam** turns it off.
+- **Tee cam:** while the ball is short of the viaduct, a panel at the top shows a behind-the-ball view (sky, tree line, the viaduct and arch in perspective) with the planned flight drawn into it, and says "Fits the arch" or "Too high for the arch" before the swing. During the shot the ball flies through it live. **Hide tee cam** turns it off. In a match the panel sits below the match bar so neither covers the other.
 - Bridges are hole data (`bridge: { y, x, halfW, h }`), so more holes like this are easy to add.
 
 ## Heating up and on fire (NBA Jam heat)
@@ -54,6 +54,7 @@ Feedback pops: PURE, A TOUCH EARLY/LATE, SLICE/HOOK (tapped early/late), HOLD TO
 - The bar hangs at the top for 80 ms, so the band is one continuous window (~0.2 s at Lv 1).
 - Let go in the band, then strike: **NUCLEAR** (~440–450 yd carry). A bad strike gives **MELTDOWN** (early: nuclear slice, late: nuclear hook).
 - Let go before the band → TOO EARLY; after it → TOO LATE. Both still hit a normal drive.
+- **Know the number before you swing.** The Nuke button shows the nuke carry (e.g. "Nuke 437"), and once armed the band says NUKE 437. Unarmed, the meter shows the club's full-power carry just past the 100% line, and the aim mark reads AIM/PIN plus its yardage. A pure strike goes the full number, so on short holes dial power back (or don't arm) instead of expecting the game to hold it.
 
 ### Upgrade levels (earned; see Rewards)
 
