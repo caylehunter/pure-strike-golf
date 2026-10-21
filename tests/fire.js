@@ -9,7 +9,7 @@ const PAGE = 'file://' + path.join(__dirname, 'page.html');
   const errs = []; pg.on('pageerror', e => errs.push(e.message));
   const checks = [];
   const check = (name, ok, info = '') => { checks.push(ok); console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}${info ? ': ' + info : ''}`); };
-  await pg.goto(PAGE); await pg.evaluate(() => localStorage.clear()); await pg.reload(); await pg.waitForTimeout(400);
+  await pg.goto(PAGE); await pg.evaluate(() => localStorage.setItem('pure-strike-v1', JSON.stringify({ best: {}, putt: { att: [0, 0, 0], made: [0, 0, 0] }, onboarded: true }))); await pg.reload(); await pg.waitForTimeout(400);
   await pg.tap('#soloBtn'); await pg.tap('.tee-card.blue'); await pg.waitForTimeout(500);
   const heat = () => pg.evaluate(() => window.__pureStrike.heat());
   const popsText = async ms => { const seen = new Set(); for (let i = 0; i < ms / 100; i++) { await pg.waitForTimeout(100); const t = await pg.$eval('#pops', e => e.innerText.replace(/\s+/g, ' ').trim()); if (t) seen.add(t); } return [...seen].join(' | '); };

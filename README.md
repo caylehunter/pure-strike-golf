@@ -15,6 +15,7 @@ npm install
 npm test
 ```
 
+- `tests/warmup.js` – first launch: welcome question, guided warm-up with coach card, gimme, You're ready, starting handicap, testing switch hidden
 - `tests/round.js` – a full 3-hole round: scorecard, handicap update, unlocks
 - `tests/match.js` – match play: pops, the per-hole target, early finish (2 & 1), ladder unlocks
 - `tests/nav.js` – menu flow, Back buttons, pause/resume/quit, conceding a match hole

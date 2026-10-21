@@ -11,7 +11,7 @@ const PAGE = 'file://' + path.join(__dirname, 'page.html');
   const errs = []; pg.on('pageerror', e => errs.push(e.message));
   const checks = [];
   const check = (name, ok, info = '') => { checks.push(ok); console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}${info ? ': ' + info : ''}`); };
-  await pg.goto(PAGE); await pg.waitForTimeout(400);
+  await pg.goto(PAGE); await pg.evaluate(() => localStorage.setItem('pure-strike-v1', JSON.stringify({ best: {}, putt: { att: [0, 0, 0], made: [0, 0, 0] }, onboarded: true }))); await pg.reload(); await pg.waitForTimeout(400);
   const btn = await pg.$('#fbBtn'); const box = await btn.boundingBox();
   const last = await pg.$$eval('#menu .card > *', els => els[els.length - 1].id);
   check('feedback button is the last thing on the menu, big, and on screen without scrolling', last === 'fbBtn' && box.height >= 56 && box.y + box.height <= 844, `height ${Math.round(box.height)}px, bottom at ${Math.round(box.y + box.height)}px of 844`);

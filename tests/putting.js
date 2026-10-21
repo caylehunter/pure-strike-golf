@@ -9,7 +9,7 @@ const PUTTS = 8, MAX_LEFT_FT = 8;
   const br = await chromium.launch();
   const pg = await br.newPage({ viewport: { width: 390, height: 844 }, hasTouch: true, deviceScaleFactor: 2 });
   const errs = []; pg.on('pageerror', e => errs.push(e.message));
-  await pg.goto(PAGE); await pg.waitForTimeout(400);
+  await pg.goto(PAGE); await pg.evaluate(() => localStorage.setItem('pure-strike-v1', JSON.stringify({ best: {}, putt: { att: [0, 0, 0], made: [0, 0, 0] }, onboarded: true }))); await pg.reload(); await pg.waitForTimeout(400);
   await pg.click('#practiceBtn');
   let fails = 0;
   for (let k = 0; k < PUTTS; k++) {

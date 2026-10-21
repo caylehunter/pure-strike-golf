@@ -6,6 +6,15 @@ Working name. Arcade golf for phones: big, satisfying drives, a real handicap un
 
 **Every objective must be obvious. It doesn't have to be easy, but it has to be obvious.** The player should always be able to see what they are aiming for, and after a miss the game says why (early, late, cancelled).
 
+## First-time players
+
+- **Welcome (first launch only):** "Have you played golf before?" Never → starting handicap 36; A little → 24; I'm a golfer → enter a real handicap (−5 to 36). Until 5 rounds are posted, the handicap is averaged with this starting number instead of 36. "Skip, go to the menu" is always there.
+- **Guided warm-up** on Short Fuse (par 4, blue tees, no wind): a coach card says the one thing to do now (hold the yellow button → let go at the AIM/PIN mark → tap when the rings meet → the approach → putting). The yellow button pulses when it's time to press it; pop-ups move below the card.
+- **Forgiving on purpose:** 20% slower meter and ring, a bigger sweet spot (0.09), misses curve 60% less, and putts inside 3 feet are conceded ("GIMME").
+- **"You're ready!"** lists what they did (first PURE, first putt) and offers **Play 3 holes** or the menu. The warm-up never posts to the handicap.
+- Replay it any time from the menu: **How to play (60-second warm-up)**.
+- **Testing: unlock everything** shows only for the owner, on a link ending in `#testing`, or if it's already switched on.
+
 ## Navigation
 
 - **Menu → mode first:** Stroke play or Match play (plus Putting practice). Each opens a setup screen with a Back button; nothing starts until a tee (stroke play) or an opponent (match play) is chosen.
@@ -164,6 +173,7 @@ The first game has to be simple and fun, or the game won't catch on.
 3. ~~Match play vs. AI with handicap pops.~~
 4. ~~Balance pass and visible opponent shots.~~
 5. ~~9-hole course.~~
-   **Next candidates:** art/audio pass, guided warm-up for new players, online one-on-one matches.
+   ~~Heating up / on fire; guided warm-up for new players.~~
+   **Next candidates:** art/audio pass, plan for the real app (online one-on-one matches).
 6. Online match play, app-store packaging.
 7. Paid tournaments, custom trophies, and the trophy case.

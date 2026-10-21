@@ -7,7 +7,7 @@ const PAGE = 'file://' + path.join(__dirname, 'page.html');
   const br = await chromium.launch();
   const pg = await br.newPage({ viewport: { width: 390, height: 844 }, hasTouch: true, deviceScaleFactor: 2 });
   const errs = []; pg.on('pageerror', e => errs.push(e.message));
-  await pg.goto(PAGE); await pg.evaluate(() => localStorage.clear()); await pg.reload(); await pg.waitForTimeout(400); await pg.evaluate(() => window.__pureStrike.setLen(3)); await pg.evaluate(() => window.__pureStrike.setLen(3));
+  await pg.goto(PAGE); await pg.evaluate(() => localStorage.setItem('pure-strike-v1', JSON.stringify({ best: {}, putt: { att: [0, 0, 0], made: [0, 0, 0] }, onboarded: true }))); await pg.reload(); await pg.waitForTimeout(400); await pg.evaluate(() => window.__pureStrike.setLen(3)); await pg.evaluate(() => window.__pureStrike.setLen(3));
   const checks = [];
   const check = (name, ok, info = '') => { checks.push(ok); console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}${info ? ': ' + info : ''}`); };
 

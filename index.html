@@ -47,6 +47,19 @@ button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 .wind small{font-size:10px;color:var(--muted);letter-spacing:.08em}
 #lie{position:fixed;left:50%;transform:translateX(-50%);bottom:240px;z-index:5;font:700 12px/1 var(--cond);letter-spacing:.12em;text-transform:uppercase;padding:6px 11px;border-radius:99px;background:rgba(7,16,12,.72);border:1px solid var(--line);pointer-events:none;white-space:nowrap}
 #lie.bad{color:#ffd29a}
+#coach{position:fixed;left:max(16px,env(safe-area-inset-left,0px));right:max(16px,env(safe-area-inset-right,0px));top:calc(env(safe-area-inset-top,0px) + 64px);z-index:7;max-width:520px;margin:0 auto;display:flex;flex-direction:column;gap:6px;padding:14px 16px;border-radius:16px;background:rgba(10,24,18,.94);border:2px solid var(--gold);box-shadow:0 10px 30px rgba(0,0,0,.45)}
+.coach-step{font:800 12px/1 var(--cond);letter-spacing:.16em;text-transform:uppercase;color:var(--gold)}
+#coachText{font:600 18px/1.35 var(--body);color:var(--text)}
+#coachSkip{all:unset;cursor:pointer;align-self:flex-end;font:700 12px/1 var(--cond);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding:6px 0}
+#coachSkip:focus-visible{outline:2px solid var(--gold)}
+#swingBtn.coach-pulse{animation:coachPulse 1s ease-in-out infinite}
+@keyframes coachPulse{50%{box-shadow:0 4px 0 var(--gold-deep),0 0 0 8px rgba(255,207,63,.35)}}
+#wcGolfer{flex-wrap:wrap}
+#wcHcp{width:90px;box-sizing:border-box;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.07);color:var(--text);font:600 18px/1 var(--body);padding:10px;-webkit-user-select:text;user-select:text}
+.tut-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.tut-list li{font:600 16px/1.3 var(--body);color:#d5e6d9}
+.tut-list b{color:var(--gold)}
+@media (prefers-reduced-motion:reduce){#swingBtn.coach-pulse{animation:none}}
 #streak{position:fixed;right:max(16px,env(safe-area-inset-right,0px));z-index:5;font:800 12px/1 var(--cond);letter-spacing:.12em;text-transform:uppercase;padding:6px 10px;border-radius:99px;background:rgba(7,16,12,.72);border:1px solid rgba(255,207,63,.5);color:var(--gold);pointer-events:none;white-space:nowrap}
 #streak.heat{background:rgba(255,150,40,.25);border-color:#ffa53a;color:#ffd08a}
 #streak.fire{background:var(--nuke);border-color:var(--nuke);color:#1d0900;box-shadow:0 0 16px rgba(255,90,31,.7)}
@@ -251,6 +264,7 @@ button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
   <div class="wind" id="wind" aria-label="Wind"><svg viewBox="0 0 24 24" id="windArrow"><path d="M12 2 L19 11 H14.5 V22 H9.5 V11 H5 Z"/></svg><span id="windVal">0</span><small>MPH</small></div>
 </header>
 <div id="lie" hidden></div>
+<div id="coach" hidden><span class="coach-step" id="coachStep"></span><span id="coachText"></span><button id="coachSkip">Skip warm-up</button></div>
 <div id="streak" hidden></div>
 <div id="matchBar" hidden><b id="mbStatus"></b><span id="mbTarget"></span></div>
 <div id="pops"></div>
@@ -307,6 +321,7 @@ button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
     <button class="tee-card mode" id="soloBtn"><span class="av">S</span><span class="tc-main"><b>Stroke play</b><small>Play 9 holes (or a quick 3), post a score, lower your handicap</small></span></button>
     <button class="tee-card mode match" id="matchBtn"><span class="av">M</span><span class="tc-main"><b>Match play</b><small>Beat Dusty, Marge and Ace hole by hole</small></span></button>
     <button class="ghost" id="practiceBtn">Putting practice</button>
+    <button class="ghost" id="howBtn">How to play (60-second warm-up)</button>
     <div class="rewards">
       <div class="rw-head"><b>Rewards</b><small>Earn them by playing</small></div>
       <ul id="rewardList"></ul>
@@ -351,6 +366,31 @@ button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
     <button class="primary" id="fbSend">Send feedback</button>
     <button class="ghost" id="fbCopy" hidden>Copy my feedback</button>
     <button class="ghost" id="fbBack">Back</button>
+  </div>
+</div>
+
+<div class="overlay" id="welcome" hidden>
+  <div class="card">
+    <span class="eyebrow">Welcome to</span>
+    <div class="brand"><h1>PURE<br><span>STRIKE</span></h1></div>
+    <h2 class="ms-title">Have you played golf before?</h2>
+    <p class="ms-note">This sets your starting handicap, so matches against friends start fair. It settles in over your first 5 rounds.</p>
+    <button class="tee-card mode" data-exp="never"><span class="av">1</span><span class="tc-main"><b>Never</b><small>Start as a rookie: you get the most strokes</small></span></button>
+    <button class="tee-card mode" data-exp="some"><span class="av">2</span><span class="tc-main"><b>A little</b><small>Start in the middle</small></span></button>
+    <button class="tee-card mode" data-exp="golfer"><span class="av">3</span><span class="tc-main"><b>I'm a golfer</b><small>Enter your real handicap</small></span></button>
+    <div class="row" id="wcGolfer" hidden><label class="fb-lbl" for="wcHcp">Your handicap</label><input id="wcHcp" type="number" inputmode="decimal" min="-5" max="36" step="0.1" placeholder="12"><button class="small-btn" id="wcGo">Continue</button></div>
+    <button class="ghost" id="wcSkip">Skip, go to the menu</button>
+  </div>
+</div>
+
+<div class="overlay" id="tutDone" hidden>
+  <div class="card">
+    <span class="eyebrow">Warm-up complete</span>
+    <h2 class="ms-title">You're ready!</h2>
+    <ul class="tut-list" id="tutList"></ul>
+    <p class="ms-note">Next: play a quick 3-hole round. Your score starts your handicap.</p>
+    <button class="primary" id="tutPlay">Play 3 holes</button>
+    <button class="ghost" id="tutMenu">Main menu</button>
   </div>
 </div>
 
@@ -699,7 +739,7 @@ if (typeof store.best.blue === 'number' && store.best.blue < 6) store.best = {};
 const rating = tee => coursePar() + (tee === 'black' ? 0.8 * HOLES.length / 3 : 0);
 function handicap() {
   const d = store.rounds.slice(-10).map(r => r.d);
-  while (d.length < 5) d.push(36);
+  while (d.length < 5) d.push(store.startH != null ? store.startH : 36);
   d.sort((x, y) => x - y);
   const k = Math.max(1, Math.round(d.length * 0.4));
   return clamp(Math.round(d.slice(0, k).reduce((x, y) => x + y, 0) / k * 10) / 10, -10, 36);
@@ -733,7 +773,7 @@ const shapeReward = sh => REWARDS.find(r => r.id === (sh === 'stinger' ? 'stinge
 /* meter runs to 125%; the nuke band sits beyond 100% and widens with the target upgrade */
 const VMAX = 1.15, HANG = 0.08;
 const nukeBand = () => [1.0, 1.0 + [0.06, 0.09, 0.13][has('target2') + has('target3')]];
-const tempo = () => [1, 0.84, 0.7][has('tempo2') + has('tempo3')];
+const tempo = () => [1, 0.84, 0.7][has('tempo2') + has('tempo3')] * (G.tutorial ? 0.8 : 1);
 const inBand = p => { const [a, z] = nukeBand(); return p >= a && p <= z; };
 function save() { try { localStorage.setItem('pure-strike-v1', JSON.stringify(store)); } catch (e) {} }
 
@@ -909,8 +949,48 @@ function startHole(i) {
   const M = G.match, live = !!M;
   const first = !live ? '' : i === 0 ? (M.honor === 'me' ? ' · you won the toss, tee off first' : ` · ${M.opp.name} won the toss, tees off first`)
     : (M.honor === 'me' ? ' · your honor' : ` · ${M.opp.name}'s honor`);
-  pop(`HOLE ${i + 1}`, 'yds', `${HOLE.name} · Par ${PAR} · ${TEE_YDS[G.tee]} yds${first}`);
+  if (G.tutorial) pop('WARM-UP', 'yds', `${HOLE.name} · Par ${PAR} · ${TEE_YDS[G.tee]} yds · no wind`);
+  else pop(`HOLE ${i + 1}`, 'yds', `${HOLE.name} · Par ${PAR} · ${TEE_YDS[G.tee]} yds${first}`);
   if (live) { initOpp(); nextTurn(); }
+}
+/* ---------- first-time warm-up: one guided, forgiving hole ---------- */
+const WARMUP_HOLE = 3;
+function startTutorial() {
+  audio();
+  hideOverlays();
+  G.tutorial = { pure: false, holed: false, gimme: false };
+  G.tee = 'blue'; G.practice = false; G.match = null; G.longest = 0; G.shape = 'straight'; G.streak = 0;
+  setRoundHoles(9); G.round = null;
+  startHole(WARMUP_HOLE);
+  G.wind = { x: 0, y: 0, mph: 0 }; syncUI();
+}
+function endTutorial() { G.tutorial = null; store.onboarded = true; save(); }
+function tutorialDone() {
+  const T = G.tutorial; G.mode = 'done';
+  endTutorial();
+  $('#tutList').innerHTML = [
+    T.pure ? '<li><b>✓</b> You hit a PURE strike</li>' : '<li><b>✓</b> You hit your first drive (a PURE is when the ring lands right on the circle)</li>',
+    `<li><b>✓</b> You ${T.gimme ? 'putted close enough for a gimme' : 'holed a putt'}</li>`,
+    '<li><b>✓</b> You know the swing: hold, let go, tap</li>'
+  ].join('');
+  syncUI(); $('#tutDone').hidden = false;
+}
+function coachLine() {
+  const m = G.mode, first = G.strokes === 0;
+  if (m === 'aim') return first ? ['Shot 1 of 3 · The drive', 'Hold the yellow button to power up. The dotted line shows where the ball will land.']
+    : ['Shot 2 of 3 · The approach', 'Same again: hold the button, let go at the PIN mark on the bar, then tap when the rings meet.'];
+  if (m === 'power') return [first ? 'Shot 1 of 3 · The drive' : 'Shot 2 of 3 · The approach', `Let go when the bar reaches the ${aimAtPin() ? 'PIN' : 'AIM'} mark.`];
+  if (m === 'accuracy') return ['Now tap', 'Tap when the white ring meets the gold circle. Right on it is a PURE.'];
+  if (m === 'putt') return ['Last step · Putting', 'Pull down anywhere on the green. The gold circle shows where the ball stops on flat ground: put it just past the hole, then let go.'];
+  return null;
+}
+function renderCoach() {
+  const c = $('#coach'), line = G.tutorial && coachLine();
+  c.hidden = !line;
+  if (line) { $('#coachStep').textContent = line[0]; $('#coachText').textContent = line[1]; }
+  $('#swingBtn').classList.toggle('coach-pulse', !!G.tutorial && G.mode === 'aim');
+  /* keep pop-ups clear of the coach card */
+  $('#pops').style.top = G.tutorial ? '44%' : '';
 }
 function startPractice() {
   audio();
@@ -936,7 +1016,7 @@ function enterPutt() {
   G.mode = 'putt'; G.putting = true; G.drag = null; G.pred = null; G.trail = []; flows = [];
   syncUI(); setupPuttCam();
 }
-function hideOverlays() { ['#menu', '#result', '#matchSetup', '#soloSetup', '#pause', '#feedback'].forEach(q => $(q).hidden = true); G.paused = false; }
+function hideOverlays() { ['#menu', '#result', '#matchSetup', '#soloSetup', '#pause', '#feedback', '#welcome', '#tutDone'].forEach(q => $(q).hidden = true); G.paused = false; }
 const gauss = () => { let u = 0; for (let k = 0; k < 6; k++) u += Math.random(); return (u - 3) / 0.7071; };
 function startMatch(oi, tee) {
   setRoundHoles(G.len);
@@ -1054,7 +1134,7 @@ const RING_START = 0.9, RING_R = 44, RING_K = 2.4;
 /* NBA Jam heat: 3 pure swings in a row heats you up, 4 sets you on fire until a swing isn't pure */
 const HEAT_AT = 3, FIRE_AT = 4;
 const onFire = () => !G.practice && (G.streak || 0) >= FIRE_AT;
-const perfectWin = () => (G.tee === 'blue' || G.practice ? 0.05 : 0.035) * (onFire() ? 1.6 : 1);
+const perfectWin = () => G.tutorial ? 0.09 : (G.tee === 'blue' || G.practice ? 0.05 : 0.035) * (onFire() ? 1.6 : 1);
 function swingDown() {
   audio();
   if (G.mode === 'opp') return skipOppShot();
@@ -1077,7 +1157,8 @@ function swingUp() {
 function strike(n) {
   const M = G.meter, PW = perfectWin(), fire = onFire();
   const perfect = Math.abs(n) <= PW;
-  const err = perfect ? 0 : clamp(n / 0.15, -1, 1);
+  const err = perfect ? 0 : clamp(n / 0.15, -1, 1) * (G.tutorial ? 0.4 : 1);
+  if (G.tutorial && perfect) G.tutorial.pure = true;
   const armed = G.nukeArmed && canNuke(), nuke = armed && inBand(M.lock);
   G.shotFromTee = onTee(); G.lastPos = { x: b.x, y: b.y };
   const lie = surface(b.x, b.y);
@@ -1175,6 +1256,7 @@ function settle() {
     pop(`${Math.round(d)} YDS`, 'yds', 'drive');
   }
   G.shotFromTee = false;
+  if (G.tutorial && G.putting && hyp(b.x - PIN.x, b.y - PIN.y) < 1) { G.tutorial.gimme = true; pop('GIMME', 'pure', "that's good: pick it up"); return holed(false); }
   if (G.strokes >= 12) return finishHole(true);
   nextTurn();
 }
@@ -1182,6 +1264,7 @@ const NAMES = { '-4': 'Condor', '-3': 'Albatross', '-2': 'Eagle', '-1': 'Birdie'
 const scoreName = n => n === 1 ? 'Hole in One' : (NAMES[String(n - PAR)] || `+${n - PAR}`);
 function holed(fromAir) {
   G.mode = 'holed'; b.x = PIN.x; b.y = PIN.y; b.vx = b.vy = 0; b.z = 0; G.ballHidden = true; G.F = null; G.bounce = null;
+  if (G.tutorial) G.tutorial.holed = true;
   sfx('cup'); vib([20, 40, 20]);
   burst(PIN.x, PIN.y, 30, ['#ffcf3f', '#ffffff', '#ff5a1f', '#3d8bff'], 2.5, 9, 2.4, 1.2);
   if (G.practice) return practiceResult(true);
@@ -1191,6 +1274,7 @@ function holed(fromAir) {
   later(2.1, () => turnsLive() && !G.opp.holed ? nextTurn() : finishHole(false));
 }
 function finishHole(pickedUp, conceded = false) {
+  if (G.tutorial) return tutorialDone();
   G.mode = 'done';
   const R = G.round, d = G.strokes - PAR;
   R.scores[HOLE_I] = G.strokes; R.putts[HOLE_I] = G.putts;
@@ -1319,6 +1403,7 @@ const pct = v => ((v + 0.15) / (VMAX + 0.15) * 100);
 function setBar(el, a, bb) { el.style.left = pct(a) + '%'; el.style.width = Math.max(0, pct(bb) - pct(a)) + '%'; }
 function syncUI() {
   const m = G.mode, putting = G.putting && m !== 'aim';
+  renderCoach();
   const MB = G.match, mb = $('#matchBar');
   mb.hidden = !MB || m === 'menu' || m === 'done';
   if (!mb.hidden) {
@@ -1355,7 +1440,7 @@ function syncUI() {
   } else {
     const R = G.round, done = R ? R.scores.filter((x, i) => i !== HOLE_I && x != null) : [];
     const tp = done.reduce((x, y) => x + y, 0) - HOLES.slice(0, done.length).reduce((x, h) => x + h.par, 0);
-    $('#holeLbl').textContent = `Hole ${HOLE_I + 1} of ${HOLES.length}` + (done.length ? ` · ${tp === 0 ? 'E' : tp > 0 ? '+' + tp : tp}` : '');
+    $('#holeLbl').textContent = G.tutorial ? 'Warm-up' : `Hole ${HOLE_I + 1} of ${HOLES.length}` + (done.length ? ` · ${tp === 0 ? 'E' : tp > 0 ? '+' + tp : tp}` : '');
     $('#holeVal').textContent = `Par ${PAR} · ${TEE_YDS[G.tee]} yds`;
     $('#strokeLbl').textContent = 'Shot'; $('#strokeVal').textContent = Math.min(G.strokes + 1, 12);
   }
@@ -1505,6 +1590,21 @@ $('#shapeSeg').onclick = e => {
 $('#readSeg').onclick = e => { const s = e.target.closest('button'); if (!s) return; G.read = s.dataset.read; flows = []; updatePuttDrag(); syncUI(); };
 document.querySelectorAll('.tee-card').forEach(btn => btn.onclick = () => { if (!btn.disabled) startRound(btn.dataset.tee); });
 $('#practiceBtn').onclick = startPractice;
+$('#howBtn').onclick = startTutorial;
+$('#coachSkip').onclick = showMenu;
+$('#tutMenu').onclick = showMenu;
+$('#tutPlay').onclick = () => { G.len = 3; startRound('blue'); G.len = store.len === 3 ? 3 : 9; };
+const START_H = { never: 36, some: 24 };
+document.querySelectorAll('#welcome [data-exp]').forEach(btn => btn.onclick = () => {
+  if (btn.dataset.exp === 'golfer') { $('#wcGolfer').hidden = false; $('#wcHcp').focus(); return; }
+  store.startH = START_H[btn.dataset.exp]; save(); startTutorial();
+});
+$('#wcGo').onclick = () => {
+  const v = parseFloat($('#wcHcp').value);
+  if (!isFinite(v)) { $('#wcHcp').focus(); return; }
+  store.startH = clamp(Math.round(v * 10) / 10, -5, 36); save(); startTutorial();
+};
+$('#wcSkip').onclick = () => { store.onboarded = true; save(); showMenu(); };
 /* feedback: saved to the artifact's own store when this viewer may write it; otherwise copied for a text message */
 const fbTags = new Set();
 $('#fbBtn').onclick = () => { $('#menu').hidden = true; $('#feedback').hidden = false; $('#fbStatus').textContent = ''; $('#fbStatus').className = 'fb-status'; $('#fbCopy').hidden = true; setTimeout(() => $('#fbText').focus(), 50); };
@@ -1593,6 +1693,7 @@ $('#resMenu').onclick = showMenu;
 $('#exitPractice').onclick = showMenu;
 function showMenu() {
   hideOverlays();
+  if (G.tutorial) endTutorial();
   G.mode = 'menu'; G.practice = false; G.round = null; G.match = null; G.opp = null; G.timers = []; G.putting = false; G.ballHidden = false; G.tee = G.tee || 'blue';
   if (HOLE_I !== 0 || !HOLE) loadHole(0);
   b.x = TEES.blue.x; b.y = TEES.blue.y; G.ci = 0; G.shape = 'straight'; G.nukeArmed = false; defaultAim();
@@ -1614,6 +1715,7 @@ function renderMenu() {
     return `<li class="${got ? 'got' : ''}"><span class="ck">${got ? '✓' : ''}</span><span class="rw-txt"><b>${r.name}</b><small>${got ? r.what : `${r.how}${r.prog ? ` · ${r.prog()}` : ''}`}</small></span></li>`;
   }).join('');
   $('#unlockAll').setAttribute('aria-pressed', String(!!store.allUnlocked));
+  $('#unlockAll').hidden = !(G.owner || location.hash === '#testing' || store.allUnlocked);
   const bb = store.best, a = store.putt.att.reduce((x, y) => x + y, 0), md = store.putt.made.reduce((x, y) => x + y, 0);
   const bits = []; if (bb.blue9) bits.push(`Blue 9 best ${bb.blue9}`); if (bb.black9) bits.push(`Black 9 best ${bb.black9}`); if (bb.blue) bits.push(`Blue 3 best ${bb.blue}`); if (bb.black) bits.push(`Black 3 best ${bb.black}`); if (a) bits.push(`Putting ${md}/${a}`);
   $('#bestLine').textContent = bits.join(' · ');
@@ -1869,6 +1971,10 @@ function resize() {
 }
 window.addEventListener('resize', resize);
 loadHole(0); resize(); showMenu();
+/* a brand-new player gets the welcome question and the warm-up first */
+if (!store.onboarded && !store.rounds.length && !store.putt.att.some(Boolean)) { $('#menu').hidden = true; $('#welcome').hidden = false; }
+window.addEventListener('hashchange', renderMenu);
+(async () => { try { const u = window.claude && await window.claude.use('user'); if (u && await u.isOwner()) { G.owner = true; renderMenu(); } } catch (e) {} })();
 /* test hook: lets automated tests score a hole without playing it */
 window.__pureStrike = { score: (strokes, putts) => { G.strokes = strokes; G.putts = putts; finishHole(false); },
   place: (x, y) => { b.x = x; b.y = y; b.vx = b.vy = 0; enterAim(); },
@@ -1891,6 +1997,7 @@ window.__pureStrike = { score: (strokes, putts) => { G.strokes = strokes; G.putt
   drop: (x, y) => { const d = dropFromWater(x, y); return { ...d, s: surface(d.x, d.y) }; },
   strikeAt: n => { if (G.mode !== 'aim') return false; swingDown(); G.meter.p = 0.7; swingUp(); strike(n); return true; },
   heat: () => ({ streak: G.streak || 0, fire: onFire(), win: perfectWin(), badge: $('#streak').hidden ? '' : $('#streak').textContent, fireShot: !!(G.F && G.F.fire) }),
+  coach: () => ({ shown: !$('#coach').hidden, step: $('#coachStep').textContent, text: $('#coachText').textContent, tutorial: !!G.tutorial }),
   holeOut: (strokes, putts) => { G.strokes = strokes; G.putts = putts; b.x = PIN.x; b.y = PIN.y; b.inCup = true; finishHole(false); }, state: () => ({ hole: HOLE_I, mode: G.mode, hcp: handicap(), rounds: store.rounds.length, earned: earnedIds() }) };
 cam.x = camT.x; cam.y = camT.y; cam.s = camT.s;
 let last = performance.now();
