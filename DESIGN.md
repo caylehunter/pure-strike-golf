@@ -68,6 +68,13 @@ Feedback pops: PURE, A TOUCH EARLY/LATE, SLICE/HOOK (tapped early/late), HOLD TO
 Big moments should feel like NBA Jam: loud, quick, and never in the way of the next swing.
 
 - **Callouts** (PURE, NUCLEAR, BIRDIE, …) slam in big and tilted, then settle and float off. NUCLEAR, birdie-or-better and HEATING UP get a spinning starburst behind them.
+- **Golf sounds** (built from how the real ones work, since there are no recordings yet):
+  - **Driver:** a swish leading into contact, a sharp crack, the titanium head ringing briefly, and a low thump you feel. A pure strike has the most thump; a mishit rings longer and buzzes.
+  - **Irons:** ball first, then turf: a crisp click, then the divot tearing through the grass about 8 ms later. Less turf off a tee or the green, more from the rough, none from sand.
+  - **Putter:** a short milled "tock" scaled to the stroke, then a quiet rumble while the ball rolls on the green.
+  - **Cup:** a hollow plastic clunk off the bottom, then a few quick rattles; a firm putt or chip-in clips the rim first.
+  - **Landing:** a soft thud on grass, a crisper pitch on the green, muffled in the rough.
+  - **Sound lab** (menu, or the link with `#sounds`): 2–3 versions of the driver, iron, putter and cup sounds, each heard in context (pure drive, mishit, nuke, approach, thin, rough, chip, short and long putts, tap-in, long putt dropping, chip-in). The pick is saved on the device and used in the game straight away.
 - **Swing hum:** holding the swing plays a tone that rises with power and buzzes inside the nuke band, so you can hear where the bar is. It stops when you let go.
 - **Crowd:** roars for a nuke, a holed shot, a birdie or a putt over 20 ft ("drained it"); claps politely for a par; says "ooh" for an approach stuffed inside 12 ft (STUFFED IT); groans at a lip-out, a splash, a CLANG off the viaduct, or when the fire goes out.
 - **Announcer:** the phone's own voice calls the biggest moments: "Nuclear!", "You're heating up!", "You're on fire!", "Birdie!", "Drained it!", "Slam dunk!", "That's the match!". At most one call every 0.7 s.

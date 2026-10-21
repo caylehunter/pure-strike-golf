@@ -67,6 +67,18 @@ const PAGE = 'file://' + path.join(__dirname, 'page.html');
   await pg.reload(); await pg.waitForTimeout(300);
   const after = await snd();
   check('both stay off after a reload', !after.on && !after.voice && (await pg.$eval('[data-sound]', e => e.textContent)) === 'Sound: Off');
+  // the Sound lab: every moment plays, and a picked version is remembered and used in the game
+  await pg.evaluate(() => location.hash = ''); await pg.click('#labBtn'); await pg.waitForTimeout(200);
+  await pg.evaluate(() => { const s = JSON.parse(localStorage.getItem('pure-strike-v1')); s.sound = true; localStorage.setItem('pure-strike-v1', JSON.stringify(s)); });
+  await pg.reload(); await pg.waitForTimeout(300); await pg.click('#labBtn'); await pg.waitForTimeout(200);
+  const silent = [];
+  for (const sec of ['driver', 'iron', 'putter', 'cup']) {
+    const n = await pg.$$eval(`.lab-sec[data-key="${sec}"] .lab-moments button`, b => b.length);
+    for (let i = 0; i < n; i++) { const name = await pg.$eval(`.lab-sec[data-key="${sec}"] [data-m="${i}"]`, e => e.textContent); await pg.click(`.lab-sec[data-key="${sec}"] [data-m="${i}"]`); if ((await loudest(name === 'Long putt drops' ? 3000 : 400)) < 0.05) silent.push(name); }
+  }
+  check('Sound lab: every moment plays a sound', silent.length === 0, silent.join(', ') || 'all audible');
+  await pg.click('.lab-sec[data-key="cup"] [data-set="B"]'); await pg.waitForTimeout(200);
+  check('Sound lab: a picked version is remembered', (await pg.evaluate(() => JSON.parse(localStorage.getItem('pure-strike-v1')).soundSets.cup)) === 'B');
   await br.close();
   if (errs.length) { console.log('ERRORS', errs.join('; ')); checks.push(false); }
   if (checks.includes(false)) process.exit(1);
