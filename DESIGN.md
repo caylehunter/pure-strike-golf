@@ -100,15 +100,18 @@ Nine holes, par 36. A round plays **all 9 (default, about 20 minutes) or the fir
 | Hole | Name | Par | Blue | Black | Rank | Character |
 |---|---|---|---|---|---|---|
 | 1 | Pond Carry | 3 | 172 | 204 | 6 | Forced carry over water to a green that tilts right-to-left |
-| 2 | Corner Trees | 4 | 389 | 433 | 1 | Dogleg right; trees guard the corner; a nuke can fly them and reach the green |
+| 2 | The Cape | 4 | 395 | 440 | 1 | **Signature.** Dogleg right around a lake. The default line goes left of it (about 130 in); a full drive carried over the lake leaves about 95. Short on that line, or a 3 wood, is wet |
 | 3 | Big Bend | 5 | 556 | 616 | 7 | Dogleg left; water right of the nuke landing zone |
-| 4 | Short Fuse | 4 | 335 | 405 | 9 | A pure blue-tee drive finishes near the green; a black-tee nuke flies it |
+| 4 | The Gamble | 4 | 291 | 321 | 9 | **Signature.** Drivable par 4: a pond guards the front-left of the green. Default aim is a layup (about 100 in); a pure driver at the flag finishes on the green; a 90% driver splashes. From the black tees it takes a tailwind or being on fire |
 | 5 | The Moat | 3 | 140 | 162 | 8 | Island green |
 | 6 | Long Haul | 5 | 580 | 655 | 3 | A creek crosses at 480; only a nuke gets home in two |
-| 7 | The Ravine | 3 | 196 | 231 | 4 | Long carry over a ravine of water |
+| 7 | The Ridge | 3 | 191 | 221 | 4 | **Signature.** A two-tier green split by a steep ridge; the pin is on the top tier. A putt that doesn't clear the ridge rolls back to its foot (from 45 ft, anything under about 50 ft of flat roll comes back) |
 | 8 | The Viaduct | 4 | 385 | 430 | 2 | A stone viaduct crosses in front of the tee; only a pure Stinger fits through its arch. Then a dogleg left with trees at the corner |
 | 9 | Home Stretch | 5 | 524 | 589 | 5 | Lake down the right of the second shot and green |
 
+- **Signature holes** (2, 4, 7) are each built around one decision, and the hole intro says what it is ("cut the corner over the lake", "carry the pond to drive the green, or lay up short", "pin on the top tier"). From their tees the camera frames the whole hole, so the bold line is in view and not just the layup. The default aim is always the safe play; going for it is the player's choice.
+- A hole can name its safe tee-shot landing spot (`teeAim`). When a drivable par 4's fairway ends before the club's carry, the default aim lays up at the end of the fairway, allowing for roll.
+- The first-time warm-up plays **Short Fuse**, a forgiving par 4 kept off the course just for it.
 - Stroke index (who gets pops first) is the rank order of the holes in the round, so a 3-hole round still ranks 1–3.
 - A scorecard follows every hole (birdies circled, bogeys boxed) with **Next hole** / **Quit round**.
 - Rough −15%, bunker −30% (sand wedge −8%). OB: +1, replay. Pick up at 12.

@@ -494,21 +494,23 @@ const ALL_HOLES = [
     clumps: []
   },
   {
-    name: 'Corner Trees', par: 4, rank: 1, fw: [85, 414],
-    cx: y => 38 * smooth((y - 200) / 180),
+    /* a cape hole: the lake wraps the inside of the dogleg; the more of it you carry, the shorter the approach */
+    name: 'The Cape', par: 4, rank: 1, fw: [85, 416], tip: 'cut the corner over the lake', showGreen: true,
+    cx: y => -10 * smooth((y - 120) / 120) + 72 * smooth((y - 250) / 130),
     hw: y => { let w = 20 + 3 * Math.sin(y / 41); if (y > 380) w = lerp(w, 12, smooth((y - 380) / 32)); if (y < 110) w = lerp(w, 15, smooth((110 - y) / 25)); return w; },
-    green: { x: 40, y: 429, rx: 14, ry: 12 }, pin: { x: 36, y: 432 },
+    green: { x: 64, y: 432, rx: 14, ry: 12 }, pin: { x: 61, y: 435 },
+    /* the safe line off the tee (where the drive lands; it rolls on down the fairway): left of the lake */
+    teeAim: { blue: { x: 8, y: 285 }, black: { x: -8, y: 248 } },
     tees: { black: { x: 0, y: 0 }, blue: { x: 0, y: 45 } },
-    water: [{ x: 9, y: 433, rx: 8, ry: 15, rot: -0.1 }],
+    water: [{ x: 40, y: 255, rx: 20, ry: 45, rot: 0 }],
     bunkers: [
-      { x: 25, y: 250, rx: 9, ry: 5.5, rot: 0.4 },
-      { x: -23, y: 285, rx: 8, ry: 5, rot: -0.3 },
-      { x: 58, y: 426, rx: 4.5, ry: 8, rot: 0.1 },
-      { x: 40, y: 413, rx: 7, ry: 3.2, rot: 0 }
+      { x: -30, y: 318, rx: 8, ry: 5, rot: -0.3 },
+      { x: 82, y: 428, rx: 4.5, ry: 8, rot: 0.1 },
+      { x: 52, y: 418, rx: 7, ry: 3.2, rot: 0.2 }
     ],
     slope: (u, v) => 0.018 * v - 0.012 * u + 0.12 * Math.exp(-((u - 4) ** 2 + (v - 3) ** 2) / 16) - 0.08 * Math.exp(-((u + 5) ** 2 + (v + 3) ** 2) / 20),
-    /* trees inside the dogleg punish cutting the corner low; a nuke flies over them */
-    clumps: [[24, 200], [31, 218], [41, 232], [29, 182], [45, 212], [52, 196]]
+    /* trees down the left catch the drive that bails away from the lake */
+    clumps: [[-40, 236], [-44, 262], [-40, 290], [-14, 372], [-4, 392]]
   },
   {
     name: 'Big Bend', par: 5, rank: 7, fw: [95, 602],
@@ -529,21 +531,19 @@ const ALL_HOLES = [
     clumps: [[-44, 232], [-40, 256], [-50, 276], [-38, 296], [-55, 312]]
   },
   {
-    /* a perfect blue-tee drive finishes near the green; a black-tee nuke can fly it */
-    name: 'Short Fuse', par: 4, rank: 9, fw: [80, 388],
-    cx: y => 10 * smooth((y - 150) / 220),
-    hw: y => { let w = 19 + 2 * Math.sin(y / 37); if (y > 360) w = lerp(w, 12, smooth((y - 360) / 28)); return w; },
-    green: { x: 10, y: 402, rx: 14, ry: 12 }, pin: { x: 12, y: 405 },
-    tees: { black: { x: 0, y: 0 }, blue: { x: 0, y: 70 } },
-    water: [],
+    /* drivable par 4: a pond guards the front-left of the green; carry it with a pure driver, or lay up right and wedge on */
+    name: 'The Gamble', par: 4, rank: 9, fw: [80, 262], tip: 'carry the pond to drive the green, or lay up short', showGreen: true,
+    cx: y => 16 * smooth((y - 90) / 140),
+    hw: y => { let w = 20 + 2 * Math.sin(y / 37); if (y > 235) w = lerp(w, 14, smooth((y - 235) / 27)); return w; },
+    green: { x: -20, y: 342, rx: 13, ry: 11 }, pin: { x: -18, y: 345 },
+    tees: { black: { x: 0, y: 25 }, blue: { x: 0, y: 55 } },
+    water: [{ x: -22, y: 291, rx: 25, ry: 25, rot: 0 }],
     bunkers: [
-      { x: -9, y: 290, rx: 5, ry: 4, rot: 0.2 },
-      { x: 27, y: 315, rx: 6, ry: 4.5, rot: -0.3 },
-      { x: -3, y: 388, rx: 6, ry: 3.5, rot: 0.3 },
-      { x: 27, y: 404, rx: 4.5, ry: 7, rot: 0.1 },
-      { x: 10, y: 419, rx: 8, ry: 3, rot: 0 }
+      { x: 34, y: 205, rx: 7, ry: 4.5, rot: -0.3 },
+      { x: 0, y: 348, rx: 4.5, ry: 7, rot: 0.1 },
+      { x: -20, y: 359, rx: 8, ry: 3, rot: 0 }
     ],
-    slope: (u, v) => 0.015 * v - 0.01 * u + 0.1 * Math.exp(-((u + 4) ** 2 + (v - 3) ** 2) / 14),
+    slope: (u, v) => 0.016 * v + 0.01 * u + 0.08 * Math.exp(-((u + 3) ** 2 + (v - 2) ** 2) / 12),
     clumps: []
   },
   {
@@ -577,25 +577,26 @@ const ALL_HOLES = [
     clumps: []
   },
   {
-    /* a long carry over a ravine of water */
-    name: 'The Ravine', par: 3, rank: 4, fw: [184, 216],
-    cx: y => -6 * smooth(y / 228),
+    /* a two-tier green: a ridge splits it, the pin is on the top tier, and a putt that comes up short rolls back down */
+    name: 'The Ridge', par: 3, rank: 4, fw: [150, 196], tip: 'pin on the top tier: come up short and it rolls back',
+    cx: y => -5 * smooth(y / 214),
     hw: () => 13,
-    green: { x: -6, y: 228, rx: 14, ry: 12 }, pin: { x: -4, y: 231 },
-    tees: { black: { x: 0, y: 0 }, blue: { x: 0, y: 35 } },
-    water: [{ x: -3, y: 150, rx: 76, ry: 30, rot: 0 }],
+    green: { x: -5, y: 214, rx: 16, ry: 14 }, pin: { x: -3, y: 221 },
+    tees: { black: { x: 0, y: 0 }, blue: { x: 0, y: 30 } },
+    water: [],
     bunkers: [
-      { x: -24, y: 232, rx: 5, ry: 7, rot: 0.15 },
-      { x: 14, y: 236, rx: 4.5, ry: 7, rot: -0.15 },
-      { x: -6, y: 246, rx: 7, ry: 3, rot: 0 }
+      { x: -25, y: 214, rx: 5, ry: 8, rot: 0.1 },
+      { x: 15, y: 205, rx: 5, ry: 6.5, rot: -0.2 },
+      { x: -4, y: 234, rx: 9, ry: 3.4, rot: 0 }
     ],
-    slope: (u, v) => 0.02 * v + 0.012 * u - 0.1 * Math.exp(-((u - 3) ** 2 + (v + 3) ** 2) / 15),
+    /* the ridge runs across the middle (a little higher on the right); the top tier is the back half */
+    slope: (u, v) => 0.18 * Math.tanh((v - 0.25 * u) / 1.6) + 0.008 * v - 0.006 * u,
     clumps: []
   },
   {
     /* dogleg left; trees guard the corner */
     /* a stone viaduct crosses in front of the tee: only a pure Stinger fits through its arch */
-    name: 'The Viaduct', par: 4, rank: 2, fw: [112, 410],
+    name: 'The Viaduct', par: 4, rank: 2, fw: [112, 410], tip: 'stinger through the arch',
     bridge: { y: 100, x: 0, halfW: 3, h: 12, wall: 60 },
     cx: y => -40 * smooth((y - 190) / 170),
     hw: y => { let w = 20 + 3 * Math.sin(y / 47); if (y > 380) w = lerp(w, 12, smooth((y - 380) / 30)); if (y < 110) w = lerp(w, 15, smooth((110 - y) / 25)); return w; },
@@ -627,6 +628,25 @@ const ALL_HOLES = [
     clumps: []
   }
 ];
+/* the first-time warm-up plays its own forgiving hole, off the course */
+const WARMUP = {
+    /* a perfect blue-tee drive finishes near the green; a black-tee nuke can fly it */
+    name: 'Short Fuse', par: 4, rank: 9, fw: [80, 388],
+    cx: y => 10 * smooth((y - 150) / 220),
+    hw: y => { let w = 19 + 2 * Math.sin(y / 37); if (y > 360) w = lerp(w, 12, smooth((y - 360) / 28)); return w; },
+    green: { x: 10, y: 402, rx: 14, ry: 12 }, pin: { x: 12, y: 405 },
+    tees: { black: { x: 0, y: 0 }, blue: { x: 0, y: 70 } },
+    water: [],
+    bunkers: [
+      { x: -9, y: 290, rx: 5, ry: 4, rot: 0.2 },
+      { x: 27, y: 315, rx: 6, ry: 4.5, rot: -0.3 },
+      { x: -3, y: 388, rx: 6, ry: 3.5, rot: 0.3 },
+      { x: 27, y: 404, rx: 4.5, ry: 7, rot: 0.1 },
+      { x: 10, y: 419, rx: 8, ry: 3, rot: 0 }
+    ],
+    slope: (u, v) => 0.015 * v - 0.01 * u + 0.1 * Math.exp(-((u + 4) ** 2 + (v - 3) ** 2) / 14),
+    clumps: []
+  };
 const PRACTICE_HOLE = 2;
 /* the round's holes; stroke index (1 = hardest, gets pops first) is the rank order within them */
 let HOLES = [];
@@ -988,8 +1008,14 @@ function defaultAim() {
   if (G.shape === 'stinger') carry *= 0.9;
   let tx = PIN.x, ty = PIN.y;
   if (hyp(PIN.x - b.x, PIN.y - b.y) > carry * 1.04) {
-    for (let y = b.y; y < FW1; y += 1) { const x = cx(y); if (hyp(x - b.x, y - b.y) >= carry) { tx = x; ty = y; break; } }
+    let found = false;
+    for (let y = b.y; y < FW1; y += 1) { const x = cx(y); if (hyp(x - b.x, y - b.y) >= carry) { tx = x; ty = y; found = true; break; } }
+    /* the fairway runs out before the club's carry (a drivable par 4): lay up at its end rather than aim over trouble */
+    if (!found && FW1 - 10 - 2 * c.roll > b.y + 40) { ty = FW1 - 10 - 2 * c.roll; tx = cx(ty); }
   }
+  /* some holes name the safe line off the tee (a cape hole's lake); going for more is the player's call */
+  const TA = HOLE.teeAim && HOLE.teeAim[G.tee];
+  if (TA && onTee() && !nuke && c.wood) { tx = TA.x; ty = TA.y; }
   G.aimA = Math.atan2(tx - b.x, ty - b.y);
   G.aimD = Math.min(hyp(tx - b.x, ty - b.y), fullCarry());
   const B = HOLE.bridge;
@@ -1079,18 +1105,17 @@ function startHole(i) {
   const first = !live ? '' : i === 0 ? (M.honor === 'me' ? ' · you won the toss, tee off first' : ` · ${M.opp.name} won the toss, tees off first`)
     : (M.honor === 'me' ? ' · your honor' : ` · ${M.opp.name}'s honor`);
   if (G.tutorial) pop('WARM-UP', 'yds', `${HOLE.name} · Par ${PAR} · ${TEE_YDS[G.tee]} yds · no wind`);
-  else pop(`HOLE ${i + 1}`, 'yds', `${HOLE.name} · Par ${PAR} · ${TEE_YDS[G.tee]} yds${HOLE.bridge ? ' · stinger through the arch' : ''}${first}`);
+  else pop(`HOLE ${i + 1}`, 'yds', `${HOLE.name} · Par ${PAR} · ${TEE_YDS[G.tee]} yds${HOLE.tip ? ' · ' + HOLE.tip : ''}${first}`);
   if (live) { initOpp(); nextTurn(); }
 }
 /* ---------- first-time warm-up: one guided, forgiving hole ---------- */
-const WARMUP_HOLE = 3;
 function startTutorial() {
   audio();
   hideOverlays();
   G.tutorial = { pure: false, holed: false, gimme: false };
   G.tee = 'blue'; G.practice = false; G.match = null; G.longest = 0; G.shape = 'straight'; G.streak = 0;
-  setRoundHoles(9); G.round = null;
-  startHole(WARMUP_HOLE);
+  HOLES = [WARMUP]; WARMUP.si = 1; G.round = null;
+  startHole(0);
   G.wind = { x: 0, y: 0, mph: 0 }; syncUI();
 }
 function endTutorial() { G.tutorial = null; store.onboarded = true; save(); }
@@ -1516,7 +1541,10 @@ function practiceResult(made) {
 
 /* ---------- cameras ---------- */
 function setupAimCam() {
-  const F = previewShot(G.nukeArmed && canNuke()), L = flightPos(F, 1);
+  const F = previewShot(G.nukeArmed && canNuke());
+  let L = flightPos(F, 1);
+  /* risk-reward holes show the green from the tee, so the bold line is in view and not just the layup */
+  if (HOLE.showGreen && onTee() && hyp(PIN.x - b.x, PIN.y - b.y) > hyp(L.x - b.x, L.y - b.y)) L = { x: PIN.x, y: PIN.y + GREEN.ry * 0.5 };
   const span = hyp(L.x - b.x, L.y - b.y) + 40;
   camT.s = clamp(Math.min(viewH * 0.92 / span, W / Math.max(50, span * 0.42)), 0.6, 12);
   camT.x = (b.x + L.x) / 2; camT.y = (b.y + L.y) / 2 + 6; camT.r = 0;
@@ -2239,6 +2267,14 @@ window.__pureStrike = { score: (strokes, putts) => { G.strokes = strokes; G.putt
   pop: (t, c, s) => pop(t, c, s),
   sound: () => ({ ctx: !!AC, charging: !!charge.o, on: soundOn(), voice: voiceOn(), fireEdge: $('#fireEdge').className, confetti: $('#confetti').children.length }),
   strikeP: (p, n) => { if (G.mode !== 'aim') return false; swingDown(); G.meter.p = p; swingUp(); strike(n); return true; },
+  /* a text map of a hole, one character per `step` yards: T tee, = fairway, . rough, o sand, ~ water, G green, f fringe, # tree, space out of bounds */
+  holeMap: (i, step = 6) => { const cur = HOLE_I, was = HOLES; HOLES = ALL_HOLES; loadHole(i); const ch = { tee: 'T', fairway: '=', rough: '.', sand: 'o', water: '~', green: 'G', fringe: 'f', oob: ' ' }, rows = [];
+    for (let y = YEND; y >= -12; y -= step) { let r = ''; for (let x = -84; x <= 100; x += step / 2) { const tree = TREES.some(t => t.block !== false && hyp(t.x - x, t.y - y) < t.r * 0.8); r += tree && surface(x, y) !== 'oob' ? '#' : ch[surface(x, y)]; } rows.push(String(Math.round(y)).padStart(4) + ' ' + r); }
+    HOLES = was; loadHole(cur); return rows.join('\n'); },
+  aimAt: (x, y) => { G.aimA = Math.atan2(x - b.x, y - b.y); G.aimD = Math.min(hyp(x - b.x, y - b.y), fullCarry()); syncUI(); },
+  calm: () => { G.wind = { x: 0, y: 0, mph: 0 }; syncUI(); },
+  setClub: id => { G.ci = CLUBS.findIndex(c => c.id === id); syncUI(); },
+  ball: () => ({ x: b.x, y: b.y, mode: G.mode, lie: surface(b.x, b.y), strokes: G.strokes }),
   puttView: () => { const [hx, hy] = w2s(PIN.x, PIN.y), [bx, by] = w2s(b.x, b.y), box = q => { const el = $(q); if (el.hidden) return null; const r = el.getBoundingClientRect(); return { top: r.top, bottom: r.bottom, left: r.left, right: r.right }; };
     return { hole: { x: hx, y: hy }, ball: { x: bx, y: by }, clearTop: puttClearTop(), coach: box('#coach'), matchBar: box('#matchBar'), pops: [...document.querySelectorAll('#pops .pop')].map(e => { const r = e.getBoundingClientRect(); return { top: r.top, bottom: r.bottom, left: r.left, right: r.right }; }) }; },
   holeOut: (strokes, putts) => { G.strokes = strokes; G.putts = putts; b.x = PIN.x; b.y = PIN.y; b.inCup = true; finishHole(false); }, state: () => ({ hole: HOLE_I, mode: G.mode, hcp: handicap(), rounds: store.rounds.length, earned: earnedIds() }) };
