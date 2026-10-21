@@ -42,11 +42,11 @@ Feedback pops: PURE, A TOUCH EARLY/LATE, SLICE/HOOK (tapped early/late), HOLD TO
 - **Tee cam:** while the ball is short of the viaduct, a panel at the top shows a behind-the-ball view (sky, tree line, the viaduct and arch in perspective) with the planned flight drawn into it, and says "Fits the arch" or "Too high for the arch" before the swing. During the shot the ball flies through it live. **Hide tee cam** turns it off. In a match the panel sits below the match bar so neither covers the other.
 - Bridges are hole data (`bridge: { y, x, halfW, h }`), so more holes like this are easy to add.
 
-## Heating up and on fire (NBA Jam heat)
+## Starting to feel it and locked in (NBA Jam heat)
 
 - Consecutive PURE full swings build a streak across holes; putts neither add to it nor break it. A badge above the controls shows it: `Pure ×2`.
-- **3 in a row → HEATING UP!** A glow around the ball.
-- **4 in a row → ON FIRE!** Flame trail and embers, a perfect window 60% wider, and 5% more carry, until a swing isn't pure ("FIRE'S OUT"). Every round starts cold.
+- **3 in a row → "HE'S STARTING TO FEEL IT!"** A glow around the ball; the badge reads "Feeling it".
+- **4 in a row → LOCKED IN!** Flame trail and embers, a perfect window 60% wider, and 5% more carry, until a swing isn't pure ("LOST THE FEEL"). Every round starts cold.
 
 ## Nuclear drive (black tees, driver, tee shot only)
 
@@ -67,7 +67,7 @@ Feedback pops: PURE, A TOUCH EARLY/LATE, SLICE/HOOK (tapped early/late), HOLD TO
 
 Big moments should feel like NBA Jam: loud, quick, and never in the way of the next swing.
 
-- **Callouts** (PURE, NUCLEAR, BIRDIE, …) slam in big and tilted, then settle and float off. NUCLEAR, birdie-or-better and HEATING UP get a spinning starburst behind them.
+- **Callouts** (PURE, NUCLEAR, BIRDIE, …) slam in big and tilted, then settle and float off. NUCLEAR, birdie-or-better and STARTING TO FEEL IT get a spinning starburst behind them.
 - **Golf sounds** (built from how the real ones work, since there are no recordings yet):
   - **Driver:** a swish leading into contact, a sharp crack, the titanium head ringing briefly, and a low thump you feel. A pure strike has the most thump; a mishit rings longer and buzzes.
   - **Irons:** ball first, then turf: a crisp click, then the divot tearing through the grass about 8 ms later. Less turf off a tee or the green, more from the rough, none from sand.
@@ -77,8 +77,8 @@ Big moments should feel like NBA Jam: loud, quick, and never in the way of the n
   - **Sound lab** (menu, or the link with `#sounds`): 2–3 versions of the driver, iron, putter and cup sounds, each heard in context (pure drive, mishit, nuke, approach, thin, rough, chip, short and long putts, tap-in, long putt dropping, chip-in). The pick is saved on the device and used in the game straight away.
 - **Swing hum:** holding the swing plays a tone that rises with power and buzzes inside the nuke band, so you can hear where the bar is. It stops when you let go.
 - **Crowd:** roars for a nuke, a holed shot, a birdie or a putt over 20 ft ("drained it"); claps politely for a par; says "ooh" for an approach stuffed inside 12 ft (STUFFED IT); groans at a lip-out, a splash, a CLANG off the viaduct, or when the fire goes out.
-- **Announcer:** the phone's own voice calls the biggest moments: "Nuclear!", "You're heating up!", "You're on fire!", "Birdie!", "Drained it!", "Slam dunk!", "That's the match!". At most one call every 0.7 s.
-- **Fire glow:** the screen edge glows orange while heating up and flickers while on fire.
+- **Announcer:** the phone's own voice calls the biggest moments: "Nuclear!", "He's starting to feel it!", "He's locked in!", "Birdie!", "Drained it!", "Slam dunk!", "That's the match!". At most one call every 0.7 s.
+- **Fire glow:** the screen edge glows orange while you're feeling it and flickers while you're locked in.
 - **Trails and rings:** a pure shot leaves a gold trail and a small white ring at the ball; a nuke gets a shock ring at launch and another on landing.
 - **CLANG** off the viaduct is a metal ring with a white flash.
 - **Match:** a chime when you win a hole, a low two-note sound when you lose one; winning the match gets a fanfare, the crowd, applause and confetti; losing gets a sad trombone.
@@ -110,7 +110,7 @@ Nine holes, par 36. A round plays **all 9 (default, about 20 minutes) or the fir
 | 1 | Pond Carry | 3 | 172 | 204 | 6 | Forced carry over water to a green that tilts right-to-left |
 | 2 | The Cape | 4 | 395 | 439 | 1 | **Signature.** Dogleg right around a lake. The default line goes left of it (about 130 in); a full drive carried over the lake leaves about 95. Short on that line, or a 3 wood, is wet |
 | 3 | Big Bend | 5 | 556 | 616 | 7 | Dogleg left; water right of the nuke landing zone |
-| 4 | The Gamble | 4 | 291 | 321 | 9 | **Signature.** Drivable par 4: a pond guards the front-left of the green. Default aim is a layup (about 100 in); a pure driver at the flag finishes on the green; a 90% driver splashes. From the black tees it takes a tailwind or being on fire |
+| 4 | The Gamble | 4 | 291 | 321 | 9 | **Signature.** Drivable par 4: a pond guards the front-left of the green. Default aim is a layup (about 100 in); a pure driver at the flag finishes on the green; a 90% driver splashes. From the black tees it takes a tailwind or being locked in |
 | 5 | The Moat | 3 | 140 | 162 | 8 | Island green |
 | 6 | Long Haul | 5 | 580 | 655 | 3 | A creek crosses at 480; only a nuke gets home in two |
 | 7 | The Ridge | 3 | 191 | 221 | 4 | **Signature.** A two-tier green split by a steep ridge; the pin is on the top tier. A putt that doesn't clear the ridge rolls back to its foot (from 45 ft, anything under about 50 ft of flat roll comes back) |
@@ -172,7 +172,7 @@ Needs: a server and accounts (matches, whose turn), push notifications (installe
 ## Ideas from playtesters (planned)
 
 - **Real-time weather:** the host shares approximate location; the match uses the local wind (and maybe rain for softer greens, cold for shorter carry). Needs the app and a weather service, so it comes with online play.
-- **Power-ups** beyond on fire: earned through play (streaks, challenges, rewards), never sold. Only cosmetics are for sale (flame colors, ball trails, trophy styles). In friend matches both players have the same access.
+- **Power-ups** beyond locked in: earned through play (streaks, challenges, rewards), never sold. Only cosmetics are for sale (flame colors, ball trails, trophy styles). In friend matches both players have the same access.
 - **Chat in online matches** (trash talk is part of golf): quick taunts plus free text between friends, a profanity filter players can switch off for their own matches, and block, mute and report (app stores require these).
 
 ## Business model and tournaments (planned, after online play)
@@ -211,7 +211,7 @@ The first game has to be simple and fun, or the game won't catch on.
 3. ~~Match play vs. AI with handicap pops.~~
 4. ~~Balance pass and visible opponent shots.~~
 5. ~~9-hole course.~~
-   ~~Heating up / on fire; guided warm-up for new players.~~
+   ~~Starting to feel it / locked in (was heating up / on fire); guided warm-up for new players.~~
    ~~Look and sound pass.~~
 6. The real app, planned in the "Pure Strike: Real App Plan" doc (about 17 weeks):
    - Phase 0, engine rebuild (~2 wks): modules + TypeScript, seeded randomness, every shot replayable from its inputs.

@@ -35,10 +35,10 @@ const PAGE = 'file://' + path.join(__dirname, 'page.html');
   // four pure swings in a row: the screen edge heats up, then burns
   for (let i = 0; i < 4; i++) {
     await pg.evaluate(() => window.__pureStrike.strikeP(0.6, 0)); await pg.waitForTimeout(150);
-    if (i === 2) check('three pure: the screen edge glows (heating up)', (await snd()).fireEdge === 'heat');
+    if (i === 2) check('three pure: the screen edge glows (feeling it)', (await snd()).fireEdge === 'heat');
     await pg.evaluate(() => window.__pureStrike.restartHole()); await pg.waitForTimeout(150);
   }
-  check('four pure: the screen edge is on fire', (await snd()).fireEdge === 'fire');
+  check('four pure: the screen edge burns (locked in)', (await snd()).fireEdge === 'fire');
   await pg.waitForTimeout(300); await pg.screenshot({ path: path.join(__dirname, 'polish-fire.png') });
   await pg.evaluate(() => window.__pureStrike.strikeP(0.6, 0.2)); await pg.waitForTimeout(150);
   check('a miss puts the glow out', (await snd()).fireEdge === '');

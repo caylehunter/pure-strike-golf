@@ -1,4 +1,4 @@
-// NBA Jam heat: 3 pure swings in a row heats you up, 4 sets you on fire; a miss puts it out.
+// NBA Jam heat: 3 pure swings in a row and he's starting to feel it, 4 and he's locked in; a miss loses the feel.
 const { chromium } = require('playwright');
 const path = require('path');
 const PAGE = 'file://' + path.join(__dirname, 'page.html');
@@ -24,24 +24,24 @@ const PAGE = 'file://' + path.join(__dirname, 'page.html');
   const cold = await heat();
   await swing(0);
   let seen = await popsText(900);
-  check('three in a row: HEATING UP!', (await heat()).streak === 3 && /HEATING UP/i.test(seen), seen);
+  check("three in a row: HE'S STARTING TO FEEL IT!", (await heat()).streak === 3 && /STARTING TO FEEL IT/i.test(seen), seen);
   await nextHole();
-  check('badge: Heating up · pure ×3', (await heat()).badge === 'Heating up · pure ×3');
+  check('badge: Feeling it · pure ×3', (await heat()).badge === 'Feeling it · pure ×3', (await heat()).badge);
   await pg.waitForTimeout(400); await pg.screenshot({ path: path.join(__dirname, 'fire-heat.png') });
   await swing(0);
   seen = await popsText(900);
   const hot = await heat();
-  check('four in a row: ON FIRE!', hot.fire && /ON FIRE/i.test(seen), seen);
-  check('on fire the sweet spot is 60% bigger', Math.abs(hot.win - cold.win * 1.6) < 1e-9, `${cold.win} → ${hot.win}`);
+  check('four in a row: LOCKED IN!', hot.fire && /LOCKED IN/i.test(seen), seen);
+  check('locked in, the sweet spot is 60% bigger', Math.abs(hot.win - cold.win * 1.6) < 1e-9, `${cold.win} → ${hot.win}`);
   await nextHole();
   // a strike a touch off the line still counts as pure while on fire
   await swing(0.06);
-  check('on fire, a swing slightly off the line still counts as PURE', (await heat()).streak === 5 && (await heat()).fireShot, `streak ${(await heat()).streak}`);
+  check('locked in, a swing slightly off the line still counts as PURE', (await heat()).streak === 5 && (await heat()).fireShot, `streak ${(await heat()).streak}`);
   await pg.waitForTimeout(700); await pg.screenshot({ path: path.join(__dirname, 'fire-flight.png') });
   await nextHole();
   await swing(0.1);
   seen = await popsText(900);
-  check("a miss puts the fire out", (await heat()).streak === 0 && !(await heat()).fire && /FIRE'S OUT/i.test(seen), seen);
+  check('a miss loses the feel', (await heat()).streak === 0 && !(await heat()).fire && /LOST THE FEEL/i.test(seen), seen);
   // a new round starts cold
   await pg.tap('#pauseBtn'); await pg.tap('#pzQuit'); await pg.waitForTimeout(250);
   await pg.tap('#soloBtn'); await pg.tap('.tee-card.blue'); await pg.waitForTimeout(400);

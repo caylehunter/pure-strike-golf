@@ -1468,7 +1468,7 @@ function skipOppShot() { if (G.mode === 'opp' && G.opp.moving) G.opp.t = Math.ma
 
 /* the strike ring starts this far out (in meter units) and closes at M.speed */
 const RING_START = 0.9, RING_R = 44, RING_K = 2.4;
-/* NBA Jam heat: 3 pure swings in a row heats you up, 4 sets you on fire until a swing isn't pure */
+/* NBA Jam heat: 3 pure swings in a row and he's starting to feel it, 4 and he's locked in until a swing isn't pure */
 const HEAT_AT = 3, FIRE_AT = 4;
 const onFire = () => !G.practice && (G.streak || 0) >= FIRE_AT;
 const perfectWin = () => G.tutorial ? 0.09 : (G.tee === 'blue' || G.practice ? 0.05 : 0.035) * (onFire() ? 1.6 : 1);
@@ -1520,10 +1520,10 @@ function strike(n) {
   if (nuke) { G.nukeArmed = false; if (Math.abs(err) <= 0.5) { store.stats.nukes++; save(); } }
   const was = G.streak || 0;
   G.streak = perfect ? was + 1 : 0;
-  if (G.streak === HEAT_AT) { later(0.35, () => { pop('HEATING UP!', 'heat', 'one more pure swing sets you on fire'); sfx('sizzle'); }); call("You're heating up!", 0.5); }
-  if (G.streak === FIRE_AT) { later(0.35, () => { pop('ON FIRE!', 'nuke', 'bigger sweet spot · more distance · until you miss'); flash('#ff8a3a', 0.4, 300); sfx('fanfare'); sfx('whoosh', 1.4); sfx('crowd', 0.7); }); call("You're on fire!", 0.5); }
-  if (!perfect && was >= FIRE_AT) { later(0.35, () => { pop("FIRE'S OUT", 'miss', `${was} pure in a row`); sfx('groan', 0.6); }); }
-  else if (!perfect && was >= HEAT_AT) later(0.35, () => pop('COOLED OFF', 'small'));
+  if (G.streak === HEAT_AT) { later(0.35, () => { pop("HE'S STARTING TO FEEL IT!", 'heat', "one more pure swing and you're locked in"); sfx('sizzle'); }); call("He's starting to feel it!", 0.5); }
+  if (G.streak === FIRE_AT) { later(0.35, () => { pop('LOCKED IN!', 'nuke', 'bigger sweet spot · more distance · until you miss'); flash('#ff8a3a', 0.4, 300); sfx('fanfare'); sfx('whoosh', 1.4); sfx('crowd', 0.7); }); call("He's locked in!", 0.5); }
+  if (!perfect && was >= FIRE_AT) { later(0.35, () => { pop('LOST THE FEEL', 'miss', `${was} pure in a row`); sfx('groan', 0.6); }); }
+  else if (!perfect && was >= HEAT_AT) later(0.35, () => pop('LOST THE FEEL', 'small'));
   syncUI();
 }
 function land(F, p) {
@@ -1823,7 +1823,7 @@ function syncUI() {
   $('#fireEdge').className = !G.practice && n >= FIRE_AT ? 'fire' : !G.practice && n >= HEAT_AT ? 'heat' : '';
   sk.hidden = lieEl.hidden || G.practice || n === 0;
   sk.className = n >= FIRE_AT ? 'fire' : n >= HEAT_AT ? 'heat' : '';
-  sk.textContent = n >= FIRE_AT ? `On fire · pure ×${n}` : n >= HEAT_AT ? `Heating up · pure ×${n}` : `Pure ×${n}`;
+  sk.textContent = n >= FIRE_AT ? `Locked in · pure ×${n}` : n >= HEAT_AT ? `Feeling it · pure ×${n}` : `Pure ×${n}`;
   lieEl.textContent = LIE_TXT[lie] || lie; lieEl.className = (lie === 'rough' || lie === 'sand') ? 'bad' : '';
 
   const c = club();

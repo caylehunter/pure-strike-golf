@@ -21,7 +21,7 @@ npm test
 - `tests/nav.js` – menu flow, Back buttons, pause/resume/quit, conceding a match hole
 - `tests/feedback.js` – feedback button placement, empty-note prompt, copy fallback
 - `tests/nine.js` – the 9-hole course: holes and par, a full round, scaled handicap and pops, 5 & 4 finish, water drops, opponent shots on every hole
-- `tests/fire.js` – PURE streak: heating up at 3, on fire at 4 (bigger sweet spot), fire's out on a miss
+- `tests/fire.js` – PURE streak: "he's starting to feel it" at 3, locked in at 4 (bigger sweet spot), "lost the feel" on a miss
 - `tests/viaduct.js` – hole 8: only a pure Stinger fits the arch, CLANG off the wall, the tee cam's verdict, hide/show
 - `tests/swing.js` – hold/release swing and strike ring: nuke, meltdown, too early/late, cancel, pure, late hook
 - `tests/putting.js` – distance-scaled putting on the practice green
