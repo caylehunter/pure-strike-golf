@@ -78,6 +78,7 @@ Big moments should feel like NBA Jam: loud, quick, and never in the way of the n
 - **Confetti** for birdie or better, any holed shot from off the green, and winning a match.
 - **Switches:** Sound and Announcer on the pause screen, remembered. Turning Sound off silences everything, including the announcer.
 - Reduced-motion settings soften the shake, flashes, slams and confetti.
+- **iPhone sound:** the page asks for the "playback" audio session (so the ring/silent switch doesn't mute the game, like any game app) and unlocks sound on the end of the first tap, which is what Safari requires. It resumes after a call or switching apps. (Playtest: "I don't hear any sound.")
 
 ## Shot shaping
 

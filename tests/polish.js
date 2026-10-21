@@ -21,6 +21,14 @@ const PAGE = 'file://' + path.join(__dirname, 'page.html');
   check('holding the swing starts audio and the power hum', held.ctx && held.charging);
   await pg.mouse.up(); await pg.waitForTimeout(100);
   check('letting go stops the hum', !(await snd()).charging);
+  // sound really comes out: the output meter moves during a pure strike, and stays silent with Sound off
+  const loudest = async ms => { let m = 0; for (let i = 0; i < ms / 20; i++) { m = Math.max(m, await pg.evaluate(() => window.__pureStrike.level())); await pg.waitForTimeout(20); } return m; };
+  await pg.waitForTimeout(2500); await pg.evaluate(() => window.__pureStrike.restartHole()); await pg.waitForTimeout(300);
+  check('the audio engine is running after the first tap', (await snd()).state === 'running', (await snd()).state);
+  await pg.evaluate(() => window.__pureStrike.strikeP(0.6, 0.3)); // a mishit, so the pure streak below starts from zero
+  const lvl = await loudest(400);
+  check('a strike is audible (the output level moves)', lvl > 0.05, `peak ${lvl.toFixed(3)}`);
+  await pg.waitForTimeout(3000);
   await pg.waitForTimeout(2500);
   await pg.evaluate(() => window.__pureStrike.restartHole()); await pg.waitForTimeout(200);
 
@@ -52,6 +60,10 @@ const PAGE = 'file://' + path.join(__dirname, 'page.html');
   check('Announcer switches off', !(await snd()).voice && (await pg.$eval('#pause [data-voice]', e => e.textContent)) === 'Announcer: Off');
   await pg.tap('#pause [data-sound]');
   check('Sound switches off, and the announcer button goes inactive with it', !(await snd()).on && (await pg.$eval('#pause [data-voice]', e => e.disabled)));
+  await pg.tap('#pzResume'); await pg.waitForTimeout(200); await pg.waitForTimeout(1500);
+  await pg.evaluate(() => window.__pureStrike.strikeP(0.6, 0));
+  const quiet = await loudest(400);
+  check('with Sound off, a strike makes no sound', quiet < 0.001, `peak ${quiet.toFixed(4)}`);
   await pg.reload(); await pg.waitForTimeout(300);
   const after = await snd();
   check('both stay off after a reload', !after.on && !after.voice && (await pg.$eval('[data-sound]', e => e.textContent)) === 'Sound: Off');

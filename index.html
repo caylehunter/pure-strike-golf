@@ -829,18 +829,39 @@ const canNuke = () => G.tee === 'black' && !G.practice && G.ci === 0 && onTee();
 const club = () => CLUBS[G.ci];
 
 /* ---------- audio ---------- */
-let AC = null, BUS = null, MASTER = null;
+let AC = null, BUS = null, MASTER = null, METER = null;
 const soundOn = () => store.sound !== false, voiceOn = () => store.announcer !== false;
+/* iPhones play web audio as "ambient" by default, which the ring/silent switch mutes: ask for "playback" like a game app */
+const SILENT_WAV = 'data:audio/wav;base64,UklGRrQBAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YZABAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA';
+let unlocked = false;
+function unlockAudio() {
+  try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
+  audio();
+  if (!AC || unlocked) return;
+  try {
+    /* a one-sample buffer started inside the tap is what unlocks Safari's audio; the silent <audio> covers older iOS */
+    const src = AC.createBufferSource(); src.buffer = AC.createBuffer(1, 1, 22050); src.connect(AC.destination); src.start(0);
+    const el = new Audio(SILENT_WAV); el.setAttribute('playsinline', ''); const pr = el.play(); if (pr && pr.catch) pr.catch(() => {});
+    unlocked = AC.state === 'running' || unlocked;
+  } catch (e) {}
+}
+/* Safari only counts the end of a tap (touchend / click / key) as permission to start sound; pointerdown is too early */
+for (const ev of ['touchend', 'click', 'keydown']) document.addEventListener(ev, unlockAudio, { capture: true, passive: true });
+document.addEventListener('visibilitychange', () => { if (!document.hidden && AC && AC.state !== 'running') AC.resume().catch(() => {}); });
 function audio() {
+  try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
   if (!AC) {
     try {
       AC = new (window.AudioContext || window.webkitAudioContext)();
       /* everything goes through one compressor so stacked sounds (a nuke plus the crowd) stay loud without clipping */
       const comp = AC.createDynamicsCompressor(); comp.threshold.value = -14; comp.knee.value = 10; comp.ratio.value = 6; comp.attack.value = 0.003; comp.release.value = 0.2;
       MASTER = AC.createGain(); MASTER.gain.value = soundOn() ? 0.9 : 0; comp.connect(MASTER); MASTER.connect(AC.destination); BUS = comp;
+      /* a level meter on the output, so tests can tell sound actually plays */
+      METER = AC.createAnalyser(); METER.fftSize = 2048; MASTER.connect(METER);
     } catch (e) { AC = null; }
   }
-  if (AC && AC.state === 'suspended') AC.resume();
+  /* 'interrupted' happens on iPhone after a call or Siri: resume from that too */
+  if (AC && AC.state !== 'running' && AC.state !== 'closed') { const pr = AC.resume(); if (pr && pr.catch) pr.catch(() => {}); }
   primeVoice();
 }
 function setSound(on) { store.sound = on; save(); if (MASTER) MASTER.gain.setTargetAtTime(on ? 0.9 : 0, AC.currentTime, 0.02); if (!on) charge.stop(); syncSoundBtns(); }
@@ -2265,7 +2286,8 @@ window.__pureStrike = { score: (strokes, putts) => { G.strokes = strokes; G.putt
   setShape: sh => { G.shape = sh; defaultAim(); syncUI(); },
   ballY: () => b.y,
   pop: (t, c, s) => pop(t, c, s),
-  sound: () => ({ ctx: !!AC, charging: !!charge.o, on: soundOn(), voice: voiceOn(), fireEdge: $('#fireEdge').className, confetti: $('#confetti').children.length }),
+  level: () => { if (!METER) return 0; const d = new Float32Array(METER.fftSize); METER.getFloatTimeDomainData(d); let m = 0; for (const v of d) m = Math.max(m, Math.abs(v)); return m; },
+  sound: () => ({ ctx: !!AC, state: AC && AC.state, session: navigator.audioSession ? navigator.audioSession.type : 'n/a', charging: !!charge.o, on: soundOn(), voice: voiceOn(), fireEdge: $('#fireEdge').className, confetti: $('#confetti').children.length }),
   strikeP: (p, n) => { if (G.mode !== 'aim') return false; swingDown(); G.meter.p = p; swingUp(); strike(n); return true; },
   /* a text map of a hole, one character per `step` yards: T tee, = fairway, . rough, o sand, ~ water, G green, f fringe, # tree, space out of bounds */
   holeMap: (i, step = 6) => { const cur = HOLE_I, was = HOLES; HOLES = ALL_HOLES; loadHole(i); const ch = { tee: 'T', fairway: '=', rough: '.', sand: 'o', water: '~', green: 'G', fringe: 'f', oob: ' ' }, rows = [];
