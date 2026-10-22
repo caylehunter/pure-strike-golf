@@ -68,7 +68,11 @@ Feedback pops: PURE, A TOUCH EARLY/LATE, SLICE/HOOK (tapped early/late), HOLD TO
 Big moments should feel like NBA Jam: loud, quick, and never in the way of the next swing.
 
 - **Callouts** (PURE, NUCLEAR, BIRDIE, …) slam in big and tilted, then settle and float off. NUCLEAR, birdie-or-better and STARTING TO FEEL IT get a spinning starburst behind them.
-- **Golf sounds** (built from how the real ones work, since there are no recordings yet):
+- **Recorded sounds come first.** Real recordings live in `sounds/` (mp3, mono, trimmed to start about 30 ms before contact and fade out by 0.75 s, peak-normalized to about -2 dB with no compression so the attack stays sharp). `python3 tools/embed_sounds.py` embeds them in `index.html`, so the game stays one file.
+  - **Driver:** Cayle's two range takes (`driver-1`, `driver-2`), picked at random each swing so it never sounds canned. A pure strike plays as recorded; a worse one is thinned (high-pass, and low-pass on a real mishit) and quieter; a nuke plays it 10% slower and deeper, under the boom.
+  - **Irons:** until there are iron recordings, the driver recording plays 18% higher and lighter.
+  - **Still synthesized, waiting on recordings:** putter, ball in the cup, landing, divot.
+- **Synthesized fallbacks** (built from how the real sounds work; used where there's no recording yet):
   - **Driver:** a swish leading into contact, a sharp crack, the titanium head ringing briefly, and a low thump you feel. A pure strike has the most thump; a mishit rings longer and buzzes.
   - **Irons:** ball first, then turf: a crisp click, then the divot tearing through the grass about 8 ms later. Less turf off a tee or the green, more from the rough, none from sand.
   - **Putter:** a short milled "tock" scaled to the stroke, then a quiet rumble while the ball rolls on the green.

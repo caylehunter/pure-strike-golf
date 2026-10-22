@@ -76,6 +76,10 @@ const PAGE = 'file://' + path.join(__dirname, 'page.html');
     const n = await pg.$$eval(`.lab-sec[data-key="${sec}"] .lab-moments button`, b => b.length);
     for (let i = 0; i < n; i++) { const name = await pg.$eval(`.lab-sec[data-key="${sec}"] [data-m="${i}"]`, e => e.textContent); await pg.click(`.lab-sec[data-key="${sec}"] [data-m="${i}"]`); if ((await loudest(name === 'Long putt drops' ? 3000 : 400)) < 0.05) silent.push(name); }
   }
+  check('the range recordings of the driver are loaded', (await pg.evaluate(() => window.__pureStrike.samples())).join() === 'driver-1,driver-2', (await pg.evaluate(() => window.__pureStrike.samples())).join());
+  await pg.click('.lab-sec[data-key="driver"] [data-m="0"]');
+  const drv = await loudest(500);
+  check('a pure drive plays the recording at full level', drv > 0.4, `peak ${drv.toFixed(2)}`);
   check('Sound lab: every moment plays a sound', silent.length === 0, silent.join(', ') || 'all audible');
   await pg.click('.lab-sec[data-key="cup"] [data-set="B"]'); await pg.waitForTimeout(200);
   check('Sound lab: a picked version is remembered', (await pg.evaluate(() => JSON.parse(localStorage.getItem('pure-strike-v1')).soundSets.cup)) === 'B');

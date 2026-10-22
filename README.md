@@ -6,6 +6,10 @@ Phone-first arcade golf prototype. See [DESIGN.md](DESIGN.md) for how everything
 
 Open `index.html` in a browser (phone-sized window works best), or use the published prototype link.
 
+## Sounds
+
+Recordings live in `sounds/` as mp3 files. After adding or replacing one, run `python3 tools/embed_sounds.py` to embed them in `index.html`.
+
 ## Tests
 
 Automated play tests drive the game in headless Chromium:
