@@ -48,6 +48,25 @@ Feedback pops: PURE, A TOUCH EARLY/LATE, SLICE/HOOK (tapped early/late), HOLD TO
 - **3 in a row → "HE'S STARTING TO FEEL IT!"** A glow around the ball; the badge reads "Feeling it".
 - **4 in a row → LOCKED IN!** Flame trail and embers, a perfect window 60% wider, and 5% more carry, until a swing isn't pure ("LOST THE FEEL"). Every round starts cold.
 
+## Power-ups and Arcade mode
+
+NBA Jam-style boosts, **earned by playing well and never sold**. They're on in **Arcade** stroke play and in **match play**; a round that counts for your handicap has none.
+
+- **Earn one** with a birdie or better (not on the last hole), by getting locked in, or with a nuclear drive. A purple "POWER-UP!" callout says which one and what it does. You hold **2 at most** (a third is missed, and the game says so); unused ones are gone when the round ends.
+- **The four:**
+
+| Power-up | What it does | When you can play it |
+| --- | --- | --- |
+| Dead Calm | No wind on your next shot (the wind is back after it) | Before a full shot |
+| Sweet Spot | The pure window doubles for your next swing | Before a full shot |
+| Read | Shows the exact line on your next putt | On the green, before the putt |
+| Mulligan | Replay your last shot: back to where it was played, with its stroke and any penalty taken back | Any time the ball is at rest on that hole |
+
+- **Using one:** tap its purple chip above the controls. It gets its own callout and announcer line, and stays lit ("Dead Calm on") until the shot it's for is played.
+- **The computer plays them too** in match play: it earns one on each of its birdies and often plays it on a later hole ("DUSTY USES SWEET SPOT"), which is often worth a stroke.
+- **Handicap stays real golf:** Arcade rounds never post (they keep their own best scores), and a match where you used a power-up doesn't post either. The result screen says why.
+- **Arcade** is chosen on the stroke play setup screen ("Counts for handicap" / "Arcade · power-ups") and remembered.
+
 ## Nuclear drive (black tees, driver, tee shot only)
 
 - Arm **Nuke**. The power bar extends past the 100% line straight into the **NUKE band**, which is the top of the meter.
@@ -176,7 +195,7 @@ Needs: a server and accounts (matches, whose turn), push notifications (installe
 ## Ideas from playtesters (planned)
 
 - **Real-time weather:** the host shares approximate location; the match uses the local wind (and maybe rain for softer greens, cold for shorter carry). Needs the app and a weather service, so it comes with online play.
-- **Power-ups** beyond locked in: earned through play (streaks, challenges, rewards), never sold. Only cosmetics are for sale (flame colors, ball trails, trophy styles). In friend matches both players have the same access.
+- **More power-ups** (built: Dead Calm, Sweet Spot, Read, Mulligan; see above): earned through play (streaks, challenges, rewards), never sold. Only cosmetics are for sale (flame colors, ball trails, trophy styles). In friend matches both players have the same access.
 - **Chat in online matches** (trash talk is part of golf): quick taunts plus free text between friends, a profanity filter players can switch off for their own matches, and block, mute and report (app stores require these).
 
 ## Business model and tournaments (planned, after online play)
@@ -217,6 +236,8 @@ The first game has to be simple and fun, or the game won't catch on.
 5. ~~9-hole course.~~
    ~~Starting to feel it / locked in (was heating up / on fire); guided warm-up for new players.~~
    ~~Look and sound pass.~~
+   ~~Signature holes; earned power-ups and Arcade mode; range recordings for drives and irons.~~
+   **Next:** daily challenge.
 6. The real app, planned in the "Pure Strike: Real App Plan" doc (about 17 weeks):
    - Phase 0, engine rebuild (~2 wks): modules + TypeScript, seeded randomness, every shot replayable from its inputs.
    - Phase 1, real app (~3 wks): Capacitor iPhone app, sign-in, cloud save, TestFlight.

@@ -63,6 +63,12 @@ button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 .tut-list b{color:var(--gold)}
 @media (prefers-reduced-motion:reduce){#swingBtn.coach-pulse{animation:none}}
 #streak{position:fixed;right:max(16px,env(safe-area-inset-right,0px));z-index:5;font:800 12px/1 var(--cond);letter-spacing:.12em;text-transform:uppercase;padding:6px 10px;border-radius:99px;background:rgba(7,16,12,.72);border:1px solid rgba(255,207,63,.5);color:var(--gold);pointer-events:none;white-space:nowrap}
+#puBar{position:fixed;left:max(16px,env(safe-area-inset-left,0px));z-index:6;display:flex;gap:6px}
+.pu{all:unset;cursor:pointer;font:800 12px/1 var(--cond);letter-spacing:.1em;text-transform:uppercase;padding:8px 11px;border-radius:99px;background:rgba(36,18,64,.88);border:1px solid #b18cff;color:#e7dcff;white-space:nowrap}
+.pu:disabled{opacity:.45;cursor:default}
+.pu.armed,.pu.armed:disabled{opacity:1;background:#b18cff;color:#1a0b33;box-shadow:0 0 14px rgba(177,140,255,.8)}
+.pu:focus-visible{outline:2px solid var(--gold)}
+.pop.pu-pop{color:#d9c7ff;text-shadow:0 0 18px #8a5cff,0 3px 0 rgba(0,0,0,.35)}
 #streak.heat{background:rgba(255,150,40,.25);border-color:#ffa53a;color:#ffd08a}
 #streak.fire{background:var(--nuke);border-color:var(--nuke);color:#1d0900;box-shadow:0 0 16px rgba(255,90,31,.7)}
 .pop.heat{color:#ffc46b;text-shadow:0 0 18px #ff8a3a,0 3px 0 rgba(0,0,0,.35)}
@@ -290,6 +296,7 @@ button.nuke small{font:700 11px/1 var(--cond);letter-spacing:.06em;opacity:.85}
 </header>
 <div id="lie" hidden></div>
 <button id="camBtn" hidden>Tee cam</button>
+<div id="puBar" hidden></div>
 <div id="coach" hidden><span class="coach-step" id="coachStep"></span><span id="coachText"></span><button id="coachSkip">Skip warm-up</button></div>
 <div id="streak" hidden></div>
 <div id="matchBar" hidden><b id="mbStatus"></b><span id="mbTarget"></span></div>
@@ -347,8 +354,8 @@ button.nuke small{font:700 11px/1 var(--cond);letter-spacing:.06em;opacity:.85}
       <h1>PURE<br><span>STRIKE</span></h1>
       <p id="menuHcp">Handicap 36.0</p>
     </div>
-    <button class="tee-card mode" id="soloBtn"><span class="av">S</span><span class="tc-main"><b>Stroke play</b><small>Play 9 holes (or a quick 3), post a score, lower your handicap</small></span></button>
-    <button class="tee-card mode match" id="matchBtn"><span class="av">M</span><span class="tc-main"><b>Match play</b><small>Beat Dusty, Marge and Ace hole by hole</small></span></button>
+    <button class="tee-card mode" id="soloBtn"><span class="av">S</span><span class="tc-main"><b>Stroke play</b><small>Play 9 holes (or a quick 3) for your handicap, or Arcade with power-ups</small></span></button>
+    <button class="tee-card mode match" id="matchBtn"><span class="av">M</span><span class="tc-main"><b>Match play</b><small>Beat Dusty, Marge and Ace hole by hole · power-ups on</small></span></button>
     <button class="ghost" id="practiceBtn">Putting practice</button>
     <button class="ghost" id="howBtn">How to play (60-second warm-up)</button>
     <button class="ghost" id="labBtn">Sound lab: pick the best sounds</button>
@@ -372,6 +379,7 @@ button.nuke small{font:700 11px/1 var(--cond);letter-spacing:.06em;opacity:.85}
   <div class="card">
     <span class="eyebrow">Stroke play · Pure Strike Links</span>
     <h2 class="ms-title">Pick your tees</h2>
+    <div class="seg" id="soloMode" role="group" aria-label="Round type"><button data-arcade="0">Counts for handicap</button><button data-arcade="1">Arcade · power-ups</button></div>
     <p class="ms-note" id="soloNote">Your score posts to your handicap when you finish the round.</p>
     <div class="row"><span class="lbl">Holes</span><div class="seg len-seg"><button data-len="9">9 holes · ~20 min</button><button data-len="3">3 holes · ~7 min</button></div></div>
     <button class="tee-card blue" data-tee="blue"><span class="dot"></span><span class="tc-main"><b>Blue tees</b><small id="blueInfo">wider sweet spot · calmer wind</small></span></button>
@@ -780,6 +788,7 @@ function lieFactor(lie, club) {
 
 /* ---------- state ---------- */
 const G = {
+  pu: [], snap: null, windSaved: null, calmFired: false,
   mode: 'menu', tee: 'blue', practice: false, strokes: 0, putts: 0, ci: 0, shape: 'straight', nukeArmed: false,
   aimA: 0, aimD: 0, wind: { x: 0, y: 0, mph: 0 }, read: 'arrows', longest: 0, lastPos: null, F: null,
   meter: { p: 0, dir: 1, pmax: 1, lock: 0, n: 0, speed: 1.25 }, trail: [], drag: null, pred: null,
@@ -1304,12 +1313,14 @@ function startRound(tee, match = null) {
   setRoundHoles(G.len);
   G.match = match;
   G.tee = tee; G.practice = false; G.longest = 0; G.shape = 'straight'; G.streak = 0;
-  G.round = { tee, scores: [], putts: [], over: false, earned: earnedIds(), oppsOpen: OPPONENTS.map((o, i) => oppOpen(i)) };
+  G.round = { tee, scores: [], putts: [], over: false, earned: earnedIds(), oppsOpen: OPPONENTS.map((o, i) => oppOpen(i)), arcade: !match && !!store.arcade, puUsed: 0 };
+  G.pu = []; if (match) match.oppPU = 0;
   hideOverlays(); startHole(0);
 }
 function startHole(i) {
   loadHole(i);
   G.strokes = 0; G.putts = 0; G.nukeArmed = false; G.ballHidden = false; G.timers = []; G.trail = []; parts = []; rings = [];
+  G.snap = null; G.windSaved = null; if (G.pu) G.pu = G.pu.filter(x => !x.armed);
   if (!shapeOpen(G.shape)) G.shape = 'straight';
   if (HOLE.bridge) G.shape = 'stinger';
   const mph = G.tee === 'black' ? 4 + Math.random() * 11 : Math.random() * 7, a = Math.random() * TAU;
@@ -1322,8 +1333,71 @@ function startHole(i) {
     : (M.honor === 'me' ? ' · your honor' : ` · ${M.opp.name}'s honor`);
   if (G.tutorial) pop('WARM-UP', 'yds', `${HOLE.name} · Par ${PAR} · ${TEE_YDS[G.tee]} yds · no wind`);
   else pop(`HOLE ${i + 1}`, 'yds', `${HOLE.name} · Par ${PAR} · ${TEE_YDS[G.tee]} yds${HOLE.tip ? ' · ' + HOLE.tip : ''}${first}`);
-  if (live) { initOpp(); nextTurn(); }
+  if (live) { oppTakesPU(); initOpp(); nextTurn(); }
+  renderPU();
 }
+/* ---------- power-ups (arcade rounds and match play): earned by playing well, never sold ---------- */
+const POWERUPS = {
+  calm: { name: 'Dead Calm', what: 'no wind on your next shot', when: 'aim' },
+  sweet: { name: 'Sweet Spot', what: 'double-size pure window on your next swing', when: 'aim' },
+  read: { name: 'Read', what: 'shows the exact line on your next putt', when: 'putt' },
+  mull: { name: 'Mulligan', what: 'replay your last shot, no penalty', when: 'rest' }
+};
+const PU_MAX = 2;
+const puOn = () => !!G.round && !G.practice && !G.tutorial && (!!G.round.arcade || !!G.match);
+/* earn one: birdie or better, getting locked in, or a nuclear drive */
+function earnPU(why) {
+  if (!puOn()) return;
+  const held = G.pu.map(x => x.id), pool = Object.keys(POWERUPS).filter(k => !held.includes(k)), id = pool[Math.floor(Math.random() * pool.length)];
+  later(1.3, () => {
+    if (G.pu.length >= PU_MAX) { pop('POWER-UP MISSED', 'small', 'both slots are full: use one'); return; }
+    G.pu.push({ id, armed: false }); renderPU();
+    pop('POWER-UP!', 'pu-pop', `${POWERUPS[id].name} · ${POWERUPS[id].what} · for your ${why}`); sfx('fanfare'); vib([15, 30, 15]);
+  });
+  call('Power up!', 1.4);
+}
+/* can this one be used right now? */
+function puReady(id) {
+  const w = POWERUPS[id].when;
+  if (w === 'aim') return G.mode === 'aim';
+  if (w === 'putt') return G.mode === 'putt' && !G.drag;
+  return (G.mode === 'aim' || G.mode === 'putt') && !!G.snap && G.snap.hole === HOLE_I;
+}
+function usePU(i) {
+  const P = G.pu[i]; if (!P || P.armed || !puReady(P.id)) return;
+  const D = POWERUPS[P.id];
+  G.round.puUsed = (G.round.puUsed || 0) + 1;
+  pop(D.name.toUpperCase(), 'pu-pop', D.what); sfx('whoosh', 1.2); vib(15); call(D.name + '!', 0.1);
+  if (P.id === 'mull') {
+    /* back to where the last shot was played from, with its stroke (and any penalty) taken back */
+    const S = G.snap; G.pu.splice(i, 1); G.snap = null;
+    G.strokes = S.strokes; G.putts = S.putts; b.x = S.x; b.y = S.y; b.z = 0; b.vx = b.vy = 0; b.inCup = false; b.lipped = false; G.ballHidden = false;
+    playerTurn(); renderPU(); return;
+  }
+  P.armed = true;
+  if (P.id === 'calm') { G.windSaved = G.wind; G.wind = { x: 0, y: 0, mph: 0 }; }
+  if (P.id === 'read') updatePuttDrag();
+  renderPU(); syncUI();
+}
+const puArmed = id => G.pu.some(x => x.id === id && x.armed);
+/* an armed power-up is spent once the shot it was for is played */
+function spendPU(ids) { const n = G.pu.length; G.pu = G.pu.filter(x => !(x.armed && ids.includes(x.id))); if (G.pu.length !== n) renderPU(); }
+function renderPU() {
+  const bar = $('#puBar'); bar.hidden = !puOn() || !G.pu.length || G.mode === 'done' || G.mode === 'menu';
+  bar.innerHTML = G.pu.map((x, i) => `<button class="pu${x.armed ? ' armed' : ''}" data-pu="${i}" ${x.armed || !puReady(x.id) ? 'disabled' : ''} title="${POWERUPS[x.id].what}">${x.armed ? POWERUPS[x.id].name + ' on' : POWERUPS[x.id].name}</button>`).join('');
+  layout();
+}
+$('#puBar').addEventListener('click', e => { const x = e.target.closest('[data-pu]'); if (x) { unlockAudio(); usePU(+x.dataset.pu); } });
+/* the computer earns them the same way (a birdie) and plays one on a later hole: often it's worth a stroke */
+function oppTakesPU() {
+  const M = G.match; if (!M || M.decided || !(M.oppPU > 0)) return;
+  if (Math.random() > 0.55) return;
+  M.oppPU--;
+  const id = Object.keys(POWERUPS)[Math.floor(Math.random() * 4)];
+  if (Math.random() < 0.6 && M.ai[HOLE_I] > PAR - 2) M.ai[HOLE_I]--;
+  later(1.6, () => pop(`${M.opp.name.toUpperCase()} USES ${POWERUPS[id].name.toUpperCase()}`, 'pu-pop', 'power-ups are on in match play'));
+}
+
 /* ---------- first-time warm-up: one guided, forgiving hole ---------- */
 function startTutorial() {
   audio();
@@ -1460,7 +1534,8 @@ function initOpp() {
 const oppDist = () => hyp(G.opp.ball.x - PIN.x, G.opp.ball.y - PIN.y);
 const myDist = () => hyp(b.x - PIN.x, b.y - PIN.y);
 const turnsLive = () => G.match && G.opp;
-function playerTurn() { const s = surface(b.x, b.y); if (s === 'green' || s === 'fringe') enterPutt(); else enterAim(); }
+function playerTurn() { if (G.calmFired && G.windSaved) { G.wind = G.windSaved; G.windSaved = null; G.calmFired = false; }
+  const s = surface(b.x, b.y); if (s === 'green' || s === 'fringe') enterPutt(); else enterAim(); renderPU(); }
 /* who plays next: the honor on the tee, then whoever is farther from the hole */
 function nextTurn() {
   if (!turnsLive()) return playerTurn();
@@ -1504,7 +1579,7 @@ const RING_START = 0.9, RING_R = 44, RING_K = 2.4;
 /* NBA Jam heat: 3 pure swings in a row and he's starting to feel it, 4 and he's locked in until a swing isn't pure */
 const HEAT_AT = 3, FIRE_AT = 4;
 const onFire = () => !G.practice && (G.streak || 0) >= FIRE_AT;
-const perfectWin = () => G.tutorial ? 0.09 : (G.tee === 'blue' || G.practice ? 0.05 : 0.035) * (onFire() ? 1.6 : 1);
+const perfectWin = () => G.tutorial ? 0.09 : (G.tee === 'blue' || G.practice ? 0.05 : 0.035) * (onFire() ? 1.6 : 1) * (G.pu && puArmed('sweet') ? 2 : 1);
 function swingDown() {
   audio();
   if (G.mode === 'opp') return skipOppShot();
@@ -1531,9 +1606,11 @@ function strike(n) {
   if (G.tutorial && perfect) G.tutorial.pure = true;
   const armed = G.nukeArmed && canNuke(), nuke = armed && inBand(M.lock);
   G.shotFromTee = onTee(); G.lastPos = { x: b.x, y: b.y };
+  G.snap = { x: b.x, y: b.y, strokes: G.strokes, putts: G.putts, hole: HOLE_I };
   const lie = surface(b.x, b.y);
   G.F = buildShot(nuke ? 1.2 : M.lock, err, { nuke, perfect, fire, wind: true });
   G.strokes++; G.mode = 'flight'; G.trail = [];
+  if (G.pu) spendPU(['sweet', 'calm']); if (G.windSaved) G.calmFired = true;
   if (lie === 'sand') { burst(b.x, b.y, 22, ['#efe0b0', '#d9c48a'], 6, 9, 2.6, 0.8); sfx('sand'); }
   if (nuke) {
     strikeSound('driver', 1, 1.2, lie); sfx('nuke'); flash('#ffb070', 0.9, 500); shake(16); vib([30, 30, 60]); G.hitstop = 0.16;
@@ -1550,11 +1627,11 @@ function strike(n) {
       else if (!armed && Math.abs(err) > 0.2) pop(err > 0 ? 'A TOUCH EARLY' : 'A TOUCH LATE', 'small');
     }
   }
-  if (nuke) { G.nukeArmed = false; if (Math.abs(err) <= 0.5) { store.stats.nukes++; save(); } }
+  if (nuke) { G.nukeArmed = false; if (Math.abs(err) <= 0.5) { store.stats.nukes++; save(); earnPU('nuclear drive'); } }
   const was = G.streak || 0;
   G.streak = perfect ? was + 1 : 0;
   if (G.streak === HEAT_AT) { later(0.35, () => { pop("HE'S STARTING TO FEEL IT!", 'heat', "one more pure swing and you're locked in"); sfx('sizzle'); }); call("He's starting to feel it!", 0.5); }
-  if (G.streak === FIRE_AT) { later(0.35, () => { pop('LOCKED IN!', 'nuke', 'bigger sweet spot · more distance · until you miss'); flash('#ff8a3a', 0.4, 300); sfx('fanfare'); sfx('whoosh', 1.4); sfx('crowd', 0.7); }); call("He's locked in!", 0.5); }
+  if (G.streak === FIRE_AT) { earnPU('locked-in streak'); later(0.35, () => { pop('LOCKED IN!', 'nuke', 'bigger sweet spot · more distance · until you miss'); flash('#ff8a3a', 0.4, 300); sfx('fanfare'); sfx('whoosh', 1.4); sfx('crowd', 0.7); }); call("He's locked in!", 0.5); }
   if (!perfect && was >= FIRE_AT) { later(0.35, () => { pop('LOST THE FEEL', 'miss', `${was} pure in a row`); sfx('groan', 0.6); }); }
   else if (!perfect && was >= HEAT_AT) later(0.35, () => pop('LOST THE FEEL', 'small'));
   syncUI();
@@ -1646,6 +1723,7 @@ function holed(fromAir) {
   const d = G.strokes - PAR, ft = G.putting && G.lastPos ? Math.round(hyp(G.lastPos.x - PIN.x, G.lastPos.y - PIN.y) * 3) : 0;
   const sub = !G.putting ? (fromAir ? 'slam dunk' : 'chip-in') : ft >= 20 ? `drained it from ${ft} ft` : `${G.strokes} strokes`;
   later(0.25, () => { sfx('fanfare'); pop(scoreName(G.strokes).toUpperCase(), d <= -1 ? 'score big' : 'score', sub); });
+  if (d <= -1 && G.pu && HOLE_I < HOLES.length - 1) earnPU(scoreName(G.strokes).toLowerCase());
   /* the crowd scales with the moment: a tap-in par gets a polite clap, a holed shot or birdie gets the roar */
   const big = d <= -1 || !G.putting || ft >= 20;
   if (big) { sfx('crowd', d <= -2 || G.strokes === 1 ? 1.2 : 0.9); later(0.3, () => sfx('applause', 1)); confetti(d <= -2 ? 120 : 70); }
@@ -1664,6 +1742,7 @@ function finishHole(pickedUp, conceded = false) {
   if (M && !M.decided) {
     const t = holeTarget(HOLE_I), r = conceded ? -1 : G.strokes <= t.win ? 1 : G.strokes === t.halve ? 0 : -1;
     M.res[HOLE_I] = r;
+    if (M.ai[HOLE_I] <= HOLES[HOLE_I].par - 1) M.oppPU = Math.min(PU_MAX, (M.oppPU || 0) + 1);
     if (r > 0) M.honor = 'me'; else if (r < 0) M.honor = 'opp';
     const st = M.res.reduce((x, y) => x + y, 0), left = HOLES.length - 1 - HOLE_I;
     holeRes = `${conceded ? 'Hole conceded' : r > 0 ? 'Hole won' : r < 0 ? 'Hole lost' : 'Hole halved'} · ${statusTxt(st)}`;
@@ -1687,6 +1766,15 @@ function finishHole(pickedUp, conceded = false) {
   let hcpHtml = '';
   if (last) {
     R.over = true;
+  }
+  /* power-ups aren't real golf: arcade rounds, and matches where you used one, don't touch the handicap */
+  const noPost = last && (R.arcade || R.puUsed > 0);
+  if (noPost) {
+    const bk = 'arcade-' + (HOLES.length === 9 ? G.tee + '9' : G.tee), prev = store.best[bk];
+    if (R.arcade && (!prev || total < prev)) store.best[bk] = total;
+    hcpHtml = R.arcade ? `<b>Arcade round</b><br>Power-ups were on, so this round doesn't count toward your handicap (still ${fmtH(handicap())}).${!prev || total < prev ? ' New arcade best!' : ` Arcade best: ${prev}.`}`
+      : `<b>Handicap unchanged (${fmtH(handicap())})</b><br>You used ${R.puUsed} power-up${R.puUsed === 1 ? '' : 's'}, so this match doesn't count toward your handicap.`;
+  } else if (last) {
     const h0 = handicap(), diff = Math.round((total - rating(G.tee)) * (18 / HOLES.length) * 10) / 10;
     /* the first 5 rounds set the handicap freely; after that one round counts at most 6 strokes from it */
     const established = store.rounds.length >= 5, posted = established ? clamp(diff, h0 - 6, h0 + 6) : diff;
@@ -1897,6 +1985,7 @@ function syncUI() {
     if (m === 'putt') $('#puttMain').textContent = 'Pull down · the gold circle shows where it stops on flat ground';
     $('#puttSub').textContent = m === 'putt' ? `${Math.round(d * 3)} ft to the hole · full pull ≈ ${Math.round(puttRange() * 3)} ft` : '';
   }
+  renderPU();
   layout();
 }
 function renderMeter() {
@@ -1914,7 +2003,7 @@ function layout() {
   viewTop = hr ? hr.bottom - 12 : 0;
   const vb = dr ? dr.top + 18 : H;
   viewH = Math.max(140, vb - viewTop); vcY = viewTop + viewH / 2;
-  if (dr) { lieEl.style.bottom = (H - dr.top + 6) + 'px'; $('#streak').style.bottom = (H - dr.top + 36) + 'px'; $('#camBtn').style.bottom = (H - dr.top + 36) + 'px'; }
+  if (dr) { lieEl.style.bottom = (H - dr.top + 6) + 'px'; $('#streak').style.bottom = (H - dr.top + 36) + 'px'; $('#puBar').style.bottom = (H - dr.top + 36) + 'px'; $('#camBtn').style.bottom = (H - dr.top + ($('#puBar').hidden ? 36 : 76)) + 'px'; }
 }
 
 /* ---------- input ---------- */
@@ -1935,7 +2024,9 @@ const endPtr = e => {
   if (G.mode === 'putt' && G.drag) {
     const P = puttFromDrag(); G.drag = null; G.pred = null;
     if (P && P.flat > 0.2 && e.type === 'pointerup') {
+      G.snap = { x: b.x, y: b.y, strokes: G.strokes, putts: G.putts, hole: HOLE_I };
       G.strokes++; G.putts++; G.lastPos = { x: b.x, y: b.y };
+      if (G.pu) spendPU(['read']);
       b.vx = P.vx; b.vy = P.vy; b.inCup = false; b.lipped = false;
       puttSound(0.35 + P.flat / 22); vib(10); G.mode = 'roll'; syncUI();
     } else updatePuttDrag();
@@ -1962,7 +2053,7 @@ function puttFromDrag() {
 }
 function updatePuttDrag() {
   const P = puttFromDrag();
-  G.pred = P && G.read === 'line' ? predictPutt(P.vx, P.vy) : null;
+  G.pred = P && (G.read === 'line' || (G.pu && puArmed('read'))) ? predictPutt(P.vx, P.vy) : null;
   const d = hyp(PIN.x - b.x, PIN.y - b.y);
   $('#puttMain').textContent = P ? `Flat roll ≈ ${Math.round(P.flat * 3)} ft` : 'Pull down, release to putt';
   $('#puttSub').textContent = `${Math.round(d * 3)} ft to the hole${P ? ' · let go to putt' : ''}`;
@@ -2044,7 +2135,12 @@ $('#fbCopy').onclick = async () => {
   try { await navigator.clipboard.writeText(t); st.textContent = 'Copied. Paste it into a text message.'; st.className = 'fb-status ok'; }
   catch (e) { const ta = $('#fbText'); ta.value = t; ta.focus(); ta.select(); st.textContent = 'Your note is selected in the box above: copy it from there.'; st.className = 'fb-status warn'; }
 };
-$('#soloBtn').onclick = () => { renderLen(); renderMenu(); $('#menu').hidden = true; $('#soloSetup').hidden = false; };
+function renderSoloMode() {
+  document.querySelectorAll('#soloMode button').forEach(x => { const on = !!+x.dataset.arcade === !!store.arcade; x.classList.toggle('on', on); x.setAttribute('aria-pressed', String(on)); });
+  $('#soloNote').textContent = store.arcade ? "Power-ups on: earn them with birdies, nukes and getting locked in. Arcade rounds don't count toward your handicap." : 'Your score posts to your handicap when you finish the round.';
+}
+$('#soloMode').onclick = e => { const x = e.target.closest('button'); if (!x) return; store.arcade = !!+x.dataset.arcade; save(); renderSoloMode(); };
+$('#soloBtn').onclick = () => { renderLen(); renderMenu(); renderSoloMode(); $('#menu').hidden = true; $('#soloSetup').hidden = false; };
 $('#soloBack').onclick = () => { $('#soloSetup').hidden = true; $('#menu').hidden = false; };
 const canConcede = () => G.match && !G.match.decided && !G.practice && !['menu', 'done', 'holed'].includes(G.mode);
 $('#pauseBtn').onclick = () => {
@@ -2470,7 +2566,7 @@ function drawAim(px) {
 function drawPuttAim(px) {
   const P = puttFromDrag(); if (!P) return;
   const v = hyp(P.vx, P.vy), ux = P.vx / v, uy = P.vy / v;
-  if (G.read === 'line' && G.pred) {
+  if (G.pred) {
     ctx.fillStyle = 'rgba(255,255,255,.9)';
     const pts = G.pred.pts; for (let i = 1; i < pts.length; i += 2) circle(pts[i][0], pts[i][1], 1.6 * px);
     const e = pts[pts.length - 1]; ctx.strokeStyle = G.pred.res === 'holed' ? '#ffcf3f' : '#fff'; ctx.lineWidth = 2 * px; ctx.beginPath(); ctx.arc(e[0], e[1], 6 * px, 0, TAU); ctx.stroke();
@@ -2532,6 +2628,12 @@ window.__pureStrike = { score: (strokes, putts) => { G.strokes = strokes; G.putt
     finally { [AC, BUS, NOISE] = was; }
   },
   level: () => { if (!METER) return 0; const d = new Float32Array(METER.fftSize); METER.getFloatTimeDomainData(d); let m = 0; for (const v of d) m = Math.max(m, Math.abs(v)); return m; },
+  pu: () => ({ on: puOn(), slots: G.pu ? G.pu.map(x => x.id + (x.armed ? '*' : '')) : [], wind: G.wind.mph, win: perfectWin(), pred: !!G.pred, oppPU: G.match ? G.match.oppPU : null, used: G.round ? G.round.puUsed : 0 }),
+  setWind: mph => { G.wind = { x: 0, y: mph, mph }; syncUI(); },
+  clearPU: () => { G.pu = []; renderPU(); },
+  givePU: id => { G.pu.push({ id, armed: false }); renderPU(); },
+  usePU: i => usePU(i),
+  oppPU: n => { G.match.oppPU = n; },
   samples: () => Object.keys(SAMPLES).filter(hasSample),
   sound: () => ({ ctx: !!AC, state: AC && AC.state, session: navigator.audioSession ? navigator.audioSession.type : 'n/a', charging: !!charge.o, on: soundOn(), voice: voiceOn(), fireEdge: $('#fireEdge').className, confetti: $('#confetti').children.length }),
   strikeP: (p, n) => { if (G.mode !== 'aim') return false; swingDown(); G.meter.p = p; swingUp(); strike(n); return true; },
