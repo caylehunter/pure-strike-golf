@@ -48,6 +48,23 @@ Feedback pops: PURE, A TOUCH EARLY/LATE, SLICE/HOOK (tapped early/late), HOLD TO
 - **3 in a row → "HE'S STARTING TO FEEL IT!"** A glow around the ball; the badge reads "Feeling it".
 - **4 in a row → LOCKED IN!** Flame trail and embers, a perfect window 60% wider, and 5% more carry, until a swing isn't pure ("LOST THE FEEL"). Every round starts cold.
 
+## Daily challenge (the Wordle loop)
+
+One hole a day, **the same hole and the same wind for everyone**, picked from the date (Daily #1 was October 28, 2026), so friends compare like for like. Blue tees, no power-ups, and it never touches the handicap.
+
+- **One counted try a day.** After that the daily card shows today's result to share, plus a **practice run** that's labeled as one and doesn't change the score.
+- **The share grid:** one emoji per stroke, so friends can read how it went without spoilers: 💥 nuke, 🟡 pure, ⚪ solid, 🟠 mishit, 💧 water, 🚫 out of bounds, 🔵 putt, and ⛳ for the one that went in. **Share** opens the phone's share sheet (or copies it):
+
+```
+Pure Strike Daily #7 ⛳
+Home Stretch · Par 5 · Birdie (-1)
+🟡🟡⚪🔵⛳
+🔥 3-day streak
+```
+
+- **Streaks:** playing on consecutive days builds a streak; skipping a day starts it over (the best is kept). The menu card nudges "keep your 3-day streak alive" and counts down to the next hole.
+- It cycles through all nine holes (every hole shows up within 40 days).
+
 ## Power-ups and Arcade mode
 
 NBA Jam-style boosts, **earned by playing well and never sold**. They're on in **Arcade** stroke play and in **match play**; a round that counts for your handicap has none.

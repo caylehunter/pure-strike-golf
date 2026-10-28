@@ -31,5 +31,6 @@ npm test
 - `tests/putting.js` – distance-scaled putting on the practice green
 - `tests/puttview.js` – putting view on two phone sizes: the coach card, match bar, putt pill and pop-ups never cover the hole; a full-length putt pull fits on phones and laptops
 - `tests/signature.js` – the signature holes: The Cape's safe vs hero line, The Gamble's layup vs pure drive, The Ridge's roll-back putt, warm-up on Short Fuse
+- `tests/daily.js` – daily challenge: same hole and wind for everyone, one counted try, practice runs, the share grid, streaks
 - `tests/powerups.js` – Arcade mode and power-ups: earning, the four kinds, two slots, the computer's, and no handicap posting
 - `tests/polish.js` – look and sound: swing hum, fire glow, big callout and confetti, Sound/Announcer switches remembered
