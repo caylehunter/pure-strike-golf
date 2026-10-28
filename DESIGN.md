@@ -48,6 +48,23 @@ Feedback pops: PURE, A TOUCH EARLY/LATE, SLICE/HOOK (tapped early/late), HOLD TO
 - **3 in a row → "HE'S STARTING TO FEEL IT!"** A glow around the ball; the badge reads "Feeling it".
 - **4 in a row → LOCKED IN!** Flame trail and embers, a perfect window 60% wider, and 5% more carry, until a swing isn't pure ("LOST THE FEEL"). Every round starts cold.
 
+## Payoff moments (the home-run feeling)
+
+The great shots get a cinematic beat, like the slow-motion home run in an arcade baseball game: time stretches, the camera leans in, and the sound rings out in an arena. Ordinary and mishit shots get none of it, so it means something.
+
+| Moment | What happens |
+| --- | --- |
+| Pure strike (any club) | A beat of slow motion (0.35× for driver, lighter for irons), the camera punches in, white speed lines burst from the ball, the strike rings out with an arena tail, and the ball "zips" off the face |
+| NUCLEAR | The deepest slow motion (0.18× for half a second), a bigger punch-in, orange speed lines, the arena wide open; on landing the yardage counts up fast and slams down ("453 YDS · nuclear drive") |
+| Any drive of 250+ | The yardage counts up with ticks and lands with a thump |
+| Pure Stinger | F-16 treatment: twin white contrails either side of the ball's path and a jet fly-by roar that drops in pitch as it passes |
+| Threading the Viaduct | Slow motion as the ball passes through the arch, "THREADED IT!", the jet, the crowd |
+| Slam dunk (flies straight in) | Seen coming from the flight: slow motion and the camera on the cup for the last part of the flight |
+| Chip-in, or a putt of 15 ft+ that's going in | **The walk-in:** the game runs the physics ahead; once it knows it's dropping, time slows to a third, the camera leans in on the cup and the crowd rises. When it drops, time snaps back, two gold rings ripple out of the cup, the arena opens and the crowd roars |
+
+- Slow motion only slows the shot (ball, particles, rings), never menus, timers or the swing meter, and it's in real time so the game never feels stuck.
+- Reduced-motion settings shrink the punch-ins and speed lines.
+
 ## Daily challenge (the Wordle loop)
 
 One hole a day, **the same hole and the same wind for everyone**, picked from the date (Daily #1 was October 28, 2026), so friends compare like for like. Blue tees, no power-ups, and it never touches the handicap.
