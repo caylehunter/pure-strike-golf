@@ -878,7 +878,7 @@ const canNuke = () => G.tee === 'black' && !G.practice && G.ci === 0 && onTee();
 const club = () => CLUBS[G.ci];
 
 /* ---------- audio ---------- */
-let AC = null, BUS = null, MASTER = null, METER = null;
+let AC = null, BUS = null, MASTER = null, METER = null, VERB = null;
 const soundOn = () => store.sound !== false, voiceOn = () => store.announcer !== false;
 /* iPhones play web audio as "ambient" by default, which the ring/silent switch mutes: ask for "playback" like a game app */
 const SILENT_WAV = 'data:audio/wav;base64,UklGRrQBAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YZABAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA';
@@ -904,7 +904,12 @@ function audio() {
       AC = new (window.AudioContext || window.webkitAudioContext)();
       /* everything goes through one compressor so stacked sounds (a nuke plus the crowd) stay loud without clipping */
       const comp = AC.createDynamicsCompressor(); comp.threshold.value = -14; comp.knee.value = 10; comp.ratio.value = 6; comp.attack.value = 0.003; comp.release.value = 0.2;
-      MASTER = AC.createGain(); MASTER.gain.value = soundOn() ? 0.9 : 0; comp.connect(MASTER); MASTER.connect(AC.destination); BUS = comp;
+      MASTER = AC.createGain(); MASTER.gain.value = soundOn() ? 0.9 : 0; comp.connect(MASTER); MASTER.connect(AC.destination);
+      /* every sound goes into BUS; a reverb send off it stays shut until a big moment opens it (an arena tail on the crack, the cup, the roar) */
+      BUS = AC.createGain(); BUS.connect(comp);
+      const conv = AC.createConvolver(), n = Math.floor(AC.sampleRate * 2.6), ir = AC.createBuffer(2, n, AC.sampleRate);
+      for (let ch = 0; ch < 2; ch++) { const d = ir.getChannelData(ch); for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 2.6) * (i < 400 ? i / 400 : 1); }
+      conv.buffer = ir; VERB = AC.createGain(); VERB.gain.value = 0; BUS.connect(VERB); VERB.connect(conv); conv.connect(comp);
       /* a level meter on the output, so tests can tell sound actually plays */
       METER = AC.createAnalyser(); METER.fftSize = 2048; MASTER.connect(METER);
       loadSamples();
@@ -1123,6 +1128,11 @@ function landSound(lie, k) {
   else if (lie === 'rough') { thump(t, 85, 50, 0.08, 0.22 * K); nz(t, 0.12, 0.14 * K, 'lowpass', 600, 0.7, 0.01); }
   else { thump(t, 95, 55, 0.08, 0.34 * K); nz(t, 0.06, 0.16 * K, 'lowpass', 520); }
 }
+/* open the arena reverb for a big moment, then let it close */
+function arena(level = 0.45, hold = 1.6) {
+  if (!VERB) return; const t = AC.currentTime;
+  VERB.gain.cancelScheduledValues(t); VERB.gain.setTargetAtTime(level, t, 0.01); VERB.gain.setTargetAtTime(0, t + hold, 0.5);
+}
 /* a putt rolling across the green: a quiet, low rumble that follows the ball's speed */
 const rollSnd = {
   src: null, g: null,
@@ -1172,6 +1182,12 @@ function sfx(name, k = 1) {
     case 'champ': [523, 659, 784, 1046, 784, 1046].forEach((f, i) => { tone('triangle', f, f, t + i * 0.11, i === 5 ? 0.9 : 0.3, 0.2); tone('square', f / 2, f / 2, t + i * 0.11, i === 5 ? 0.9 : 0.25, 0.04, 1200); }); break;
     case 'sad': [392, 370, 349, 294].forEach((f, i) => tone('sawtooth', f, i === 3 ? f * 0.94 : f, t + i * 0.32, i === 3 ? 0.9 : 0.3, 0.09, 900)); break;
     case 'ui': tone('sine', 900, 1200, t, 0.05, 0.08); break;
+    case 'zip': nz(t + 0.05, 0.55, 0.16 * k, 'highpass', 6500, 0.7, 0.02, 1800); break; // the ball ripping off the face
+    case 'jet': // F-16 fly-by: a roar that rises and drops in pitch as it passes, with a low rumble under it
+      nz(t, 1.5, 0.42 * k, 'bandpass', 3200, 1.4, 0.35, 520); nz(t, 1.6, 0.3 * k, 'lowpass', 180, 0.7, 0.3); tone('sawtooth', 70, 46, t, 1.4, 0.12 * k, 260); break;
+    case 'swell': nz(t, k, 0.35, 'bandpass', 480, 1.6, k * 0.9, 820); nz(t, k, 0.2, 'bandpass', 1100, 2.2, k * 0.9, 1600); break; // the crowd rising as a putt tracks
+    case 'roll-tick': tone('square', 1800, 1700, t, 0.012, 0.05); break;
+    case 'slam': thump(t, 90, 40, 0.18, 0.55); nz(t, 0.08, 0.3, 'lowpass', 900); break;
   }
 }
 const vib = ms => { try { navigator.vibrate && navigator.vibrate(ms); } catch (e) {} };
@@ -1230,7 +1246,7 @@ function buildShot(p, err, o) {
     curve += cross * 1.1 * (carry / 250) * windMul;
   }
   if (o.nuke) { apex *= 1.45; rollMul *= 1.25; }
-  return { sx: b.x, sy: b.y, dx, dy, rx, ry, carry, off, curve, apex, T: 1.15 + carry / 190, t: 0, nuke: !!o.nuke, fire: !!o.fire, perfect: !!o.perfect, rollV: c.roll * rollMul, wood: !!c.wood };
+  return { sx: b.x, sy: b.y, dx, dy, rx, ry, carry, off, curve, apex, T: 1.15 + carry / 190, t: 0, nuke: !!o.nuke, fire: !!o.fire, perfect: !!o.perfect, stinger: G.shape === 'stinger', rollV: c.roll * rollMul, wood: !!c.wood };
 }
 function flightPos(F, u) {
   const f = F.carry * u, l = F.off * u + F.curve * u * u;
@@ -1360,6 +1376,65 @@ function startHole(i) {
   if (live) { oppTakesPU(); initOpp(); nextTurn(); }
   renderPU();
 }
+/* ---------- payoffs: slow motion, a camera punch, speed lines ---------- */
+/* slow motion: time runs at `scale` for `hold` seconds (real time), then eases back over `ramp` */
+function slowmo(scale, hold, ramp = 0.35) { G.slow = { s: scale, t: 0, hold, ramp }; }
+function slowFactor(dt) {
+  const S = G.slow; if (!S) return 1;
+  S.t += dt; if (S.t < S.hold) return S.s;
+  const u = (S.t - S.hold) / S.ramp; if (u >= 1) { G.slow = null; return 1; }
+  return lerp(S.s, 1, smooth(u));
+}
+const endSlow = () => { if (G.slow) { G.slow.hold = Math.min(G.slow.hold, G.slow.t); } };
+/* a quick zoom toward the action that the camera eases back out of */
+function punch(k) { cam.s *= REDUCED ? 1 + (k - 1) * 0.3 : k; }
+/* anime speed lines out from the ball at impact */
+function impactLines(col, n = 26, life = 0.38) { if (REDUCED) n = 8; G.fx = { t: 0, life, col, n, seed: Math.random() * 1000, x: b.x, y: b.y }; }
+function drawImpactLines() {
+  const F = G.fx; if (!F) return;
+  const k = F.t / F.life; if (k >= 1) { G.fx = null; return; }
+  const [sx, sy] = w2s(F.x, F.y), R0 = 26 + k * 40, len = Math.max(W, H) * 0.7;
+  ctx.save(); ctx.globalAlpha = (1 - k) * 0.85; ctx.strokeStyle = F.col; ctx.lineCap = 'round';
+  for (let i = 0; i < F.n; i++) {
+    const a = (i / F.n) * TAU + Math.sin(F.seed + i * 12.9898) * 0.12, r1 = R0 + (Math.sin(F.seed + i * 78.233) * 0.5 + 0.5) * 30, r2 = r1 + len * (0.25 + 0.3 * (Math.sin(F.seed * 2 + i) * 0.5 + 0.5));
+    ctx.lineWidth = 1.5 + 2.5 * (1 - k) * ((i % 3) ? 0.6 : 1);
+    ctx.beginPath(); ctx.moveTo(sx + Math.cos(a) * r1, sy + Math.sin(a) * r1); ctx.lineTo(sx + Math.cos(a) * r2, sy + Math.sin(a) * r2); ctx.stroke();
+  }
+  ctx.restore();
+}
+/* a yardage that counts up fast and lands with a thump */
+function countPop(final, sub, cls = 'yds') {
+  const el = document.createElement('div'); el.className = 'pop ' + cls; el.textContent = '0 YDS';
+  const s2 = document.createElement('small'); s2.textContent = sub; el.appendChild(s2); $('#pops').appendChild(el);
+  const t0 = performance.now(), dur = Math.min(900, 300 + final * 1.6); let lastTick = 0;
+  const step = () => {
+    const u = Math.min(1, (performance.now() - t0) / dur), v = Math.round(final * (1 - Math.pow(1 - u, 3)));
+    el.firstChild.nodeValue = `${v} YDS`;
+    if (performance.now() - lastTick > 45 && u < 1) { lastTick = performance.now(); sfx('roll-tick'); }
+    if (u < 1) requestAnimationFrame(step);
+    else {
+      sfx('slam'); shake(4); vib(15);
+      el.animate([{ transform: 'scale(1.25) rotate(-4deg)' }, { transform: 'scale(1) rotate(-4deg)' }], { duration: 220, easing: 'ease-out' });
+      setTimeout(() => el.animate([{ opacity: 1 }, { opacity: 0, transform: 'translateY(-24px) rotate(-4deg)' }], { duration: 600, easing: 'ease-in' }).onfinish = () => el.remove(), 1200);
+    }
+  };
+  el.style.transform = 'rotate(-4deg)'; requestAnimationFrame(step);
+}
+
+/* is this roll going in? run the same physics ahead on a copy */
+function walkingIn() {
+  const B = { x: b.x, y: b.y, vx: b.vx, vy: b.vy };
+  for (let i = 0; i < 900; i++) { const r = advanceRoll(B, 1 / 60); if (r) return r === 'holed'; if (B.stopped) return false; }
+  return false;
+}
+/* a long putt (15 ft+) or any chip that's tracking: slow it down, lean in on the cup, let the crowd rise */
+function startWalkIn() {
+  const ft = G.putting && G.lastPos ? hyp(G.lastPos.x - PIN.x, G.lastPos.y - PIN.y) * 3 : 99;
+  if (ft < 15) return false;
+  slowmo(0.32, 3, 0.25); sfx('swell', 1.6); vib(10);
+  return true;
+}
+
 /* ---------- daily challenge: one hole a day, the same hole and wind for everyone, one counted try ---------- */
 const DAILY_EPOCH = [2026, 9, 28]; // Daily #1 (months count from 0)
 function dayNo(d = new Date()) {
@@ -1712,19 +1787,25 @@ function strike(n) {
   G.snap = { x: b.x, y: b.y, strokes: G.strokes, putts: G.putts, hole: HOLE_I };
   const lie = surface(b.x, b.y);
   G.F = buildShot(nuke ? 1.2 : M.lock, err, { nuke, perfect, fire, wind: true });
-  G.strokes++; G.mode = 'flight'; G.trail = [];
+  G.strokes++; G.mode = 'flight'; G.trail = []; G.walkIn = null;
   if (G.pu) spendPU(['sweet', 'calm']); if (G.windSaved) G.calmFired = true;
   gridAdd(nuke ? '💥' : perfect ? '🟡' : Math.abs(err) > 0.55 ? '🟠' : '⚪');
   if (lie === 'sand') { burst(b.x, b.y, 22, ['#efe0b0', '#d9c48a'], 6, 9, 2.6, 0.8); sfx('sand'); }
   if (nuke) {
-    strikeSound('driver', 1, 1.2, lie); sfx('nuke'); flash('#ffb070', 0.9, 500); shake(16); vib([30, 30, 60]); G.hitstop = 0.16;
+    strikeSound('driver', 1, 1.2, lie); sfx('nuke'); arena(0.5, 2.2); slowmo(0.18, 0.55, 0.45); punch(1.5); impactLines('#ffb070', 34, 0.6); sfx('zip', 1.4); flash('#ffb070', 0.9, 500); shake(16); vib([30, 30, 60]); G.hitstop = 0.16;
     rings.push({ x: b.x, y: b.y, t: 0, dur: 0.6, max: 26 }); sfx('crowd', Math.abs(err) > 0.5 ? 0.5 : 1);
     call(Math.abs(err) > 0.5 ? 'Meltdown!' : 'Nuclear!', 0.15);
     pop(Math.abs(err) > 0.5 ? 'MELTDOWN' : 'NUCLEAR', 'nuke', Math.abs(err) > 0.5 ? (err > 0 ? 'early strike · nuclear slice' : 'late strike · nuclear hook') : (perfect ? 'pure contact' : err > 0 ? 'strike a touch early' : 'strike a touch late'));
   } else {
     if (armed) pop(M.lockDir > 0 ? 'TOO EARLY' : 'TOO LATE', 'miss', M.lockDir > 0 ? 'before the nuke band · normal drive' : 'the bar had left the band · normal drive');
     const kind = club().wood ? 'driver' : 'iron';
-    if (perfect) { strikeSound(kind, 1, M.lock, lie); flash('#ffffff', 0.55, 260); shake(5); vib(25); G.hitstop = 0.07; pop('PURE', 'pure'); rings.push({ x: b.x, y: b.y, t: 0, dur: 0.45, max: 12, pure: true }); if (fire) sfx('whoosh'); }
+    if (perfect) {
+      /* the pure-contact moment: the strike rings out, time stretches for a beat, the camera leans in */
+      strikeSound(kind, 1, M.lock, lie); arena(kind === 'driver' ? 0.32 : 0.2, 0.9);
+      if (G.shape === 'stinger') { sfx('jet', 1); slowmo(0.35, 0.3, 0.3); punch(1.18); impactLines('#dff3ff', 30, 0.45); }
+      else if (kind === 'driver') { sfx('zip', 1); slowmo(0.35, 0.28, 0.3); punch(1.18); impactLines('#ffffff', 28, 0.42); }
+      else { sfx('zip', 0.6); slowmo(0.55, 0.16, 0.2); punch(1.08); impactLines('#ffffff', 18, 0.3); }
+      flash('#ffffff', 0.55, 260); shake(5); vib(25); G.hitstop = 0.07; pop('PURE', 'pure'); rings.push({ x: b.x, y: b.y, t: 0, dur: 0.45, max: 12, pure: true }); if (fire) sfx('whoosh'); }
     else {
       strikeSound(kind, clamp(1 - Math.abs(err), 0, 1) * 0.75, M.lock, lie); vib(12);
       if (!armed && Math.abs(err) > 0.55) pop(err > 0 ? 'SLICE' : 'HOOK', 'miss', err > 0 ? 'tapped early' : 'tapped late');
@@ -1742,6 +1823,7 @@ function strike(n) {
 }
 function land(F, p) {
   const s = surface(p.x, p.y);
+  if (F.dunkSlow) endSlow();
   b.x = p.x; b.y = p.y; b.z = 0; G.F = null; b.inCup = false; b.lipped = false;
   if (hyp(p.x - PIN.x, p.y - PIN.y) < CUP_R * 1.6) return holed(true);
   if (s === 'water') return penalty('water');
@@ -1807,7 +1889,7 @@ function settle() {
   if (G.shotFromTee) {
     const t = TEES[G.tee], d = hyp(b.x - t.x, b.y - t.y);
     G.longest = Math.max(G.longest, d);
-    pop(`${Math.round(d)} YDS`, 'yds', 'drive');
+    if (d >= 250) countPop(Math.round(d), d >= 380 ? 'nuclear drive' : 'drive'); else pop(`${Math.round(d)} YDS`, 'yds', 'drive');
   }
   G.shotFromTee = false;
   if (!G.putting && !G.practice && hyp(b.x - PIN.x, b.y - PIN.y) < 4) { sfx('crowd', 0.45); pop('STUFFED IT', 'pure', `${Math.max(1, Math.round(hyp(b.x - PIN.x, b.y - PIN.y) * 3))} ft`); }
@@ -1820,6 +1902,9 @@ const scoreName = n => n === 1 ? 'Hole in One' : (NAMES[String(n - PAR)] || `+${
 function holed(fromAir) {
   const vIn = hyp(b.vx, b.vy);
   if (G.grid && G.grid.length) G.grid[G.grid.length - 1] = '⛳';
+  const moment = G.walkIn || fromAir;
+  G.walkIn = null; endSlow();
+  if (moment) { arena(0.55, 2.4); punch(1.12); shake(6); rings.push({ x: PIN.x, y: PIN.y, t: 0, dur: 0.8, max: 6, pure: true }); rings.push({ x: PIN.x, y: PIN.y, t: -0.12, dur: 1, max: 11, pure: true }); }
   G.mode = 'holed'; b.x = PIN.x; b.y = PIN.y; b.vx = b.vy = 0; b.z = 0; G.ballHidden = true; G.F = null; G.bounce = null;
   if (G.tutorial) G.tutorial.holed = true;
   cupSound(fromAir ? 2 : vIn); vib([20, 40, 20]);
@@ -2132,7 +2217,7 @@ const endPtr = e => {
     if (P && P.flat > 0.2 && e.type === 'pointerup') {
       G.snap = { x: b.x, y: b.y, strokes: G.strokes, putts: G.putts, hole: HOLE_I };
       G.strokes++; G.putts++; G.lastPos = { x: b.x, y: b.y };
-      if (G.pu) spendPU(['read']); gridAdd('🔵');
+      if (G.pu) spendPU(['read']); gridAdd('🔵'); G.walkIn = null;
       b.vx = P.vx; b.vy = P.vy; b.inCup = false; b.lipped = false;
       puttSound(0.35 + P.flat / 22); vib(10); G.mode = 'roll'; syncUI();
     } else updatePuttDrag();
@@ -2374,6 +2459,8 @@ function renderMenu() {
 function update(dt) {
   for (let i = G.timers.length - 1; i >= 0; i--) { const t = G.timers[i]; t.t -= dt; if (t.t <= 0) { G.timers.splice(i, 1); t.fn(); } }
   let sdt = dt; if (G.hitstop > 0) { G.hitstop -= dt; sdt = 0; }
+  sdt *= slowFactor(dt);
+  if (G.fx) G.fx.t += dt;
   const M = G.meter;
   if (G.mode === 'power') {
     if (M.hang > 0) M.hang -= dt;
@@ -2398,6 +2485,12 @@ function update(dt) {
     if (u > 0.04 && u < 1) for (const t of TREES) if (p.z < t.h && Math.abs(t.x - p.x) < t.r && Math.abs(t.y - p.y) < t.r && hyp(t.x - p.x, t.y - p.y) < t.r * 0.85) { hit = t; break; }
     camT.x = p.x + F.dx * 20; camT.y = p.y + F.dy * 20; camT.s = clamp(Math.max(camT.s * 0.995, 2.2), 0.6, 3.4);
     if (F.cross === undefined) F.cross = bridgeCross(F);
+    if (F.cross && F.cross.ok && !F.threaded && u >= F.cross.u) {
+      F.threaded = true; slowmo(0.25, 0.45, 0.35); punch(1.2); arena(0.4, 1.4); sfx('jet', 0.8); sfx('crowd', 0.9); shake(5);
+      pop('THREADED IT!', 'heat', 'through the arch'); call('Threaded it!');
+    }
+    if (F.dunk === undefined) { const L = flightPos(F, 1); F.dunk = hyp(L.x - PIN.x, L.y - PIN.y) < CUP_R * 1.6; }
+    if (F.dunk && !F.dunkSlow && u > 0.72) { F.dunkSlow = true; slowmo(0.3, 2, 0.2); camT.x = PIN.x; camT.y = PIN.y; sfx('swell', 1.2); }
     if (F.cross && !F.cross.ok && u >= F.cross.u) bridgeHit(F, F.cross);
     else if (hit) treeHit(F, p);
     else if (u >= 1) land(F, p);
@@ -2408,8 +2501,11 @@ function update(dt) {
     if (G.bounce) { G.bounce.t += sdt; const t = G.bounce.t; b.z = G.bounce.h * Math.abs(Math.sin(t * 9)) * Math.exp(-t * 5); if (t > 0.9) { G.bounce = null; b.z = 0; } }
     if (G.trail.length) G.trail.shift();
     if (G.putting) rollSnd.set(hyp(b.vx, b.vy));
+    if (!G.walkIn && G.walkIn !== false && hyp(b.x - PIN.x, b.y - PIN.y) < 2.6) G.walkIn = walkingIn() ? startWalkIn() : false;
     if (b.lipped) { b.lipped = false; sfx('lip'); sfx('groan', 0.8); pop('LIP OUT', 'miss'); }
-    if (G.putting) { camT.x = (b.x + PIN.x) / 2; camT.y = (b.y + PIN.y) / 2; }
+    /* the walk-in: the camera leans in on the cup */
+    if (G.walkIn) { camT.x = lerp(b.x, PIN.x, 0.7); camT.y = lerp(b.y, PIN.y, 0.7); camT.s = G.putting ? 85 : 45; }
+    else if (G.putting) { camT.x = (b.x + PIN.x) / 2; camT.y = (b.y + PIN.y) / 2; }
     else { camT.x = b.x; camT.y = b.y; camT.r = 0; }
     if (r === 'holed') holed(false);
     else if (r === 'water') penalty('water');
@@ -2417,9 +2513,9 @@ function update(dt) {
     else if (r === 'stopped') { G.mode = 'rest'; b.z = 0; later(0.45, settle); }
   } else if (G.trail.length) G.trail.shift();
 
-  for (const p of parts) { p.life -= dt; p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt; p.vz -= 22 * dt; if (p.z < 0) { p.z = 0; p.vx *= 0.6; p.vy *= 0.6; p.vz = 0; } }
+  for (const p of parts) { p.life -= sdt; p.x += p.vx * sdt; p.y += p.vy * sdt; p.z += p.vz * sdt; p.vz -= 22 * sdt; if (p.z < 0) { p.z = 0; p.vx *= 0.6; p.vy *= 0.6; p.vz = 0; } }
   parts = parts.filter(p => p.life > 0);
-  for (const r of rings) r.t += dt; rings = rings.filter(r => r.t < r.dur);
+  for (const r of rings) r.t += sdt; rings = rings.filter(r => r.t < r.dur);
 
   if (G.putting && G.read === 'arrows' && (G.mode === 'putt' || G.mode === 'roll')) {
     while (flows.length < 170) { const a = Math.random() * TAU, rr = Math.sqrt(Math.random()); flows.push({ x: GREEN.x + Math.cos(a) * rr * GREEN.rx, y: GREEN.y + Math.sin(a) * rr * GREEN.ry, life: 0.8 + Math.random() * 2, max: 2.8 }); }
@@ -2510,6 +2606,15 @@ function draw() {
     if (nk || pu) ctx.globalCompositeOperation = 'lighter';
     for (let i = 1; i < G.trail.length; i++) { const a = i / G.trail.length; ctx.strokeStyle = nk ? `rgba(255,${120 + a * 100},40,${a * 0.85})` : pu ? `rgba(255,214,90,${a * 0.75})` : `rgba(255,255,255,${a * 0.55})`; ctx.lineWidth = (nk ? 7 : 2.2) * a * px + (nk ? 1.5 * px : 0); ctx.beginPath(); ctx.moveTo(G.trail[i - 1][0], G.trail[i - 1][1]); ctx.lineTo(G.trail[i][0], G.trail[i][1]); ctx.stroke(); }
     ctx.globalCompositeOperation = 'source-over';
+    if (G.F && G.F.stinger) {
+      /* F-16 contrails: two thin streaks either side of the ball's path */
+      const T = G.trail; ctx.lineWidth = 1.1 * px;
+      for (const side of [-1, 1]) {
+        ctx.beginPath();
+        for (let i = 1; i < T.length; i++) { const dx = T[i][0] - T[i - 1][0], dy = T[i][1] - T[i - 1][1], l = hyp(dx, dy) || 1, ox = -dy / l * 0.9 * side, oy = dx / l * 0.9 * side; if (i === 1) ctx.moveTo(T[0][0] + ox, T[0][1] + oy); ctx.lineTo(T[i][0] + ox, T[i][1] + oy); }
+        ctx.strokeStyle = 'rgba(235,248,255,.75)'; ctx.stroke();
+      }
+    }
   }
   for (const p of parts) { ctx.globalAlpha = clamp(p.life / p.max * 1.5, 0, 1); if (p.glow) ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = p.col; circle(p.x, p.y + p.z * 0.6, p.r * px); ctx.globalCompositeOperation = 'source-over'; }
   ctx.globalAlpha = 1;
@@ -2558,6 +2663,7 @@ function draw() {
     ctx.fillStyle = '#ffffff'; ctx.font = '400 10px "Bowlby One", "Arial Black", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText(G.match.opp.name[0], mx, my + 0.5);
   }
+  drawImpactLines();
   drawTeeCam();
   if (G.mode === 'accuracy') drawStrikeRing();
   if (G.mode === 'putt' && G.drag) {
@@ -2741,6 +2847,20 @@ window.__pureStrike = { score: (strokes, putts) => { G.strokes = strokes; G.putt
   givePU: id => { G.pu.push({ id, armed: false }); renderPU(); },
   usePU: i => usePU(i),
   oppPU: n => { G.match.oppPU = n; },
+  /* find a putt that drops from where the ball is (searching the real green physics), and roll it like a real putt */
+  holingPutt: () => {
+    const d = hyp(PIN.x - b.x, PIN.y - b.y), a0 = Math.atan2(PIN.x - b.x, PIN.y - b.y);
+    for (let k = 0; k < 4000; k++) {
+      const a = a0 + (Math.random() - 0.5) * 0.5, v = Math.sqrt(2 * DECEL.green * d) * (0.9 + Math.random() * 0.6), B = { x: b.x, y: b.y, vx: Math.sin(a) * v, vy: Math.cos(a) * v };
+      let r = null; for (let i = 0; i < 900 && !r && !B.stopped; i++) r = advanceRoll(B, 1 / 60);
+      if (r === 'holed') return { vx: Math.sin(a) * v, vy: Math.cos(a) * v };
+    }
+    return null;
+  },
+  rollPutt: (vx, vy) => { G.snap = { x: b.x, y: b.y, strokes: G.strokes, putts: G.putts, hole: HOLE_I }; G.strokes++; G.putts++; G.lastPos = { x: b.x, y: b.y }; gridAdd('🔵'); G.walkIn = null; b.vx = vx; b.vy = vy; b.inCup = false; b.lipped = false; puttSound(1); G.mode = 'roll'; syncUI(); },
+  slow: () => G.slow ? { s: G.slow.s, t: G.slow.t } : null,
+  fx: () => ({ lines: !!G.fx, verb: VERB ? VERB.gain.value : 0, camS: cam.s, camTS: camT.s }),
+  walkIn: () => G.walkIn,
   dailyPlanFor: n => dailyPlan(n),
   daily: () => ({ n: dayNo(), plan: dailyPlan(), store: dailyStore(), grid: G.grid, round: G.round && G.round.daily }),
   samples: () => Object.keys(SAMPLES).filter(hasSample),
