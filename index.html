@@ -1454,10 +1454,16 @@ function countPop(final, sub, cls = 'yds') {
 /* ---------- tracer cam ----------
    The stinger-ASMR shot: a fixed camera just behind the ball, looking down the line, the ball boring away low against the
    trees with a TV-style red tracer behind it. It cuts in at impact, holds through the landing and roll, then cuts back. */
+const CINE_SIDE = -2.2, CINE_BACK = 11, CINE_LOOK = 150, CINE_ZOOM = 1.15, CINE_CENTER = 0.36;
 function startCine(kind) {
   if (G.practice || G.tutorial) return;
   const F = G.F, a = Math.atan2(F.dx, F.dy);
-  G.cine = { kind, t: 0, fade: 0, done: null, trail: [], dx: Math.sin(a), dy: Math.cos(a), x: F.sx - Math.sin(a) * 7.5, y: F.sy - Math.cos(a) * 7.5, bx: F.sx, by: F.sy };
+  /* the camera sits behind the ball and off to one side (CINE_SIDE yards; + is the golfer's side), aimed down the line, so a
+     straight ball flies diagonally across the frame and its climb reads, instead of a flat stripe up the middle */
+  const lx = Math.sin(a), ly = Math.cos(a), lrx = ly, lry = -lx, side = G.cineSide != null ? G.cineSide : CINE_SIDE;
+  const cxp = F.sx - lx * CINE_BACK + lrx * side, cyp = F.sy - ly * CINE_BACK + lry * side;
+  const tx = F.sx + lx * CINE_LOOK, ty = F.sy + ly * CINE_LOOK, dl = Math.hypot(tx - cxp, ty - cyp);
+  G.cine = { kind, t: 0, fade: 0, done: null, trail: [], dx: (tx - cxp) / dl, dy: (ty - cyp) / dl, x: cxp, y: cyp, bx: F.sx, by: F.sy, lrx, lry };
 }
 /* ---------- the golfer in the tracer cam ----------
    A real swing: Cayle's own driver swing, filmed from behind at the range, cut out frame by frame (tools/roto_*.py) and
@@ -1493,7 +1499,7 @@ function cineTick(dt) {
 }
 function drawCine() {
   const C = G.cine; if (!C || C.fade <= 0) return;
-  const dx = C.dx, dy = C.dy, rx = dy, ry = -dx, camZ = 2.2, hor = H * 0.4, f = Math.min(Math.max(W, H) * 0.75, W * 1.9), cx0 = W / 2;
+  const dx = C.dx, dy = C.dy, rx = dy, ry = -dx, camZ = 2.2, hor = H * 0.4, f = Math.min(Math.max(W, H) * 0.75, W * 1.9) * CINE_ZOOM, cx0 = W * CINE_CENTER;
   const proj = (x, y, z) => { const ex = x - C.x, ey = y - C.y, d = ex * dx + ey * dy; if (d < 0.6) return null; return [cx0 + f * (ex * rx + ey * ry) / d, hor - f * (z - camZ) / d, d]; };
   ctx.save(); ctx.setTransform(DPR, 0, 0, DPR, 0, 0); ctx.globalAlpha = C.fade;
   /* sky and the far tree line */
@@ -1539,7 +1545,7 @@ function drawCine() {
     }
   }
   /* the golfer, from behind, beside the ball, holding the finish */
-  const gq = proj(C.bx + rx * 0.75, C.by + ry * 0.75, 0);
+  const gq = proj(C.bx + C.lrx * 0.75, C.by + C.lry * 0.75, 0);
   if (gq) drawGolfer(gq[0], gq[1], f * 1.85 / gq[2], C.kind, C.t * 0.8);
   /* the tracer: a glowing red line behind the ball, like the TV shot tracer */
   const pts = C.trail.map(p => proj(p[0], p[1], p[2])).filter(Boolean);
@@ -3086,6 +3092,7 @@ window.__pureStrike = { score: (strokes, putts) => { G.strokes = strokes; G.putt
   slow: () => G.slow ? { s: G.slow.s, t: G.slow.t } : null,
   fx: () => ({ lines: !!G.fx, verb: VERB ? VERB.gain.value : 0, camS: cam.s, camTS: camT.s }),
   walkIn: () => G.walkIn,
+  cineSide: v => { G.cineSide = v; },
   cine: () => G.cine ? { kind: G.cine.kind, fade: G.cine.fade, trail: G.cine.trail.length } : null,
   puQueue: () => (G.puQueue || []).length,
   earnNow: why => earnPU(why),
