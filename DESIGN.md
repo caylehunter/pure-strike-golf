@@ -65,6 +65,14 @@ The great shots get a cinematic beat, like the slow-motion home run in an arcade
 - Slow motion only slows the shot (ball, particles, rings), never menus, timers or the swing meter, and it's in real time so the game never feels stuck.
 - Reduced-motion settings shrink the punch-ins and speed lines.
 
+## Highlights lab (testing)
+
+A menu button only the owner sees (or anyone opening the link with `#testing`): **"Highlights lab: jump to a moment"**. Each button drops you straight into one payoff, so tuning a moment takes seconds instead of a round. Nothing in it counts toward the handicap, and finishing a hole skips the scorecard.
+
+- **Hit it for me** (default) plays the moment perfectly; **Let me hit it** sets it up for you to play (on the long putt it hands you **Read** so you can sink it).
+- The moments: pure drive, NUCLEAR (black tees, nuke armed), pure stinger, threading the Viaduct, pure iron, getting locked in (two pure swings already banked), a 30 ft putt that drops, a chip-in, a slam dunk on the island green, and an Arcade hole holding all four power-ups.
+- While in one, a small **Replay / Lab** bar sits top right. Wind is calm so every replay is the same.
+
 ## Daily challenge (the Wordle loop)
 
 One hole a day, **the same hole and the same wind for everyone**, picked from the date (Daily #1 was October 28, 2026), so friends compare like for like. Blue tees, no power-ups, and it never touches the handicap.

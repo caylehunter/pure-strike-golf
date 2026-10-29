@@ -204,6 +204,15 @@ button.nuke small{font:700 11px/1 var(--cond);letter-spacing:.06em;opacity:.85}
 .rw-test:focus-visible{outline:2px solid var(--gold)}
 .tee-card:disabled{cursor:default;opacity:.55}
 .tee-card:disabled .tag{background:rgba(255,255,255,.18);color:var(--text)}
+.hl-list{display:flex;flex-direction:column;gap:8px}
+.hl-item{all:unset;cursor:pointer;display:flex;flex-direction:column;gap:3px;padding:12px 14px;border-radius:14px;background:rgba(10,24,18,.92);border:1px solid var(--line)}
+.hl-item b{font:800 16px/1.1 var(--cond);letter-spacing:.06em;text-transform:uppercase;color:var(--text)}
+.hl-item small{font:500 13px/1.35 var(--body);color:var(--muted)}
+.hl-item:focus-visible{outline:2px solid var(--gold)}
+.hl-item:active{background:rgba(177,140,255,.25)}
+.hl-open{border-style:dashed;color:#cdb8ff}
+#hlBar{position:fixed;right:max(16px,env(safe-area-inset-right,0px));z-index:12;display:flex;gap:6px}
+#hlBar button{all:unset;cursor:pointer;font:800 12px/1 var(--cond);letter-spacing:.1em;text-transform:uppercase;padding:8px 12px;border-radius:99px;background:rgba(36,18,64,.9);border:1px solid #b18cff;color:#e7dcff}
 .lab-sec{display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:14px;background:rgba(10,24,18,.92);border:1px solid var(--line);margin-bottom:12px}
 .lab-sec h3{margin:0;font:800 13px/1 var(--cond);letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
 .lab-moments{display:flex;flex-wrap:wrap;gap:8px}
@@ -366,6 +375,7 @@ button.nuke small{font:700 11px/1 var(--cond);letter-spacing:.06em;opacity:.85}
     <button class="ghost" id="practiceBtn">Putting practice</button>
     <button class="ghost" id="howBtn">How to play (60-second warm-up)</button>
     <button class="ghost" id="labBtn">Sound lab: pick the best sounds</button>
+    <button class="ghost hl-open" id="hlBtn" hidden>Highlights lab: jump to a moment (testing)</button>
     <div class="rewards">
       <div class="rw-head"><b>Rewards</b><small>Earn them by playing</small></div>
       <ul id="rewardList"></ul>
@@ -438,6 +448,18 @@ button.nuke small{font:700 11px/1 var(--cond);letter-spacing:.06em;opacity:.85}
     <button class="ghost" id="tutMenu">Main menu</button>
   </div>
 </div>
+
+<div class="overlay" id="hlLab" hidden>
+  <div class="card">
+    <span class="eyebrow">Highlights lab · testing</span>
+    <h2 class="ms-title">Jump to a moment</h2>
+    <p class="ms-note">Drops you straight into the spot. Nothing here counts toward your handicap. Phone off silent, volume up.</p>
+    <div class="seg" id="hlMode" role="group" aria-label="Who hits it"><button data-auto="1">Hit it for me</button><button data-auto="0">Let me hit it</button></div>
+    <div id="hlList" class="hl-list"></div>
+    <button class="ghost" id="hlBack">Back</button>
+  </div>
+</div>
+<div id="hlBar" hidden><button id="hlReplay">Replay</button><button id="hlToLab">Lab</button></div>
 
 <div class="overlay" id="soundLab" hidden>
   <div class="card">
@@ -1550,6 +1572,81 @@ function startWalkIn() {
   return true;
 }
 
+/* ---------- highlights lab (testing): jump straight to a payoff moment ---------- */
+/* swing for the tester: power p (1 = full), strike timing n (0 = dead pure) */
+function autoSwing(p, n = 0) { if (G.mode !== 'aim') return; swingDown(); G.meter.p = p; swingUp(); strike(n); }
+/* from here, find a roll (putt or chip) that the real physics says goes in */
+function findHolingRoll(lo = 0.9, hi = 1.5) {
+  /* speeds are scaled from what a putt of this length needs on the green; a chip starts a little off it */
+  const d = hyp(PIN.x - b.x, PIN.y - b.y), a0 = Math.atan2(PIN.x - b.x, PIN.y - b.y);
+  for (let k = 0; k < 8000; k++) {
+    const a = a0 + (Math.random() - 0.5) * 0.4, v = Math.sqrt(2 * DECEL.green * d) * (lo + Math.random() * (hi - lo)), B = { x: b.x, y: b.y, vx: Math.sin(a) * v, vy: Math.cos(a) * v };
+    let r = null; for (let i = 0; i < 900 && !r && !B.stopped; i++) r = advanceRoll(B, 1 / 60);
+    if (r === 'holed') return { vx: Math.sin(a) * v, vy: Math.cos(a) * v };
+  }
+  return null;
+}
+function rollBall(V, putt) {
+  G.snap = { x: b.x, y: b.y, strokes: G.strokes, putts: G.putts, hole: HOLE_I };
+  G.strokes++; if (putt) G.putts++; G.lastPos = { x: b.x, y: b.y }; gridAdd(putt ? '🔵' : '⚪'); G.walkIn = null;
+  b.vx = V.vx; b.vy = V.vy; b.inCup = false; b.lipped = false;
+  if (putt) puttSound(1); else strikeSound('iron', 1, 0.3, surface(b.x, b.y));
+  G.putting = !!putt; G.mode = 'roll'; syncUI();
+}
+/* put the ball somewhere mid-hole, as if the earlier shots were played */
+function placeBall(x, y, strokes = 1) { b.x = x; b.y = y; b.z = 0; b.vx = b.vy = 0; b.inCup = false; b.lipped = false; G.ballHidden = false; G.strokes = strokes; G.mode = 'rest'; playerTurn(); }
+const HL = [
+  { id: 'drive', name: 'Pure drive', what: 'Slow motion, punch-in, speed lines, yardage count-up', tee: 'blue', hole: 8, go: auto => { if (auto) later(1.4, () => autoSwing(1)); } },
+  { id: 'nuke', name: 'NUCLEAR', what: 'Black tees, nuke armed: the deepest slow motion and the tracer cam', tee: 'black', hole: 1, go: auto => { G.nukeArmed = true; defaultAim(); syncUI(); setupAimCam(); if (auto) later(1.4, () => autoSwing(1.05)); } },
+  { id: 'stinger', name: 'Pure stinger', what: 'The tracer cam: down the line, red tracer, the rip', tee: 'blue', hole: 8, go: auto => { G.shape = 'stinger'; defaultAim(); syncUI(); if (auto) later(1.4, () => autoSwing(1)); } },
+  { id: 'viaduct', name: 'Thread the Viaduct', what: 'A pure stinger through the arch, through the tracer cam', tee: 'blue', hole: 7, go: auto => { if (auto) later(1.6, () => autoSwing(1)); } },
+  { id: 'iron', name: 'Pure iron', what: 'Your iron recording, slow motion, onto the green', tee: 'blue', hole: 0, go: auto => { if (auto) later(1.4, () => autoSwing(Math.min(1, G.aimD / fullCarry()))); } },
+  { id: 'locked', name: 'Getting locked in', what: 'Two pure swings already: the next one makes "He\'s starting to feel it!"; one more and he\'s locked in', tee: 'blue', hole: 8, go: auto => { G.streak = 2; syncUI(); if (auto) later(1.4, () => autoSwing(1)); } },
+  { id: 'putt', name: '30 ft putt that drops', what: 'The walk-in: slow motion, camera on the cup, the crowd rising, the roar', tee: 'blue', hole: 0, go: auto => {
+      placeBall(PIN.x - 2, PIN.y - 9.5, 2);
+      if (auto) later(1.2, () => { const V = findHolingRoll(); if (V) rollBall(V, true); });
+      else { G.pu = [{ id: 'read', armed: false }]; renderPU(); later(0.8, () => pop('READ IS YOURS', 'pu-pop', 'tap it, then line up the putt and sink it')); } } },
+  { id: 'chip', name: 'Chip-in', what: 'From just off the green: the walk-in and the roar', tee: 'blue', hole: 0, go: auto => {
+      placeBall(PIN.x + 1, GREEN.y - GREEN.ry - 2.2, 1);
+      if (auto) later(1.2, () => { const V = findHolingRoll(0.9, 2.2); if (V) rollBall(V, false); }); } },
+  { id: 'dunk', name: 'Slam dunk', what: 'Straight in from the air on the island green', tee: 'blue', hole: 4, go: auto => {
+      if (!auto) return;
+      later(1.4, () => {
+        if (G.mode !== 'aim') return;
+        /* a pure shot whose flight is bent to land exactly in the cup */
+        autoSwing(Math.min(1, G.aimD / fullCarry()));
+        const F = G.F; if (!F) return;
+        const d = hyp(PIN.x - F.sx, PIN.y - F.sy); F.dx = (PIN.x - F.sx) / d; F.dy = (PIN.y - F.sy) / d; F.rx = F.dy; F.ry = -F.dx; F.carry = d; F.off = 0; F.curve = 0; F.dunk = undefined;
+      }); } },
+  { id: 'pu', name: 'All four power-ups', what: 'Arcade round with Dead Calm, Sweet Spot, Read and Mulligan in hand (holds 4 for testing)', tee: 'blue', hole: 3, go: () => { G.pu = ['calm', 'sweet', 'read', 'mull'].map(id => ({ id, armed: false })); renderPU(); } }
+];
+function runMoment(id) {
+  const M = HL.find(x => x.id === id), auto = store.hlAuto !== false;
+  audio(); hideOverlays();
+  setRoundHoles(9); G.match = null; G.tee = M.tee; G.practice = false; G.longest = 0; G.shape = 'straight'; G.streak = 0;
+  G.round = { tee: M.tee, scores: [], putts: [], over: false, earned: earnedIds(), oppsOpen: OPPONENTS.map((o, i) => oppOpen(i)), arcade: true, lab: id, puUsed: 0 };
+  G.pu = []; G.puQueue = []; G.lab = id;
+  startHole(M.hole);
+  G.wind = { x: 0, y: 0, mph: 0 };
+  M.go(auto); syncUI(); renderHL();
+}
+function renderHL() {
+  const bar = $('#hlBar'); bar.hidden = !G.lab || G.mode === 'menu' || !G.round || !G.round.lab;
+  if (!bar.hidden) bar.style.top = (hud.getBoundingClientRect().bottom + 8) + 'px';
+}
+function showHL() {
+  hideOverlays(); G.lab = null; renderHL();
+  document.querySelectorAll('#hlMode button').forEach(x => x.classList.toggle('on', !!+x.dataset.auto === (store.hlAuto !== false)));
+  $('#hlList').innerHTML = HL.map(m => `<button class="hl-item" data-hl="${m.id}"><b>${m.name}</b><small>${m.what}</small></button>`).join('');
+  $('#hlLab').hidden = false;
+}
+$('#hlBtn').onclick = showHL;
+$('#hlBack').onclick = () => { $('#hlLab').hidden = true; showMenu(); };
+$('#hlMode').onclick = e => { const x = e.target.closest('button'); if (!x) return; store.hlAuto = !!+x.dataset.auto; save(); showHL(); };
+$('#hlList').onclick = e => { const x = e.target.closest('[data-hl]'); if (x) runMoment(x.dataset.hl); };
+$('#hlReplay').onclick = () => { if (G.lab) runMoment(G.lab); };
+$('#hlToLab').onclick = () => { G.timers = []; showHL(); };
+
 /* ---------- daily challenge: one hole a day, the same hole and wind for everyone, one counted try ---------- */
 const DAILY_EPOCH = [2026, 9, 28]; // Daily #1 (months count from 0)
 function dayNo(d = new Date()) {
@@ -1637,6 +1734,7 @@ const POWERUPS = {
   mull: { name: 'Mulligan', what: 'replay your last shot, no penalty', when: 'rest' }
 };
 const PU_MAX = 2;
+const puMax = () => (G.round && G.round.lab ? 4 : PU_MAX);
 const puOn = () => !!G.round && !G.practice && !G.tutorial && (!!G.round.arcade || !!G.match);
 /* earn one: birdie or better, getting locked in, or a nuclear drive */
 function earnPU(why) {
@@ -1648,7 +1746,7 @@ function flushPU() {
   const Q = G.puQueue; if (!Q || !Q.length || !puOn()) { G.puQueue = []; return; }
   G.puQueue = [];
   const why = Q[0];
-  if (G.pu.length >= PU_MAX) {
+  if (G.pu.length >= puMax()) {
     later(0.4, () => pop('SLOTS FULL', 'pu-pop', `your ${why} earned a power-up, but you're already holding two: use one to make room for the next`));
     return;
   }
@@ -1761,7 +1859,7 @@ function enterPutt() {
   G.mode = 'putt'; G.putting = true; G.drag = null; G.pred = null; G.trail = []; flows = [];
   syncUI(); setupPuttCam();
 }
-function hideOverlays() { ['#menu', '#dailyDone', '#result', '#matchSetup', '#soloSetup', '#pause', '#feedback', '#welcome', '#tutDone', '#soundLab'].forEach(q => $(q).hidden = true); G.paused = false; }
+function hideOverlays() { ['#menu', '#hlLab', '#dailyDone', '#result', '#matchSetup', '#soloSetup', '#pause', '#feedback', '#welcome', '#tutDone', '#soundLab'].forEach(q => $(q).hidden = true); G.paused = false; }
 const gauss = () => { let u = 0; for (let k = 0; k < 6; k++) u += Math.random(); return (u - 3) / 0.7071; };
 function startMatch(oi, tee) {
   setRoundHoles(G.len);
@@ -2050,6 +2148,8 @@ function holed(fromAir) {
 function finishHole(pickedUp, conceded = false) {
   if (G.tutorial) return tutorialDone();
   if (G.round && G.round.daily) return finishDaily(pickedUp);
+  /* the highlights lab: no scorecard, stay on the course with Replay / Lab */
+  if (G.round && G.round.lab) { G.mode = 'done'; syncUI(); return; }
   G.mode = 'done';
   const R = G.round, d = G.strokes - PAR;
   R.scores[HOLE_I] = G.strokes; R.putts[HOLE_I] = G.putts;
@@ -2301,7 +2401,7 @@ function syncUI() {
     if (m === 'putt') $('#puttMain').textContent = 'Pull down · the gold circle shows where it stops on flat ground';
     $('#puttSub').textContent = m === 'putt' ? `${Math.round(d * 3)} ft to the hole · full pull ≈ ${Math.round(puttRange() * 3)} ft` : '';
   }
-  renderPU();
+  renderPU(); renderHL();
   layout();
 }
 function renderMeter() {
@@ -2550,6 +2650,7 @@ $('#resPractice').onclick = startPractice;
 $('#resMenu').onclick = showMenu;
 $('#exitPractice').onclick = showMenu;
 function showMenu() {
+  G.lab = null; if (typeof renderHL === 'function') renderHL();
   hideOverlays();
   if (G.tutorial) endTutorial();
   G.mode = 'menu'; G.practice = false; G.round = null; G.match = null; G.opp = null; G.timers = []; G.putting = false; G.ballHidden = false; G.tee = G.tee || 'blue';
@@ -2575,6 +2676,7 @@ function renderMenu() {
   }).join('');
   $('#unlockAll').setAttribute('aria-pressed', String(!!store.allUnlocked));
   $('#unlockAll').hidden = !(G.owner || location.hash === '#testing' || store.allUnlocked);
+  $('#hlBtn').hidden = !(G.owner || location.hash === '#testing' || store.allUnlocked);
   const bb = store.best, a = store.putt.att.reduce((x, y) => x + y, 0), md = store.putt.made.reduce((x, y) => x + y, 0);
   const bits = []; if (bb.blue9) bits.push(`Blue 9 best ${bb.blue9}`); if (bb.black9) bits.push(`Black 9 best ${bb.black9}`); if (bb.blue) bits.push(`Blue 3 best ${bb.blue}`); if (bb.black) bits.push(`Black 3 best ${bb.black}`); if (a) bits.push(`Putting ${md}/${a}`);
   $('#bestLine').textContent = bits.join(' · ');
@@ -2993,6 +3095,7 @@ window.__pureStrike = { score: (strokes, putts) => { G.strokes = strokes; G.putt
   earnNow: why => earnPU(why),
   dailyPlanFor: n => dailyPlan(n),
   daily: () => ({ n: dayNo(), plan: dailyPlan(), store: dailyStore(), grid: G.grid, round: G.round && G.round.daily }),
+  hl: () => ({ lab: G.lab, bar: !$('#hlBar').hidden, btn: !$('#hlBtn').hidden, auto: store.hlAuto !== false }),
   samples: () => Object.keys(SAMPLES).filter(hasSample),
   sound: () => ({ ctx: !!AC, state: AC && AC.state, session: navigator.audioSession ? navigator.audioSession.type : 'n/a', charging: !!charge.o, on: soundOn(), voice: voiceOn(), fireEdge: $('#fireEdge').className, confetti: $('#confetti').children.length }),
   strikeP: (p, n) => { if (G.mode !== 'aim') return false; swingDown(); G.meter.p = p; swingUp(); strike(n); return true; },

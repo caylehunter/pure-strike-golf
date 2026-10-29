@@ -31,6 +31,7 @@ npm test
 - `tests/putting.js` – distance-scaled putting on the practice green
 - `tests/puttview.js` – putting view on two phone sizes: the coach card, match bar, putt pill and pop-ups never cover the hole; a full-length putt pull fits on phones and laptops
 - `tests/signature.js` – the signature holes: The Cape's safe vs hero line, The Gamble's layup vs pure drive, The Ridge's roll-back putt, warm-up on Short Fuse
+- `tests/highlights.js` – Highlights lab: hidden from players, every moment button actually produces its moment, Let me hit it, Replay, nothing posts to the handicap
 - `tests/payoffs.js` – payoff moments: slow motion, punch-in, speed lines and arena reverb on pure drives and nukes, the yardage count-up, the stinger and nuke tracer cam, threading the Viaduct, the long-putt walk-in (and none for mishits or short putts)
 - `tests/daily.js` – daily challenge: same hole and wind for everyone, one counted try, practice runs, the share grid, streaks
 - `tests/powerups.js` – Arcade mode and power-ups: earning, the four kinds, two slots, the computer's, and no handicap posting
