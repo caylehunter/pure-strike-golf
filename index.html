@@ -1270,12 +1270,18 @@ function buildShot(p, err, o) {
     curve += cross * 1.1 * (carry / 250) * windMul;
   }
   if (o.nuke) { apex *= 1.45; rollMul *= 1.25; }
-  return { sx: b.x, sy: b.y, dx, dy, rx, ry, carry, off, curve, apex, T: 1.15 + carry / 190, t: 0, nuke: !!o.nuke, fire: !!o.fire, perfect: !!o.perfect, stinger: G.shape === 'stinger', rise: G.shape === 'stinger' && !!o.perfect, rollV: c.roll * rollMul, wood: !!c.wood };
+  return { sx: b.x, sy: b.y, dx, dy, rx, ry, carry, off, curve, apex, T: 1.15 + carry / 190, t: 0, nuke: !!o.nuke, fire: !!o.fire, perfect: !!o.perfect, stinger: G.shape === 'stinger', rise: G.shape === 'stinger' && !!o.perfect, tank: !!o.nuke, rollV: c.roll * rollMul, wood: !!c.wood };
 }
 /* the height curve: a normal shot is a symmetric arc; a pure stinger launches flat, climbs gently on its spin and
    peaks late (about 70% of the way), the "starts low and rises" flight; u^2.2 * (1 - u), scaled to peak at the apex */
 const RISE_PEAK = Math.pow(2.2 / 3.2, 2.2) * (1 / 3.2);
-const heightAt = (F, u) => F.rise ? F.apex * Math.pow(u, 2.2) * (1 - u) / RISE_PEAK : 4 * F.apex * u * (1 - u);
+/* a nuke is tanked like a long-drive bomb: it launches around 13 degrees, keeps climbing past halfway, peaks about 60% of
+   the way out, then falls more steeply than it rose: u * (1 - u) * (1 + 1.5u), scaled to peak at the apex */
+const TANK_PEAK = (() => { const u = (1 + Math.sqrt(19)) / 9; return u * (1 - u) * (1 + 1.5 * u); })();
+const heightAt = (F, u) => F.tank ? F.apex * u * (1 - u) * (1 + 1.5 * u) / TANK_PEAK : F.rise ? F.apex * Math.pow(u, 2.2) * (1 - u) / RISE_PEAK : 4 * F.apex * u * (1 - u);
+/* how far along the flight the ball is after a fraction tau of its time: a nuke leaves the face fast (1.6x its average
+   speed) and slows in the air (to 0.4x by the landing), like a ball fighting drag; everything else flies at a steady rate */
+const flightU = (F, tau) => F.tank ? tau * (1.6 - 0.6 * tau) : tau;
 function flightPos(F, u) {
   const f = F.carry * u, l = F.off * u + F.curve * u * u;
   return { x: F.sx + F.dx * f + F.rx * l, y: F.sy + F.dy * f + F.ry * l, z: heightAt(F, u) };
@@ -1334,7 +1340,7 @@ function bridgeHit(F, c) {
   pop('CLANG', 'miss', c.high ? 'too high for the arch: hit a pure Stinger' : 'missed the arch: aim through the gap');
   const l = hyp(F.dx, F.dy);
   b.x = c.x; b.y = B.y - 1.5; b.z = 0; b.vx = -F.dx / l * 2; b.vy = -F.dy / l * 2; b.inCup = false; b.lipped = false;
-  G.bounce = { t: 0, h: Math.min(c.z, 5) }; G.F = null; G.mode = 'roll';
+  G.bounce = { t: 0, h: Math.min(c.z, 5) }; G.F = null; G.rollAcc = 0; G.mode = 'roll';
 }
 
 /* ---------- rolling ball ---------- */
@@ -1369,7 +1375,8 @@ function advanceRoll(B, dt) {
 }
 function predictPutt(vx, vy) {
   const B = { x: b.x, y: b.y, vx, vy }, pts = [[B.x, B.y]]; let res = null;
-  for (let i = 0; i < 900 && !res; i++) { res = advanceRoll(B, 1 / 60); if (i % 2 === 0) pts.push([B.x, B.y]); }
+  /* the same fixed steps the real roll takes, so Read's line is exactly where the ball goes */
+  for (let i = 0; i < 4000 && !res; i++) { res = advanceRoll(B, ROLL_H); if (i % 8 === 0) pts.push([B.x, B.y]); }
   pts.push([B.x, B.y]);
   return { pts, res };
 }
@@ -1561,9 +1568,11 @@ function drawCine() {
 }
 
 /* is this roll going in? run the same physics ahead on a copy */
+/* rolls advance 1.5x (putts) or 2.5x (chips) game time per frame: step the copy exactly the same way so the prediction matches */
+const ROLL_H = 1 / 120;
 function walkingIn() {
-  const B = { x: b.x, y: b.y, vx: b.vx, vy: b.vy };
-  for (let i = 0; i < 900; i++) { const r = advanceRoll(B, 1 / 60); if (r) return r === 'holed'; if (B.stopped) return false; }
+  const B = { x: b.x, y: b.y, vx: b.vx, vy: b.vy, inCup: b.inCup };
+  for (let i = 0; i < 4000; i++) { const r = advanceRoll(B, ROLL_H); if (r) return r === 'holed'; if (B.stopped) return false; }
   return false;
 }
 /* a long putt (15 ft+) or any chip that's tracking: slow it down, lean in on the cup, let the crowd rise */
@@ -1578,12 +1587,12 @@ function startWalkIn() {
 /* swing for the tester: power p (1 = full), strike timing n (0 = dead pure) */
 function autoSwing(p, n = 0) { if (G.mode !== 'aim') return; swingDown(); G.meter.p = p; swingUp(); strike(n); }
 /* from here, find a roll (putt or chip) that the real physics says goes in */
-function findHolingRoll(lo = 0.9, hi = 1.5) {
+function findHolingRoll(lo = 0.9, hi = 1.5, putt = true) {
   /* speeds are scaled from what a putt of this length needs on the green; a chip starts a little off it */
   const d = hyp(PIN.x - b.x, PIN.y - b.y), a0 = Math.atan2(PIN.x - b.x, PIN.y - b.y);
   for (let k = 0; k < 8000; k++) {
     const a = a0 + (Math.random() - 0.5) * 0.4, v = Math.sqrt(2 * DECEL.green * d) * (lo + Math.random() * (hi - lo)), B = { x: b.x, y: b.y, vx: Math.sin(a) * v, vy: Math.cos(a) * v };
-    let r = null; for (let i = 0; i < 900 && !r && !B.stopped; i++) r = advanceRoll(B, 1 / 60);
+    let r = null; for (let i = 0; i < 4000 && !r && !B.stopped; i++) r = advanceRoll(B, ROLL_H);
     if (r === 'holed') return { vx: Math.sin(a) * v, vy: Math.cos(a) * v };
   }
   return null;
@@ -1593,7 +1602,7 @@ function rollBall(V, putt) {
   G.strokes++; if (putt) G.putts++; G.lastPos = { x: b.x, y: b.y }; gridAdd(putt ? '🔵' : '⚪'); G.walkIn = null;
   b.vx = V.vx; b.vy = V.vy; b.inCup = false; b.lipped = false;
   if (putt) puttSound(1); else strikeSound('iron', 1, 0.3, surface(b.x, b.y));
-  G.putting = !!putt; G.mode = 'roll'; syncUI();
+  G.putting = !!putt; G.rollAcc = 0; G.mode = 'roll'; syncUI();
 }
 /* put the ball somewhere mid-hole, as if the earlier shots were played */
 function placeBall(x, y, strokes = 1) { b.x = x; b.y = y; b.z = 0; b.vx = b.vy = 0; b.inCup = false; b.lipped = false; G.ballHidden = false; G.strokes = strokes; G.mode = 'rest'; playerTurn(); }
@@ -1610,7 +1619,7 @@ const HL = [
       else { G.pu = [{ id: 'read', armed: false }]; renderPU(); later(0.8, () => pop('READ IS YOURS', 'pu-pop', 'tap it, then line up the putt and sink it')); } } },
   { id: 'chip', name: 'Chip-in', what: 'From just off the green: the walk-in and the roar', tee: 'blue', hole: 0, go: auto => {
       placeBall(PIN.x + 1, GREEN.y - GREEN.ry - 2.2, 1);
-      if (auto) later(1.2, () => { const V = findHolingRoll(0.9, 2.2); if (V) rollBall(V, false); }); } },
+      if (auto) later(1.2, () => { const V = findHolingRoll(0.9, 2.2, false); if (V) rollBall(V, false); }); } },
   { id: 'dunk', name: 'Slam dunk', what: 'Straight in from the air on the island green', tee: 'blue', hole: 4, go: auto => {
       if (!auto) return;
       later(1.4, () => {
@@ -2066,7 +2075,7 @@ function land(F, p) {
     burst(p.x, p.y, 46, ['#8a6b42', '#b89462', '#5f7d3a', '#ffcf7a'], 18, 16, 4, 1.4);
   } else if (s === 'sand') { sfx('sand'); burst(p.x, p.y, 16, ['#efe0b0', '#d9c48a'], 5, 6, 2.2, 0.7); }
   else { landSound(s, clamp(F.carry / 200, 0.4, 1.2)); burst(p.x, p.y, 8, s === 'rough' ? ['#3e7a35', '#2e5f28'] : ['#7cc062', '#a8d98c'], 4, 4, 1.8, 0.5); }
-  G.mode = 'roll';
+  G.rollAcc = 0; G.mode = 'roll';
 }
 function treeHit(F, p) {
   sfx('tree'); vib(15); shake(3);
@@ -2074,7 +2083,7 @@ function treeHit(F, p) {
   pop('TIMBER', 'small');
   const l = hyp(F.dx, F.dy);
   b.x = p.x; b.y = p.y; b.vx = -F.dx / l * 1.2; b.vy = -F.dy / l * 1.2; b.inCup = false; b.lipped = false;
-  G.bounce = { t: 0, h: Math.min(p.z, 6) }; G.F = null; G.mode = 'roll';
+  G.bounce = { t: 0, h: Math.min(p.z, 6) }; G.F = null; G.rollAcc = 0; G.mode = 'roll';
 }
 function penalty(kind) {
   G.mode = 'rest'; G.F = null; G.strokes += 1; G.shotFromTee = false; gridAdd(kind === 'water' ? '💧' : '🚫'); b.vx = b.vy = 0; b.z = 0; G.bounce = null;
@@ -2446,7 +2455,7 @@ const endPtr = e => {
       G.strokes++; G.putts++; G.lastPos = { x: b.x, y: b.y };
       if (G.pu) spendPU(['read']); gridAdd('🔵'); G.walkIn = null;
       b.vx = P.vx; b.vy = P.vy; b.inCup = false; b.lipped = false;
-      puttSound(0.35 + P.flat / 22); vib(10); G.mode = 'roll'; syncUI();
+      puttSound(0.35 + P.flat / 22); vib(10); G.rollAcc = 0; G.mode = 'roll'; syncUI();
     } else updatePuttDrag();
   }
 };
@@ -2707,7 +2716,7 @@ function update(dt) {
   if (G.mode === 'opp') stepOpp(dt);
   if (G.mode === 'flight' && G.F) {
     const F = G.F; F.t += sdt;
-    const u = Math.min(1, F.t / F.T), p = flightPos(F, u);
+    const u = flightU(F, Math.min(1, F.t / F.T)), p = flightPos(F, u);
     b.x = p.x; b.y = p.y; b.z = p.z;
     G.trail.push([p.x, p.y + p.z * 0.6]); if (G.trail.length > (F.nuke ? 70 : 36)) G.trail.shift();
     if ((F.nuke || F.fire) && sdt > 0) for (let i = 0; i < (F.nuke ? 3 : 2); i++) parts.push({ x: p.x + (Math.random() - 0.5) * 1.5, y: p.y + (Math.random() - 0.5) * 1.5, z: p.z, vx: (Math.random() - 0.5) * 4, vy: (Math.random() - 0.5) * 4, vz: -2, life: 0.5, max: 0.5, col: Math.random() < 0.5 ? '#ffcf3f' : '#ff6a2a', r: 2.5 + Math.random() * 2.5, glow: true });
@@ -2725,7 +2734,11 @@ function update(dt) {
     else if (hit) treeHit(F, p);
     else if (u >= 1) land(F, p);
   } else if (G.mode === 'roll') {
-    const by0 = b.y, r = sdt > 0 ? advanceRoll(b, sdt * (G.putting ? 1.5 : 2.5)) : null;
+    /* the roll runs on a fixed timestep (ROLL_H of physics time per step, however the frames fall or slow motion stretches
+       them), so it's deterministic and walkingIn() can predict it exactly */
+    const by0 = b.y; let r = null;
+    G.rollAcc = (G.rollAcc || 0) + sdt * (G.putting ? 1.5 : 2.5);
+    while (G.rollAcc >= ROLL_H && !r) { G.rollAcc -= ROLL_H; r = advanceRoll(b, ROLL_H); if (b.stopped) break; }
     const Bw = HOLE.bridge;
     if (Bw && by0 < Bw.y && b.y >= Bw.y && Math.abs(b.x - Bw.x) >= Bw.halfW) { b.y = Bw.y - 0.6; b.vy = -Math.abs(b.vy) * 0.3; }
     if (G.bounce) { G.bounce.t += sdt; const t = G.bounce.t; b.z = G.bounce.h * Math.abs(Math.sin(t * 9)) * Math.exp(-t * 5); if (t > 0.9) { G.bounce = null; b.z = 0; } }
@@ -3083,12 +3096,12 @@ window.__pureStrike = { score: (strokes, putts) => { G.strokes = strokes; G.putt
     const d = hyp(PIN.x - b.x, PIN.y - b.y), a0 = Math.atan2(PIN.x - b.x, PIN.y - b.y);
     for (let k = 0; k < 4000; k++) {
       const a = a0 + (Math.random() - 0.5) * 0.5, v = Math.sqrt(2 * DECEL.green * d) * (0.9 + Math.random() * 0.6), B = { x: b.x, y: b.y, vx: Math.sin(a) * v, vy: Math.cos(a) * v };
-      let r = null; for (let i = 0; i < 900 && !r && !B.stopped; i++) r = advanceRoll(B, 1 / 60);
+      let r = null; for (let i = 0; i < 4000 && !r && !B.stopped; i++) r = advanceRoll(B, ROLL_H);
       if (r === 'holed') return { vx: Math.sin(a) * v, vy: Math.cos(a) * v };
     }
     return null;
   },
-  rollPutt: (vx, vy) => { G.snap = { x: b.x, y: b.y, strokes: G.strokes, putts: G.putts, hole: HOLE_I }; G.strokes++; G.putts++; G.lastPos = { x: b.x, y: b.y }; gridAdd('🔵'); G.walkIn = null; b.vx = vx; b.vy = vy; b.inCup = false; b.lipped = false; puttSound(1); G.mode = 'roll'; syncUI(); },
+  rollPutt: (vx, vy) => { G.snap = { x: b.x, y: b.y, strokes: G.strokes, putts: G.putts, hole: HOLE_I }; G.strokes++; G.putts++; G.lastPos = { x: b.x, y: b.y }; gridAdd('🔵'); G.walkIn = null; b.vx = vx; b.vy = vy; b.inCup = false; b.lipped = false; puttSound(1); G.rollAcc = 0; G.mode = 'roll'; syncUI(); },
   slow: () => G.slow ? { s: G.slow.s, t: G.slow.t } : null,
   fx: () => ({ lines: !!G.fx, verb: VERB ? VERB.gain.value : 0, camS: cam.s, camTS: camT.s }),
   walkIn: () => G.walkIn,
