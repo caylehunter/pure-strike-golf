@@ -1579,7 +1579,7 @@ function walkingIn() {
 function startWalkIn() {
   const ft = G.putting && G.lastPos ? hyp(G.lastPos.x - PIN.x, G.lastPos.y - PIN.y) * 3 : 99;
   if (ft < 15) return false;
-  slowmo(0.32, 3, 0.25); sfx('swell', 1.6); vib(10);
+  slowmo(G.putting ? 0.32 : 0.55, 6, 0.25); sfx('swell', 1.6); vib(10);
   return true;
 }
 
@@ -1587,11 +1587,12 @@ function startWalkIn() {
 /* swing for the tester: power p (1 = full), strike timing n (0 = dead pure) */
 function autoSwing(p, n = 0) { if (G.mode !== 'aim') return; swingDown(); G.meter.p = p; swingUp(); strike(n); }
 /* from here, find a roll (putt or chip) that the real physics says goes in */
-function findHolingRoll(lo = 0.9, hi = 1.5, putt = true) {
+function findHolingRoll(lo = 0.9, hi = 1.5, putt = true) { return findHolingRollFrom(b.x, b.y, lo, hi, putt); }
+function findHolingRollFrom(bx, by, lo = 0.9, hi = 1.5, putt = true) {
   /* speeds are scaled from what a putt of this length needs on the green; a chip starts a little off it */
-  const d = hyp(PIN.x - b.x, PIN.y - b.y), a0 = Math.atan2(PIN.x - b.x, PIN.y - b.y);
+  const d = hyp(PIN.x - bx, PIN.y - by), a0 = Math.atan2(PIN.x - bx, PIN.y - by);
   for (let k = 0; k < 8000; k++) {
-    const a = a0 + (Math.random() - 0.5) * 0.4, v = Math.sqrt(2 * DECEL.green * d) * (lo + Math.random() * (hi - lo)), B = { x: b.x, y: b.y, vx: Math.sin(a) * v, vy: Math.cos(a) * v };
+    const a = a0 + (Math.random() - 0.5) * 0.4, v = Math.sqrt(2 * DECEL.green * d) * (lo + Math.random() * (hi - lo)), B = { x: bx, y: by, vx: Math.sin(a) * v, vy: Math.cos(a) * v };
     let r = null; for (let i = 0; i < 4000 && !r && !B.stopped; i++) r = advanceRoll(B, ROLL_H);
     if (r === 'holed') return { vx: Math.sin(a) * v, vy: Math.cos(a) * v };
   }
@@ -1617,9 +1618,18 @@ const HL = [
       placeBall(PIN.x - 2, PIN.y - 9.5, 2);
       if (auto) later(1.2, () => { const V = findHolingRoll(); if (V) rollBall(V, true); });
       else { G.pu = [{ id: 'read', armed: false }]; renderPU(); later(0.8, () => pop('READ IS YOURS', 'pu-pop', 'tap it, then line up the putt and sink it')); } } },
-  { id: 'chip', name: 'Chip-in', what: 'From just off the green: the walk-in and the roar', tee: 'blue', hole: 0, go: auto => {
-      placeBall(PIN.x + 1, GREEN.y - GREEN.ry - 2.2, 1);
-      if (auto) later(1.2, () => { const V = findHolingRoll(0.9, 2.2, false); if (V) rollBall(V, false); }); } },
+  { id: 'chip', name: 'Chip-in', what: 'A pitch from short of the green: it lands, the camera swings in behind it, and you watch it run in', tee: 'blue', hole: 0, go: auto => {
+      placeBall(PIN.x + 1, GREEN.y - GREEN.ry - 16, 1);
+      if (!auto) return;
+      later(1.4, () => {
+        if (G.mode !== 'aim') return;
+        /* pick a landing spot on the green short of the pin, find a run-out from there that drops, and fly the pitch to it */
+        const L = { x: b.x + (PIN.x - b.x) * 0.72, y: b.y + (PIN.y - b.y) * 0.72 };
+        const V = findHolingRollFrom(L.x, L.y, 0.9, 1.9, false); if (!V) return;
+        G.ci = CLUBS.findIndex(c => c.id === 'SW'); autoSwing(0.3);
+        const F = G.F; if (!F) return;
+        const d = hyp(L.x - F.sx, L.y - F.sy); F.dx = (L.x - F.sx) / d; F.dy = (L.y - F.sy) / d; F.rx = F.dy; F.ry = -F.dx; F.carry = d; F.off = 0; F.curve = 0; F.apex = 9; F.T = 1.3; F.forceRoll = V; F.dunk = undefined;
+      }); } },
   { id: 'dunk', name: 'Slam dunk', what: 'Straight in from the air on the island green', tee: 'blue', hole: 4, go: auto => {
       if (!auto) return;
       later(1.4, () => {
@@ -2066,6 +2076,7 @@ function land(F, p) {
   const ddx = F.dx * F.carry + F.rx * (F.off + 2 * F.curve), ddy = F.dy * F.carry + F.ry * (F.off + 2 * F.curve), dl = hyp(ddx, ddy);
   const v = F.rollV * f;
   b.vx = ddx / dl * v; b.vy = ddy / dl * v;
+  if (F.forceRoll) { b.vx = F.forceRoll.vx; b.vy = F.forceRoll.vy; } // the lab's planned run-out
   G.bounce = s === 'sand' ? null : { t: 0, h: Math.min(F.apex * 0.06, 2.4) };
   if (F.nuke) {
     sfx('boom'); shake(14); vib(40); flash('#ffd2a0', 0.35, 300);
@@ -2743,11 +2754,19 @@ function update(dt) {
     if (Bw && by0 < Bw.y && b.y >= Bw.y && Math.abs(b.x - Bw.x) >= Bw.halfW) { b.y = Bw.y - 0.6; b.vy = -Math.abs(b.vy) * 0.3; }
     if (G.bounce) { G.bounce.t += sdt; const t = G.bounce.t; b.z = G.bounce.h * Math.abs(Math.sin(t * 9)) * Math.exp(-t * 5); if (t > 0.9) { G.bounce = null; b.z = 0; } }
     if (G.trail.length) G.trail.shift();
-    if (G.putting) rollSnd.set(hyp(b.vx, b.vy));
-    if (!G.walkIn && G.walkIn !== false && hyp(b.x - PIN.x, b.y - PIN.y) < 2.6) G.walkIn = walkingIn() ? startWalkIn() : false;
+    if (G.putting || G.walkIn) rollSnd.set(hyp(b.vx, b.vy));
+    const dPin = hyp(b.x - PIN.x, b.y - PIN.y);
+    /* a chip is judged the moment it lands (so the walk-in plays the whole run out); a putt once it's within ~8 ft */
+    if (!G.walkIn && G.walkIn !== false && (!G.putting || dPin < 2.6)) G.walkIn = walkingIn() ? startWalkIn() : false;
+    /* a chip's walk-in starts gentle and deepens as it nears the cup, so a long run-out doesn't drag */
+    if (G.walkIn && G.slow && G.slow.s > 0.33 && dPin < 2.6) G.slow.s = 0.32;
     if (b.lipped) { b.lipped = false; sfx('lip'); sfx('groan', 0.8); pop('LIP OUT', 'miss'); }
     /* the walk-in: the camera leans in on the cup */
-    if (G.walkIn) { camT.x = lerp(b.x, PIN.x, 0.7); camT.y = lerp(b.y, PIN.y, 0.7); camT.s = G.putting ? 85 : 45; }
+    if (G.walkIn) {
+      /* the long-putt view: turned so the cup is straight ahead, framing ball and cup, closing in as it rolls */
+      if (dPin > 0.3) camT.r = Math.atan2(PIN.x - b.x, PIN.y - b.y);
+      camT.x = lerp(b.x, PIN.x, 0.6); camT.y = lerp(b.y, PIN.y, 0.6); camT.s = clamp(viewH * 0.45 / Math.max(dPin, 0.6), 18, 85);
+    }
     else if (G.putting) { camT.x = (b.x + PIN.x) / 2; camT.y = (b.y + PIN.y) / 2; }
     else { camT.x = b.x; camT.y = b.y; camT.r = 0; }
     if (r === 'holed') holed(false);
@@ -3128,7 +3147,7 @@ window.__pureStrike = { score: (strokes, putts) => { G.strokes = strokes; G.putt
   holeOut: (strokes, putts) => { G.strokes = strokes; G.putts = putts; b.x = PIN.x; b.y = PIN.y; b.inCup = true; finishHole(false); }, state: () => ({ hole: HOLE_I, mode: G.mode, hcp: handicap(), rounds: store.rounds.length, earned: earnedIds() }) };
 cam.x = camT.x; cam.y = camT.y; cam.s = camT.s;
 let last = performance.now();
-function frame(now) { if (charge.o && G.mode !== 'power') charge.stop(); if (rollSnd.src && !(G.mode === 'roll' && G.putting)) rollSnd.stop(); const dt = Math.min(0.05, (now - last) / 1000); last = now; if (!G.paused) update(dt); draw(); requestAnimationFrame(frame); }
+function frame(now) { if (charge.o && G.mode !== 'power') charge.stop(); if (rollSnd.src && !(G.mode === 'roll' && (G.putting || G.walkIn))) rollSnd.stop(); const dt = Math.min(0.05, (now - last) / 1000); last = now; if (!G.paused) update(dt); draw(); requestAnimationFrame(frame); }
 requestAnimationFrame(frame);
 })();
 </script>
