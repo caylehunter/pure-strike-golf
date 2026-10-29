@@ -68,7 +68,10 @@ The great shots get a cinematic beat, like the slow-motion home run in an arcade
 ## Ball flight
 
 - A normal shot flies a symmetric arc that peaks halfway.
+- **A nuke flies like a long-drive bomb:** it launches around 13°, keeps climbing past halfway, peaks about 60% of the way out (roughly 45 yards up) and falls more steeply than it rose (height ∝ u · (1 − u) · (1 + 1.5u)). It also comes off the face fast and slows in the air, 1.6× its average speed at launch down to 0.4× at landing, while the total flight time stays the same, so the game stays fast.
 - **A pure stinger launches low, climbs on its spin and peaks late** (about 70% of the way, roughly 20 yards up for a driver), then drops: the "starts low and rises" flight from stinger videos. Height follows u^2.2 · (1 − u), scaled to the apex. A mishit stinger keeps the early, ballooning arc, which is what clangs the Viaduct.
+
+- **Rolls run on a fixed timestep** (1/120 s of physics time per step, however the frames fall or slow motion stretches them), so they're deterministic: the walk-in's "is this going in?" prediction and Read's putt line now match the real roll exactly.
 
 ## The golfer (tracer cam)
 
