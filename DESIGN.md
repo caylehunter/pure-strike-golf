@@ -57,13 +57,22 @@ The great shots get a cinematic beat, like the slow-motion home run in an arcade
 | Pure strike (any club) | A beat of slow motion (0.35× for driver, lighter for irons), the camera punches in, white speed lines burst from the ball, the strike rings out with an arena tail, and the ball "zips" off the face |
 | NUCLEAR | The tracer cam too (the golfer in a full finish, the tracer climbing high over the trees), after the deepest slow motion (0.18× for half a second), a bigger punch-in, orange speed lines, the arena wide open; on landing the yardage counts up fast and slams down ("453 YDS · nuclear drive") |
 | Any drive of 250+ | The yardage counts up with ticks and lands with a thump |
-| Pure Stinger | **The tracer cam** (the "golf stinger ASMR" shot): the screen cuts to a fixed camera just behind the ball, looking down the line: the golfer from behind holding the abbreviated stinger finish, the fairway's mowing stripes running to the tree line, and a TV-style red shot tracer following the ball low and dead straight. The sound is the strike, then a long tearing "rip" that falls in pitch and fades as the ball goes. It holds on the landing and roll, then cuts back to the course. Twin contrails stay on the top-down view |
+| Pure Stinger | **The tracer cam** (the "golf stinger ASMR" shot): the screen cuts to a fixed camera just behind the ball, looking down the line: **Cayle's own driver swing**, cut out of his range video and played from impact into the finish as a backlit silhouette, the fairway's mowing stripes running to the tree line, and a TV-style red shot tracer following the ball low and dead straight. The sound is the strike, then a long tearing "rip" that falls in pitch and fades as the ball goes. It holds on the landing and roll, then cuts back to the course. Twin contrails stay on the top-down view |
 | Threading the Viaduct | Through the tracer cam: the viaduct wall fills the screen and the tracer threads the arch; slow motion as it passes, "THREADED IT!", the crowd |
 | Slam dunk (flies straight in) | Seen coming from the flight: slow motion and the camera on the cup for the last part of the flight |
 | Chip-in, or a putt of 15 ft+ that's going in | **The walk-in:** the game runs the physics ahead; once it knows it's dropping, time slows to a third, the camera leans in on the cup and the crowd rises. When it drops, time snaps back, two gold rings ripple out of the cup, the arena opens and the crowd roars |
 
 - Slow motion only slows the shot (ball, particles, rings), never menus, timers or the swing meter, and it's in real time so the game never feels stuck.
 - Reduced-motion settings shrink the punch-ins and speed lines.
+
+## Ball flight
+
+- A normal shot flies a symmetric arc that peaks halfway.
+- **A pure stinger launches low, climbs on its spin and peaks late** (about 70% of the way, roughly 20 yards up for a driver), then drops: the "starts low and rises" flight from stinger videos. Height follows u^2.2 · (1 − u), scaled to the apex. A mishit stinger keeps the early, ballooning arc, which is what clangs the Viaduct.
+
+## The golfer (tracer cam)
+
+The golfer is real: Cayle's driver swing filmed from behind at the range, cut out frame by frame with Google's MediaPipe person segmenter (`tools/roto_segment.py`), packed into a 24-frame sprite sheet from impact to the finish (`tools/roto_sheet.py`, `art/golfer-swing.png`) and embedded by `tools/embed_art.py`. It's drawn as a dark silhouette with a warm rim of light, standing right of the ball line with his back to the camera. Any new swing video filmed from behind (a stinger finish, a different player) can replace it the same way.
 
 ## Highlights lab (testing)
 

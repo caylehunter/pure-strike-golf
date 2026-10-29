@@ -10,6 +10,10 @@ Open `index.html` in a browser (phone-sized window works best), or use the publi
 
 Recordings live in `sounds/` as mp3 files. After adding or replacing one, run `python3 tools/embed_sounds.py` to embed them in `index.html`.
 
+## Art
+
+`art/golfer-swing.png` is the golfer in the tracer cam, cut out of a real swing video. `tools/embed_art.py` embeds it in `index.html` and describes how to remake it from a new video.
+
 ## Tests
 
 Automated play tests drive the game in headless Chromium:
