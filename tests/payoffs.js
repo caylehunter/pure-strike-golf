@@ -80,7 +80,8 @@ const PAGE = 'file://' + path.join(__dirname, 'page.html');
   check('a 28 ft putt tracking in gets the walk-in: slow motion, camera on the cup', walked && slowWalk && zoomed, `walk-in ${walked}, slow ${slowWalk}, zoom ${zoomed}`);
   await pg.waitForTimeout(150);
   fx = await ps('fx');
-  check('when it drops, time snaps back and the arena opens for the roar', !(await ps('slow')) || (await ps('slow')).t > 0, `send ${fx.verb.toFixed(2)}`);
+  const after = await ps('slow');
+  check('when it drops, time snaps back and the arena opens for the roar', (!after || after.t > 0) && fx.verb > 0.3, `send ${fx.verb.toFixed(2)}`);
 
   // a short putt doesn't get it
   await ps('restartHole'); await pg.waitForTimeout(200);
