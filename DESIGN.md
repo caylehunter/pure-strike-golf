@@ -55,10 +55,10 @@ The great shots get a cinematic beat, like the slow-motion home run in an arcade
 | Moment | What happens |
 | --- | --- |
 | Pure strike (any club) | A beat of slow motion (0.35× for driver, lighter for irons), the camera punches in, white speed lines burst from the ball, the strike rings out with an arena tail, and the ball "zips" off the face |
-| NUCLEAR | The deepest slow motion (0.18× for half a second), a bigger punch-in, orange speed lines, the arena wide open; on landing the yardage counts up fast and slams down ("453 YDS · nuclear drive") |
+| NUCLEAR | The tracer cam too (the golfer in a full finish, the tracer climbing high over the trees), after the deepest slow motion (0.18× for half a second), a bigger punch-in, orange speed lines, the arena wide open; on landing the yardage counts up fast and slams down ("453 YDS · nuclear drive") |
 | Any drive of 250+ | The yardage counts up with ticks and lands with a thump |
-| Pure Stinger | F-16 treatment: twin white contrails either side of the ball's path and a jet fly-by roar that drops in pitch as it passes |
-| Threading the Viaduct | Slow motion as the ball passes through the arch, "THREADED IT!", the jet, the crowd |
+| Pure Stinger | **The tracer cam** (the "golf stinger ASMR" shot): the screen cuts to a fixed camera just behind the ball, looking down the line: the golfer from behind holding the abbreviated stinger finish, the fairway's mowing stripes running to the tree line, and a TV-style red shot tracer following the ball low and dead straight. The sound is the strike, then a long tearing "rip" that falls in pitch and fades as the ball goes. It holds on the landing and roll, then cuts back to the course. Twin contrails stay on the top-down view |
+| Threading the Viaduct | Through the tracer cam: the viaduct wall fills the screen and the tracer threads the arch; slow motion as it passes, "THREADED IT!", the crowd |
 | Slam dunk (flies straight in) | Seen coming from the flight: slow motion and the camera on the cup for the last part of the flight |
 | Chip-in, or a putt of 15 ft+ that's going in | **The walk-in:** the game runs the physics ahead; once it knows it's dropping, time slows to a third, the camera leans in on the cup and the crowd rises. When it drops, time snaps back, two gold rings ripple out of the cup, the arena opens and the crowd roars |
 
@@ -86,7 +86,7 @@ Home Stretch · Par 5 · Birdie (-1)
 
 NBA Jam-style boosts, **earned by playing well and never sold**. They're on in **Arcade** stroke play and in **match play**; a round that counts for your handicap has none.
 
-- **Earn one** with a birdie or better (not on the last hole), by getting locked in, or with a nuclear drive. A purple "POWER-UP!" callout says which one and what it does. You hold **2 at most** (a third is missed, and the game says so); unused ones are gone when the round ends.
+- **Earn one** with a birdie or better (not on the last hole), by getting locked in, or with a nuclear drive. It's announced **once the ball is at rest and it's your turn** (a birdie's on the next tee), never over the shot that earned it: a purple "POWER-UP!" callout says which one, what it does, and what earned it. You hold **2 at most**; if both slots are full you get one plain "SLOTS FULL" message saying to use one to make room (playtest: "POWER-UP MISSED" mid-nuke was confusing). Unused ones are gone when the round ends.
 - **The four:**
 
 | Power-up | What it does | When you can play it |

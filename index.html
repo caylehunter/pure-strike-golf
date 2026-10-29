@@ -1183,6 +1183,8 @@ function sfx(name, k = 1) {
     case 'sad': [392, 370, 349, 294].forEach((f, i) => tone('sawtooth', f, i === 3 ? f * 0.94 : f, t + i * 0.32, i === 3 ? 0.9 : 0.3, 0.09, 900)); break;
     case 'ui': tone('sine', 900, 1200, t, 0.05, 0.08); break;
     case 'zip': nz(t + 0.05, 0.55, 0.16 * k, 'highpass', 6500, 0.7, 0.02, 1800); break; // the ball ripping off the face
+    case 'rip': // the stinger-ASMR sound: the ball tearing away low and fast, a long hiss that drops in pitch and fades
+      nz(t + 0.05, 2.2, 0.32 * k, 'bandpass', 5200, 1.1, 0.03, 1700); nz(t + 0.05, 1.6, 0.12 * k, 'highpass', 7000, 0.7, 0.02, 3500); tone('sine', 2300, 1500, t + 0.06, 1.8, 0.018 * k); break;
     case 'jet': // F-16 fly-by: a roar that rises and drops in pitch as it passes, with a low rumble under it
       nz(t, 1.5, 0.42 * k, 'bandpass', 3200, 1.4, 0.35, 520); nz(t, 1.6, 0.3 * k, 'lowpass', 180, 0.7, 0.3); tone('sawtooth', 70, 46, t, 1.4, 0.12 * k, 260); break;
     case 'swell': nz(t, k, 0.35, 'bandpass', 480, 1.6, k * 0.9, 820); nz(t, k, 0.2, 'bandpass', 1100, 2.2, k * 0.9, 1600); break; // the crowd rising as a putt tracks
@@ -1353,7 +1355,7 @@ function startRound(tee, match = null) {
   G.match = match;
   G.tee = tee; G.practice = false; G.longest = 0; G.shape = 'straight'; G.streak = 0;
   G.round = { tee, scores: [], putts: [], over: false, earned: earnedIds(), oppsOpen: OPPONENTS.map((o, i) => oppOpen(i)), arcade: !match && !!store.arcade, puUsed: 0 };
-  G.pu = []; if (match) match.oppPU = 0;
+  G.pu = []; G.puQueue = []; if (match) match.oppPU = 0;
   hideOverlays(); startHole(0);
 }
 function startHole(i) {
@@ -1374,6 +1376,8 @@ function startHole(i) {
   else if (G.tutorial) pop('WARM-UP', 'yds', `${HOLE.name} · Par ${PAR} · ${TEE_YDS[G.tee]} yds · no wind`);
   else pop(`HOLE ${i + 1}`, 'yds', `${HOLE.name} · Par ${PAR} · ${TEE_YDS[G.tee]} yds${HOLE.tip ? ' · ' + HOLE.tip : ''}${first}`);
   if (live) { oppTakesPU(); initOpp(); nextTurn(); }
+  /* power-ups earned on the last hole (a birdie) arrive once the hole intro has had its moment */
+  if (G.puQueue && G.puQueue.length) later(1.8, flushPU);
   renderPU();
 }
 /* ---------- payoffs: slow motion, a camera punch, speed lines ---------- */
@@ -1419,6 +1423,117 @@ function countPop(final, sub, cls = 'yds') {
     }
   };
   el.style.transform = 'rotate(-4deg)'; requestAnimationFrame(step);
+}
+
+/* ---------- tracer cam ----------
+   The stinger-ASMR shot: a fixed camera just behind the ball, looking down the line, the ball boring away low against the
+   trees with a TV-style red tracer behind it. It cuts in at impact, holds through the landing and roll, then cuts back. */
+function startCine(kind) {
+  if (G.practice || G.tutorial) return;
+  const F = G.F, a = Math.atan2(F.dx, F.dy);
+  G.cine = { kind, t: 0, fade: 0, done: null, trail: [], dx: Math.sin(a), dy: Math.cos(a), x: F.sx - Math.sin(a) * 7.5, y: F.sy - Math.cos(a) * 7.5, bx: F.sx, by: F.sy };
+}
+/* a simple golfer seen from behind, x/feetY in pixels, h = height in pixels. 'stinger': the held, abbreviated finish
+   (hands low, shaft pointing at the target); otherwise the full finish, club over the shoulder */
+function drawGolfer(x, feetY, h, kind) {
+  const u = h / 100; ctx.save(); ctx.translate(x, feetY); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  const fill = (c, f) => { ctx.fillStyle = c; ctx.beginPath(); f(); ctx.fill(); };
+  /* shadow, shoes, legs (weight on the lead side, trail heel up) */
+  fill('rgba(0,0,0,.18)', () => ctx.ellipse(2 * u, 0, 26 * u, 4 * u, 0, 0, TAU));
+  ctx.strokeStyle = '#d8c7a8'; ctx.lineWidth = 9 * u;
+  ctx.beginPath(); ctx.moveTo(-9 * u, -2 * u); ctx.lineTo(-7 * u, -46 * u); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(13 * u, -6 * u); ctx.lineTo(4 * u, -46 * u); ctx.stroke();
+  fill('#f4f4f2', () => ctx.ellipse(-10 * u, -1 * u, 7 * u, 3.5 * u, 0, 0, TAU));
+  fill('#f4f4f2', () => ctx.ellipse(15 * u, -5 * u, 5 * u, 3 * u, 0.6, 0, TAU));
+  /* shorts, polo, cap */
+  fill('#26385e', () => { ctx.moveTo(-13 * u, -60 * u); ctx.lineTo(11 * u, -60 * u); ctx.lineTo(10 * u, -40 * u); ctx.lineTo(-13 * u, -40 * u); ctx.closePath(); });
+  fill('#f2f2ee', () => { ctx.moveTo(-15 * u, -60 * u); ctx.quadraticCurveTo(-18 * u, -78 * u, -11 * u, -86 * u); ctx.lineTo(12 * u, -86 * u); ctx.quadraticCurveTo(16 * u, -76 * u, 12 * u, -60 * u); ctx.closePath(); });
+  fill('#e9c9a6', () => ctx.arc(1 * u, -91 * u, 6 * u, 0, TAU));
+  fill('#ffffff', () => ctx.ellipse(1 * u, -95 * u, 7.5 * u, 4.5 * u, 0, Math.PI, 0));
+  /* arms and club */
+  ctx.strokeStyle = '#e9c9a6'; ctx.lineWidth = 5 * u;
+  if (kind === 'stinger') {
+    ctx.beginPath(); ctx.moveTo(-10 * u, -82 * u); ctx.lineTo(-20 * u, -70 * u); ctx.lineTo(-24 * u, -76 * u); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(10 * u, -82 * u); ctx.lineTo(-6 * u, -72 * u); ctx.lineTo(-22 * u, -76 * u); ctx.stroke();
+    ctx.strokeStyle = '#2b2b2b'; ctx.lineWidth = 2 * u; ctx.beginPath(); ctx.moveTo(-23 * u, -76 * u); ctx.lineTo(-58 * u, -112 * u); ctx.stroke();
+  } else {
+    ctx.beginPath(); ctx.moveTo(-10 * u, -82 * u); ctx.lineTo(-14 * u, -98 * u); ctx.lineTo(-4 * u, -108 * u); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(10 * u, -82 * u); ctx.lineTo(4 * u, -100 * u); ctx.lineTo(-3 * u, -108 * u); ctx.stroke();
+    ctx.strokeStyle = '#2b2b2b'; ctx.lineWidth = 2 * u; ctx.beginPath(); ctx.moveTo(-3 * u, -108 * u); ctx.lineTo(30 * u, -86 * u); ctx.stroke();
+  }
+  ctx.restore();
+}
+function cineTick(dt) {
+  const C = G.cine; if (!C) return;
+  C.t += dt; C.fade = Math.min(1, C.fade + dt / 0.12);
+  if (G.mode === 'flight') C.trail.push([b.x, b.y, b.z]);
+  else if (C.done === null) C.done = C.t;
+  if (G.mode === 'roll' || G.mode === 'flight') { if (C.trail.length) C.roll = [b.x, b.y]; }
+  /* hold on the landing and the roll, then fade back to the course */
+  const hold = C.done === null ? 0 : C.t - C.done;
+  if (hold > 1.4) { C.fade = Math.max(0, 1 - (hold - 1.4) / 0.35); if (C.fade <= 0) G.cine = null; }
+}
+function drawCine() {
+  const C = G.cine; if (!C || C.fade <= 0) return;
+  const dx = C.dx, dy = C.dy, rx = dy, ry = -dx, camZ = 2.2, hor = H * 0.4, f = Math.min(Math.max(W, H) * 0.75, W * 1.9), cx0 = W / 2;
+  const proj = (x, y, z) => { const ex = x - C.x, ey = y - C.y, d = ex * dx + ey * dy; if (d < 0.6) return null; return [cx0 + f * (ex * rx + ey * ry) / d, hor - f * (z - camZ) / d, d]; };
+  ctx.save(); ctx.setTransform(DPR, 0, 0, DPR, 0, 0); ctx.globalAlpha = C.fade;
+  /* sky and the far tree line */
+  let g = ctx.createLinearGradient(0, 0, 0, hor); g.addColorStop(0, '#8fb6d6'); g.addColorStop(1, '#dfe8e2'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, hor);
+  g = ctx.createLinearGradient(0, hor, 0, H); g.addColorStop(0, '#3f7d38'); g.addColorStop(1, '#5fa84c'); ctx.fillStyle = g; ctx.fillRect(0, hor, W, H - hor);
+  ctx.fillStyle = '#2d5530';
+  for (let k = -30; k <= 30; k++) { const bx = cx0 + k * 22, bh = 26 + ((k * 37) % 7 + 7) % 7 * 5; ctx.beginPath(); ctx.ellipse(bx, hor - bh * 0.35, 18, bh * 0.6, 0, 0, TAU); ctx.fill(); }
+  ctx.fillRect(0, hor - 14, W, 16);
+  /* the hole on the ground: mowing bands everywhere for depth, then fairway, water, sand, green */
+  const poly0 = (pts, col) => { const q = pts.map(p => proj(p[0], p[1], 0)).filter(Boolean); if (q.length < 3) return; ctx.fillStyle = col; ctx.beginPath(); q.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.closePath(); ctx.fill(); };
+  for (let d = 2; d < 400; d += d < 40 ? 3 : 10) {
+    const k = Math.floor(d / (d < 40 ? 3 : 10)) % 2, w2 = 200, a0 = [C.x + dx * d - rx * w2, C.y + dy * d - ry * w2], b0 = [C.x + dx * d + rx * w2, C.y + dy * d + ry * w2], dd = d < 40 ? 3 : 10;
+    if (k) poly0([a0, b0, [b0[0] + dx * dd, b0[1] + dy * dd], [a0[0] + dx * dd, a0[1] + dy * dd]], 'rgba(255,255,255,.035)');
+  }
+  const poly = (pts, col) => { const q = pts.map(p => proj(p[0], p[1], 0)).filter(Boolean); if (q.length < 3) return; ctx.fillStyle = col; ctx.beginPath(); q.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.closePath(); ctx.fill(); };
+  const ell = (e, n = 28) => Array.from({ length: n }, (_, i) => { const t = i / n * TAU, c = Math.cos(e.rot || 0), s2 = Math.sin(e.rot || 0), u = Math.cos(t) * e.rx, v = Math.sin(t) * e.ry; return [e.x + u * c - v * s2, e.y + u * s2 + v * c]; });
+  for (let y = Math.max(FW0, C.y + 1); y < FW1; y += 12) {
+    const y2 = Math.min(FW1, y + 12), band = [[cx(y) - hw(y), y], [cx(y2) - hw(y2), y2], [cx(y2) + hw(y2), y2], [cx(y) + hw(y), y]];
+    poly(band, Math.floor(y / 12) % 2 ? '#6cbb57' : '#62b14f');
+  }
+  for (const w of WATER) poly(ell(w), '#3a9cc6');
+  for (const s3 of BUNKERS) poly(ell(s3, 16), '#e6d6a3');
+  poly(ell({ x: GREEN.x, y: GREEN.y, rx: GREEN.rx + FR, ry: GREEN.ry + FR }), '#5aae4c'); poly(ell(GREEN), '#7cc865');
+  for (const k in TEES) { const t = TEES[k]; poly([[t.x - 6, t.y - 4.5], [t.x + 6, t.y - 4.5], [t.x + 6, t.y + 4.5], [t.x - 6, t.y + 4.5]], '#74c25e'); }
+  /* trees down both sides, far ones first */
+  const trees = TREES.concat(FOREST).map(t => ({ t, q: proj(t.x, t.y, 0) })).filter(o => o.q && o.q[2] < 520 && Math.abs(o.q[0] - cx0) < W * 1.2).sort((a, b2) => b2.q[2] - a.q[2]);
+  for (const { t, q } of trees) {
+    const s4 = f / q[2], top = proj(t.x, t.y, t.h);
+    if (!top) continue;
+    ctx.fillStyle = '#4a3a26'; ctx.fillRect(q[0] - s4 * 0.35, top[1] + (q[1] - top[1]) * 0.55, s4 * 0.7, (q[1] - top[1]) * 0.45);
+    ctx.fillStyle = t.c1; ctx.beginPath(); ctx.ellipse(q[0], top[1] + (q[1] - top[1]) * 0.35, t.r * s4, (q[1] - top[1]) * 0.5, 0, 0, TAU); ctx.fill();
+    ctx.fillStyle = t.c2; ctx.beginPath(); ctx.ellipse(q[0] - t.r * s4 * 0.25, top[1] + (q[1] - top[1]) * 0.28, t.r * s4 * 0.6, (q[1] - top[1]) * 0.3, 0, 0, TAU); ctx.fill();
+  }
+  /* the viaduct, if it's this hole */
+  const B = HOLE.bridge;
+  if (B) {
+    const wl = proj(B.x - 80, B.y, 0), top = proj(B.x, B.y, B.h + 9), al = proj(B.x - B.halfW, B.y, 0), ar = proj(B.x + B.halfW, B.y, 0), spring = proj(B.x, B.y, B.h - B.halfW);
+    if (wl && top && al && ar && spring) {
+      ctx.fillStyle = '#8f8878'; ctx.fillRect(0, top[1], W, wl[1] - top[1]);
+      ctx.fillStyle = '#6f6a5d'; ctx.fillRect(0, top[1], W, (wl[1] - top[1]) * 0.08);
+      const rad = (ar[0] - al[0]) / 2; ctx.fillStyle = '#9fcf86';
+      ctx.beginPath(); ctx.moveTo(al[0], al[1]); ctx.lineTo(al[0], spring[1]); ctx.arc((al[0] + ar[0]) / 2, spring[1], rad, Math.PI, 0); ctx.lineTo(ar[0], ar[1]); ctx.closePath(); ctx.fill();
+    }
+  }
+  /* the golfer, from behind, beside the ball, holding the finish */
+  const gq = proj(C.bx - rx * 0.9, C.by - ry * 0.9, 0);
+  if (gq) drawGolfer(gq[0], gq[1], f * 1.85 / gq[2], C.kind);
+  /* the tracer: a glowing red line behind the ball, like the TV shot tracer */
+  const pts = C.trail.map(p => proj(p[0], p[1], p[2])).filter(Boolean);
+  if (pts.length > 1) {
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    for (const [w2, col] of [[9, 'rgba(255,60,40,.22)'], [4.5, 'rgba(255,70,45,.55)'], [2, '#ff5a3c']]) {
+      ctx.strokeStyle = col; ctx.lineWidth = w2; ctx.beginPath(); pts.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.stroke();
+    }
+  }
+  const qb = proj(b.x, b.y, b.z);
+  if (qb && !G.ballHidden) { ctx.fillStyle = '#fff'; ctx.shadowColor = '#fff'; ctx.shadowBlur = 8; ctx.beginPath(); ctx.arc(qb[0], qb[1], Math.max(1.8, f * 0.06 / qb[2]), 0, TAU); ctx.fill(); ctx.shadowBlur = 0; }
+  ctx.restore();
 }
 
 /* is this roll going in? run the same physics ahead on a copy */
@@ -1526,13 +1641,21 @@ const puOn = () => !!G.round && !G.practice && !G.tutorial && (!!G.round.arcade 
 /* earn one: birdie or better, getting locked in, or a nuclear drive */
 function earnPU(why) {
   if (!puOn()) return;
+  /* held until the ball is at rest and it's your turn, so it never talks over the shot that earned it */
+  (G.puQueue = G.puQueue || []).push(why);
+}
+function flushPU() {
+  const Q = G.puQueue; if (!Q || !Q.length || !puOn()) { G.puQueue = []; return; }
+  G.puQueue = [];
+  const why = Q[0];
+  if (G.pu.length >= PU_MAX) {
+    later(0.4, () => pop('SLOTS FULL', 'pu-pop', `your ${why} earned a power-up, but you're already holding two: use one to make room for the next`));
+    return;
+  }
   const held = G.pu.map(x => x.id), pool = Object.keys(POWERUPS).filter(k => !held.includes(k)), id = pool[Math.floor(Math.random() * pool.length)];
-  later(1.3, () => {
-    if (G.pu.length >= PU_MAX) { pop('POWER-UP MISSED', 'small', 'both slots are full: use one'); return; }
-    G.pu.push({ id, armed: false }); renderPU();
-    pop('POWER-UP!', 'pu-pop', `${POWERUPS[id].name} · ${POWERUPS[id].what} · for your ${why}`); sfx('fanfare'); vib([15, 30, 15]);
-  });
-  call('Power up!', 1.4);
+  G.pu.push({ id, armed: false }); renderPU();
+  later(0.4, () => { pop('POWER-UP!', 'pu-pop', `${POWERUPS[id].name} · ${POWERUPS[id].what} · for your ${why}`); sfx('fanfare'); vib([15, 30, 15]); });
+  call('Power up!', 0.6);
 }
 /* can this one be used right now? */
 function puReady(id) {
@@ -1713,6 +1836,7 @@ const oppDist = () => hyp(G.opp.ball.x - PIN.x, G.opp.ball.y - PIN.y);
 const myDist = () => hyp(b.x - PIN.x, b.y - PIN.y);
 const turnsLive = () => G.match && G.opp;
 function playerTurn() { if (G.calmFired && G.windSaved) { G.wind = G.windSaved; G.windSaved = null; G.calmFired = false; }
+  flushPU();
   const s = surface(b.x, b.y); if (s === 'green' || s === 'fringe') enterPutt(); else enterAim(); renderPU(); }
 /* who plays next: the honor on the tee, then whoever is farther from the hole */
 function nextTurn() {
@@ -1787,12 +1911,13 @@ function strike(n) {
   G.snap = { x: b.x, y: b.y, strokes: G.strokes, putts: G.putts, hole: HOLE_I };
   const lie = surface(b.x, b.y);
   G.F = buildShot(nuke ? 1.2 : M.lock, err, { nuke, perfect, fire, wind: true });
-  G.strokes++; G.mode = 'flight'; G.trail = []; G.walkIn = null;
+  G.strokes++; G.mode = 'flight'; G.trail = []; G.walkIn = null; G.cine = null;
+  if (nuke && Math.abs(err) <= 0.5) startCine('nuke');
   if (G.pu) spendPU(['sweet', 'calm']); if (G.windSaved) G.calmFired = true;
   gridAdd(nuke ? '💥' : perfect ? '🟡' : Math.abs(err) > 0.55 ? '🟠' : '⚪');
   if (lie === 'sand') { burst(b.x, b.y, 22, ['#efe0b0', '#d9c48a'], 6, 9, 2.6, 0.8); sfx('sand'); }
   if (nuke) {
-    strikeSound('driver', 1, 1.2, lie); sfx('nuke'); arena(0.5, 2.2); slowmo(0.18, 0.55, 0.45); punch(1.5); impactLines('#ffb070', 34, 0.6); sfx('zip', 1.4); flash('#ffb070', 0.9, 500); shake(16); vib([30, 30, 60]); G.hitstop = 0.16;
+    strikeSound('driver', 1, 1.2, lie); sfx('nuke'); arena(0.5, 2.2); slowmo(0.18, 0.55, 0.45); punch(1.5); impactLines('#ffb070', 34, 0.6); sfx('rip', 1.3); flash('#ffb070', 0.9, 500); shake(16); vib([30, 30, 60]); G.hitstop = 0.16;
     rings.push({ x: b.x, y: b.y, t: 0, dur: 0.6, max: 26 }); sfx('crowd', Math.abs(err) > 0.5 ? 0.5 : 1);
     call(Math.abs(err) > 0.5 ? 'Meltdown!' : 'Nuclear!', 0.15);
     pop(Math.abs(err) > 0.5 ? 'MELTDOWN' : 'NUCLEAR', 'nuke', Math.abs(err) > 0.5 ? (err > 0 ? 'early strike · nuclear slice' : 'late strike · nuclear hook') : (perfect ? 'pure contact' : err > 0 ? 'strike a touch early' : 'strike a touch late'));
@@ -1802,7 +1927,7 @@ function strike(n) {
     if (perfect) {
       /* the pure-contact moment: the strike rings out, time stretches for a beat, the camera leans in */
       strikeSound(kind, 1, M.lock, lie); arena(kind === 'driver' ? 0.32 : 0.2, 0.9);
-      if (G.shape === 'stinger') { sfx('jet', 1); slowmo(0.35, 0.3, 0.3); punch(1.18); impactLines('#dff3ff', 30, 0.45); }
+      if (G.shape === 'stinger') { sfx('rip', 1); slowmo(0.5, 0.25, 0.3); startCine('stinger'); }
       else if (kind === 'driver') { sfx('zip', 1); slowmo(0.35, 0.28, 0.3); punch(1.18); impactLines('#ffffff', 28, 0.42); }
       else { sfx('zip', 0.6); slowmo(0.55, 0.16, 0.2); punch(1.08); impactLines('#ffffff', 18, 0.3); }
       flash('#ffffff', 0.55, 260); shake(5); vib(25); G.hitstop = 0.07; pop('PURE', 'pure'); rings.push({ x: b.x, y: b.y, t: 0, dur: 0.45, max: 12, pure: true }); if (fire) sfx('whoosh'); }
@@ -2461,6 +2586,7 @@ function update(dt) {
   let sdt = dt; if (G.hitstop > 0) { G.hitstop -= dt; sdt = 0; }
   sdt *= slowFactor(dt);
   if (G.fx) G.fx.t += dt;
+  cineTick(dt);
   const M = G.meter;
   if (G.mode === 'power') {
     if (M.hang > 0) M.hang -= dt;
@@ -2486,7 +2612,7 @@ function update(dt) {
     camT.x = p.x + F.dx * 20; camT.y = p.y + F.dy * 20; camT.s = clamp(Math.max(camT.s * 0.995, 2.2), 0.6, 3.4);
     if (F.cross === undefined) F.cross = bridgeCross(F);
     if (F.cross && F.cross.ok && !F.threaded && u >= F.cross.u) {
-      F.threaded = true; slowmo(0.25, 0.45, 0.35); punch(1.2); arena(0.4, 1.4); sfx('jet', 0.8); sfx('crowd', 0.9); shake(5);
+      F.threaded = true; slowmo(0.25, 0.45, 0.35); arena(0.4, 1.4); sfx('crowd', 0.9); shake(3);
       pop('THREADED IT!', 'heat', 'through the arch'); call('Threaded it!');
     }
     if (F.dunk === undefined) { const L = flightPos(F, 1); F.dunk = hyp(L.x - PIN.x, L.y - PIN.y) < CUP_R * 1.6; }
@@ -2664,7 +2790,8 @@ function draw() {
     ctx.fillText(G.match.opp.name[0], mx, my + 0.5);
   }
   drawImpactLines();
-  drawTeeCam();
+  drawCine();
+  if (!G.cine) drawTeeCam(); else $('#camBtn').hidden = true;
   if (G.mode === 'accuracy') drawStrikeRing();
   if (G.mode === 'putt' && G.drag) {
     const d = G.drag;
@@ -2861,6 +2988,9 @@ window.__pureStrike = { score: (strokes, putts) => { G.strokes = strokes; G.putt
   slow: () => G.slow ? { s: G.slow.s, t: G.slow.t } : null,
   fx: () => ({ lines: !!G.fx, verb: VERB ? VERB.gain.value : 0, camS: cam.s, camTS: camT.s }),
   walkIn: () => G.walkIn,
+  cine: () => G.cine ? { kind: G.cine.kind, fade: G.cine.fade, trail: G.cine.trail.length } : null,
+  puQueue: () => (G.puQueue || []).length,
+  earnNow: why => earnPU(why),
   dailyPlanFor: n => dailyPlan(n),
   daily: () => ({ n: dayNo(), plan: dailyPlan(), store: dailyStore(), grid: G.grid, round: G.round && G.round.daily }),
   samples: () => Object.keys(SAMPLES).filter(hasSample),

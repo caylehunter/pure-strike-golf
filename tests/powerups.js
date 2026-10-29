@@ -33,10 +33,11 @@ const PAGE = 'file://' + path.join(__dirname, 'page.html');
   check('Arcade explains itself before you tee off', /Power-ups on.*don't count toward your handicap/.test(await pg.$eval('#soloNote', e => e.textContent)), await pg.$eval('#soloNote', e => e.textContent));
   await pg.tap('.tee-card.blue'); await pg.waitForTimeout(400);
   await pg.evaluate(() => window.__pureStrike.sink());
+  await pg.waitForFunction(() => !document.querySelector('#result').hidden, null, { timeout: 8000 });
+  await next();
   const seen = await pops(2000);
   p = await pu();
-  check('Arcade: a hole-in-one earns a power-up, with a callout saying what it does', p.on && p.slots.length === 1 && /POWER-UP!/.test(seen), `${p.slots.join()} | ${seen.slice(-90)}`);
-  await next();
+  check('Arcade: a hole-in-one earns a power-up, announced on the next tee with what it does', p.on && p.slots.length === 1 && /POWER-UP!.*FOR YOUR HOLE IN ONE/.test(seen), `${p.slots.join()} | ${seen.slice(-90)}`);
   check('the power-up shows in a slot above the controls', !(await pg.$eval('#puBar', e => e.hidden)) && (await pg.$$eval('#puBar .pu', b => b.length)) === 1);
 
   // 3. Dead Calm: no wind for one shot, then the wind is back
@@ -87,13 +88,34 @@ const PAGE = 'file://' + path.join(__dirname, 'page.html');
   await pg.evaluate(() => { window.__pureStrike.clearPU(); window.__pureStrike.givePU('calm'); window.__pureStrike.givePU('sweet'); });
   await pg.screenshot({ path: path.join(__dirname, 'powerup-slots.png') });
   await pg.evaluate(() => window.__pureStrike.sink());
-  const missed = await pops(2000);
-  check('with both slots full, a new power-up is missed (and it says so)', (await pu()).slots.length === 2 && /POWER-UP MISSED/.test(missed));
+  await pg.waitForFunction(() => !document.querySelector('#result').hidden, null, { timeout: 8000 });
+  await next(); const missed = await pops(2500);
+  check('with both slots full, a birdie\'s power-up is not added, and it says why on the next tee', (await pu()).slots.length === 2 && /SLOTS FULL/.test(missed), missed.slice(-100));
+
+  // 7b. an earned power-up waits until the ball is at rest (never talks over the shot)
+  await pg.evaluate(() => window.__pureStrike.restartHole()); await pg.waitForTimeout(300);
+  await pg.evaluate(() => window.__pureStrike.clearPU());
+  await pg.evaluate(() => window.__pureStrike.setWind(0));
+  await pg.waitForTimeout(1500);
+  await pg.evaluate(() => { window.__pureStrike.strikeP(0.6, 0); window.__pureStrike.earnNow('test'); });
+  await pg.waitForTimeout(300);
+  const midFlight = await pg.$eval('#pops', e => e.innerText), q = await pg.evaluate(() => window.__pureStrike.puQueue());
+  check('an earned power-up is not announced mid-shot', !/POWER-UP|SLOTS FULL/.test(midFlight) && q === 1, `queue ${q} | ${midFlight.replace(/\s+/g, ' ').slice(0, 80)}`);
+  const atRest = await pops(5000);
+  check('…it arrives once the ball is at rest', /POWER-UP!/.test(atRest) && (await pu()).slots.length === 1, atRest.slice(-80));
+  await pg.evaluate(() => { window.__pureStrike.givePU('calm'); window.__pureStrike.restartHole(); }); await pg.waitForTimeout(300);
+  await pg.evaluate(() => window.__pureStrike.strikeP(0.6, 0)); await pg.evaluate(() => window.__pureStrike.earnNow('nuclear drive'));
+  const full = await pops(5000);
+  check("with both slots full it says so plainly, once, after the shot", /SLOTS FULL.*use one to make room/i.test(full) && !/POWER-UP MISSED/.test(full), full.slice(-120));
 
   // 8. an arcade round never posts to the handicap
   const rounds0 = await pg.evaluate(() => JSON.parse(localStorage.getItem('pure-strike-v1')).rounds.length);
-  await next(); await pg.evaluate(() => window.__pureStrike.score(4, 2)); await pg.waitForTimeout(200);
-  if ((await pg.$eval('#againBtn', e => e.textContent)).startsWith('Next')) { await next(); await pg.evaluate(() => window.__pureStrike.score(4, 2)); await pg.waitForTimeout(200); }
+  // finish the round from wherever it stands
+  for (let i = 0; i < 3; i++) {
+    if (await pg.$eval('#result', e => e.hidden)) { await pg.evaluate(() => window.__pureStrike.score(4, 2)); await pg.waitForTimeout(250); }
+    if (!(await pg.$eval('#againBtn', e => e.textContent)).startsWith('Next')) break;
+    await next();
+  }
   const hcpTxt = await pg.$eval('#resHcp', e => e.innerText);
   const rounds1 = await pg.evaluate(() => JSON.parse(localStorage.getItem('pure-strike-v1')).rounds.length);
   check("Arcade round: the result says it doesn't count, and the handicap is untouched", /Arcade round/.test(hcpTxt) && rounds1 === rounds0, hcpTxt.replace(/\n/g, ' '));

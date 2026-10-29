@@ -42,8 +42,23 @@ const PAGE = 'file://' + path.join(__dirname, 'page.html');
   await pg.tap('#nukeBtn'); await ps('strikeP', 1.05, 0); await pg.waitForTimeout(120);
   sl = await ps('slow');
   check('NUCLEAR: deep slow motion', sl && sl.s <= 0.2, JSON.stringify(sl));
+  const nc = await ps('cine');
+  check('NUCLEAR: the tracer cam cuts in, from behind the ball', nc && nc.kind === 'nuke', JSON.stringify(nc));
   const nk = await pops(6000);
   check('NUCLEAR: the yardage counts up to a nuclear drive', /\d{3} YDS NUCLEAR DRIVE/.test(nk), nk.slice(-50));
+
+
+  // a pure stinger: the down-the-line tracer cam, held through the landing, then back to the course
+  await start('blue', 9);
+  await ps('setShape', 'stinger'); await ps('setClub', 'D'); await ps('strikeP', 1, 0); await pg.waitForTimeout(600);
+  let c = await ps('cine');
+  check('pure stinger: the tracer cam cuts in and draws the tracer', c && c.kind === 'stinger' && c.fade > 0.9 && c.trail > 5, JSON.stringify(c));
+  await pg.screenshot({ path: path.join(__dirname, 'payoff-stinger.png') });
+  let gone = false; for (let i = 0; i < 80; i++) { await pg.waitForTimeout(100); if (!(await ps('cine'))) { gone = true; break; } }
+  check('…and cuts back to the course after the ball lands', gone && !/flight/.test((await ps('ball')).mode));
+  await ps('restartHole'); await pg.waitForTimeout(300); await ps('calm');
+  await ps('setShape', 'stinger'); await ps('setClub', 'D'); await ps('strikeP', 1, 0.3); await pg.waitForTimeout(400);
+  check('a mishit stinger stays on the normal view', !(await ps('cine')));
 
   // threading the Viaduct with a pure stinger
   await start('blue', 8);
