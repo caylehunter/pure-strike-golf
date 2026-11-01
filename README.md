@@ -4,6 +4,8 @@ Phone-first arcade golf prototype. See [DESIGN.md](DESIGN.md) for how everything
 
 ## Play
 
+Live at **https://caylehunter.github.io/pure-strike-golf/** (GitHub Pages serves `index.html` from `main`; add `#testing` for the Highlights lab). `index.html` is a complete document, with its own doctype, charset and viewport, so it renders the same on GitHub Pages as in the Claude artifact.
+
 Open `index.html` in a browser (phone-sized window works best), or use the published prototype link.
 
 ## Sounds
