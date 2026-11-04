@@ -29,7 +29,7 @@ const PILL = 8 + 38; // the PUTT/HOLE pill sits this far below the lowest top ov
     await pg.evaluate(() => localStorage.setItem('pure-strike-v1', JSON.stringify({ best: {}, putt: { att: [0, 0, 0], made: [0, 0, 0] }, rounds: [10, 10, 10, 10, 10].map(d => ({ d })), onboarded: true, allUnlocked: true })));
     await pg.reload(); await pg.waitForTimeout(300);
     await pg.evaluate(() => window.__pureStrike.setLen(3));
-    await pg.tap('#matchBtn'); await pg.waitForTimeout(150); await pg.tap('#oppList button[data-opp="1"]'); await pg.waitForTimeout(400);
+    await pg.tap('#matchBtn'); await pg.waitForTimeout(150); await pg.tap('#oppList button[data-opp="1"]'); await pg.tap('#vsGo'); await pg.waitForTimeout(400);
     await pg.evaluate(() => window.__pureStrike.oppFinish()); await pg.waitForTimeout(300);
     const pin = await pg.evaluate(() => window.__pureStrike.aim().pin);
     for (const yds of [3, 9, 13]) {

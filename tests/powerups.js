@@ -122,7 +122,7 @@ const PAGE = 'file://' + path.join(__dirname, 'page.html');
 
   // 9. match play: power-ups on for both sides; using one keeps the match off your handicap
   await fresh({ allUnlocked: true });
-  await pg.tap('#matchBtn'); await pg.waitForTimeout(150); await pg.tap('#oppList button[data-opp="0"]'); await pg.waitForTimeout(400);
+  await pg.tap('#matchBtn'); await pg.waitForTimeout(150); await pg.tap('#oppList button[data-opp="0"]'); await pg.tap('#vsGo'); await pg.waitForTimeout(400);
   check('match play has power-ups on', (await pu()).on);
   await pg.evaluate(() => { Math.random = () => 0.1; window.__pureStrike.oppPU(1); window.__pureStrike.oppFinish(); window.__pureStrike.score(4, 2); });
   await pg.waitForTimeout(200); await pg.tap('#againBtn');

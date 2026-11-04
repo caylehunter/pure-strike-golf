@@ -37,12 +37,12 @@ const PLAYER = h => JSON.stringify({ best: {}, putt: { att: [0, 0, 0], made: [0,
   d = await pg.evaluate(() => window.__pureStrike.drop(0, 480));
   check('Long Haul: a ball in the creek drops short of it, on the hole', d.y < 474 && Math.abs(d.x) < 25 && !/water/.test(d.s), `drop at (${d.x.toFixed(0)}, ${d.y.toFixed(0)}) on ${d.s}`);
 
-  // 9-hole match vs Dusty (28) for a 15: 7 strokes, on stroke index 1-7
+  // 9-hole match vs Tank (28) for a 15: 7 strokes, on stroke index 1-7
   await pg.tap('#pauseBtn'); await pg.tap('#pzQuit'); await pg.waitForTimeout(250);
   await pg.tap('#matchBtn'); await pg.waitForTimeout(150);
   const myH = (await pg.evaluate(() => window.__pureStrike.state())).hcp, want = Math.round((28 - myH) * 9 / 18);
-  check(`setup shows 9-hole strokes: Dusty (28) gets ${want} against a ${myH}`, (await pg.$eval('#oppList button[data-opp="0"]', e => e.innerText)).includes(`Dusty gets ${want} strokes`));
-  await pg.tap('#oppList button[data-opp="0"]'); await pg.waitForTimeout(400);
+  check(`setup shows 9-hole strokes: Tank (28) gets ${want} against a ${myH}`, (await pg.$eval('#oppList button[data-opp="0"]', e => e.innerText)).includes(`Tank gets ${want} strokes`));
+  await pg.tap('#oppList button[data-opp="0"]'); await pg.tap('#vsGo'); await pg.waitForTimeout(400);
   const m0 = await pg.evaluate(() => window.__pureStrike.match());
   check('the match uses that many pops: half the handicap gap over 9 holes', m0.n === want && !m0.meGets, `${m0.n} pops`);
   const spread = await pg.evaluate(() => window.__pureStrike.popsTotal());

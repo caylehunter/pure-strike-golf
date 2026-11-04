@@ -40,7 +40,7 @@ const PAGE = 'file://' + path.join(__dirname, 'page.html');
   check('quit goes to the menu and the round does not count', st.mode === 'menu' && await vis('#menu') && st.rounds === 5, `rounds ${st.rounds}`);
 
   // match: concede hole 1
-  await pg.tap('#matchBtn'); await pg.tap('#oppList button[data-opp="0"]'); await pg.waitForTimeout(400);
+  await pg.tap('#matchBtn'); await pg.tap('#oppList button[data-opp="0"]'); await pg.tap('#vsGo'); await pg.waitForTimeout(400);
   await pg.tap('#pauseBtn'); await pg.waitForTimeout(150);
   check('concede offered in match play', await vis('#pzConcede'));
   await shot('nav-pause-match.png');

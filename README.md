@@ -30,6 +30,7 @@ npm test
 - `tests/match.js` – match play: pops, the per-hole target, early finish (2 & 1), ladder unlocks
 - `tests/nav.js` – menu flow, Back buttons, pause/resume/quit, conceding a match hole
 - `tests/feedback.js` – feedback button placement, empty-note prompt, copy fallback
+- `tests/rivals.js` – rivals with personality: each scores to their handicap in their own style (Tank long with three-putts, Marge short and steady, Doc spinning it back), the VS card, speech bubbles
 - `tests/nine.js` – the 9-hole course: holes and par, a full round, scaled handicap and pops, 5 & 4 finish, water drops, opponent shots on every hole
 - `tests/fire.js` – PURE streak: "he's starting to feel it" at 3, locked in at 4 (bigger sweet spot), "lost the feel" on a miss
 - `tests/viaduct.js` – hole 8: only a pure Stinger fits the arch, CLANG off the wall, the tee cam's verdict, hide/show

@@ -117,7 +117,7 @@ NBA Jam-style boosts, **earned by playing well and never sold**. They're on in *
 | Mulligan | Replay your last shot: back to where it was played, with its stroke and any penalty taken back | Any time the ball is at rest on that hole |
 
 - **Using one:** tap its purple chip above the controls. It gets its own callout and announcer line, and stays lit ("Dead Calm on") until the shot it's for is played.
-- **The computer plays them too** in match play: it earns one on each of its birdies and often plays it on a later hole ("DUSTY USES SWEET SPOT"), which is often worth a stroke.
+- **The computer plays them too** in match play: it earns one on each of its birdies and often plays it on a later hole ("TANK USES SWEET SPOT"), which is often worth a stroke.
 - **Handicap stays real golf:** Arcade rounds never post (they keep their own best scores), and a match where you used a power-up doesn't post either. The result screen says why.
 - **Arcade** is chosen on the stroke play setup screen ("Counts for handicap" / "Arcade · power-ups") and remembered.
 
@@ -226,12 +226,19 @@ Locked shot shapes are struck through; tapping one says how to unlock it. The me
 
 ## Match play vs. the computer
 
-- **Ladder:** Dusty (28), Marge (14), Ace (4). Dusty is always open; beating an opponent unlocks the next. Records (W–L–H) show on each card.
+- **Ladder:** Tank (28), Grandma Marge (14), Doc (4). Tank is always open; beating an opponent unlocks the next. Records (W–L–H) show on each card.
+- **Rivals with personality (Punch-Out style):** each one plays the hole in their own style, and that is how their score comes out:
+  - **Tank, "The Long Ball"** bombs it 320+ (the call-out shows the yardage), sprays it into the trees and punches out, chunks chips, and three-putts almost half the time. Get it on the green and he gives shots back.
+  - **Grandma Marge, "Fairways & Greens"** pokes it 190 down the middle every time, hits greens and two-putts. She never makes a mistake, so you have to make birdies.
+  - **Doc, "The Spin Doctor"** isn't long, but his wedges land past the flag and suck back (SPIN BACK), he gets it up and down, and he chips in.
+  - Picking one opens a **VS card**: you vs them, name and nickname, a quote in their voice, power / accuracy / short game / putting bars, how to beat them, the strokes and your record. "Tee it up" starts the match.
+  - **They talk:** a speech bubble under the match bar and their own voice (the phone's speech, with their own pitch and pace; the Announcer setting turns it off) on the intro, their tee shots, Tank's flubs, Doc's spin and chip-ins, your water balls and pure strikes, every hole won or lost and the end of the match. At most one line every few seconds.
+  - Tuned by simulation so each scores to their handicap: about +15, +9 and +3 over nine from the blue tees.
 - **Pops:** the handicap gap scaled to the match length: `round(|myH − oppH| × holes / 18)` strokes to the higher handicap (a sixth over 3 holes, half over 9), spread by stroke index, one per hole before any hole gets a second. The scorecard shows them in their own row.
-- **Opponent scoring:** its score per hole is par + (handicap + 3)/18 (+0.15 from the black tees), since golfers average about 3 over their handicap; the spread is 0.6 + handicap/60 strokes (higher handicaps are less consistent), clamped to par −2 … par +4.
+- **Opponent scoring:** at the start of the match each rival plays every hole in their own style (`simHole`), and the shots are kept so what you watch is how they scored. A score that changes mid-match (a power-up, a test) is replayed in their style until it matches (`planFor`).
 - **Alternating shots, by the rules of golf:** the hole is played shot for shot. On the tee the **honor** goes first: a coin toss on hole 1, then the winner of the previous hole (a halve keeps the honor). After that, **whoever is farther from the hole plays next**, so a duffed shot that leaves you behind means you hit again. Once one player is in the hole, the other plays out.
-- **The opponent's shots** come from its hole score, turned into shots (full shots along the hole, the last onto the green, then putts) and played one at a time with an orange ball while the camera follows. Their ball stays on the course between shots, tagged with their initial. Shots never finish in water or out of bounds (they lay up short of a pond); Dusty's drift right (his slice). Tap the course to skip a shot.
-- **Match bar while they're still playing:** `Dusty: 2 shots, 14 ft away · you get a stroke · you're away`. Once they hole out it switches to the target: `Dusty made par (4) · 4 wins, 5 halves`.
+- **The opponent's shots** come from its hole score, turned into shots (full shots along the hole, the last onto the green, then putts) and played one at a time with an orange ball while the camera follows. Their ball stays on the course between shots, tagged with their initial. Shots never finish in water or out of bounds (they lay up short of a pond); Each rival's shots come from their own style (above). Tap the course to skip a shot.
+- **Match bar while they're still playing:** `Tank: 2 shots, 14 ft away · you get a stroke · you're away`. Once they hole out it switches to the target: `Tank made par (4) · 4 wins, 5 halves`.
 - Lower net score wins the hole. Status: ALL SQUARE / n UP / n DOWN.
 - **A match ends the moment one side leads by more holes than are left,** and the trailing side concedes: 2 up with 1 to play is "2 & 1"; over nine holes, 5 up with 4 to play is "5 & 4". This works both ways. The round still posts: unplayed holes count as **net par** (par plus the player's pops there), shown faded on the card.
 - Hole cards show the hole result and match status; the final card shows "You won 2 & 1" / "Marge won 1 up" / "Match halved", both totals, and a rematch button.
