@@ -15,23 +15,26 @@ const PAGE = 'file://' + path.join(__dirname, 'page.html');
   await pg.reload(); await pg.waitForTimeout(400);
 
   // their games match their personalities: over nine holes they score to their handicap, in very different ways
-  const st = await pg.evaluate(() => [0, 1, 2].map(i => window.__pureStrike.simStats(i, 250)));
+  const names = ['Tank', 'Marge', 'Benny', 'Doc', 'Kenzie', 'Hal'], hcp = [28, 14, 9, 4, 1, -3];
+  const st = await pg.evaluate(() => [0, 1, 2, 3, 4, 5].map(i => window.__pureStrike.simStats(i, 250)));
   const sum = (a, k) => a.reduce((x, h) => x + h[k], 0), avg = (a, k) => { const v = a.filter(h => h[k] != null); return v.reduce((x, h) => x + h[k], 0) / v.length; };
-  const [tank, marge, doc] = st, hcp = [28, 14, 4];
-  st.forEach((s, i) => { const o = sum(s, 'over'); check(`${['Tank', 'Marge', 'Doc'][i]} (${hcp[i]}) scores about +${hcp[i] / 2} over nine`, Math.abs(o - hcp[i] / 2) < 2.5, o.toFixed(1)); });
+  const over = st.map(s => sum(s, 'over'));
+  st.forEach((s, i) => check(`${names[i]} (${hcp[i]}) scores to their handicap over nine`, Math.abs(over[i] - (hcp[i] / 2 + 1.5)) < 2, over[i].toFixed(1)));
+  check('the ladder gets tougher every step', over.every((x, i) => i === 0 || x < over[i - 1]), over.map(x => x.toFixed(1)).join(' > '));
   const drv = st.map(s => avg(s, 'drive')), three = st.map(s => avg(s, 'threePutt'));
-  check('Tank hits it a mile: longest drives, over 300', drv[0] > 300 && drv[0] > drv[2] && drv[2] > drv[1], drv.map(Math.round).join(' / '));
-  check('Marge pokes it: under 200 off the tee', drv[1] < 200, Math.round(drv[1]));
-  check('Tank cannot putt: far more three-putts', three[0] > 2.5 * three[1] && three[0] > 2.5 * three[2], three.map(x => x.toFixed(2)).join(' / '));
+  check('Tank and Kenzie bomb it past 300; Marge and Benny under 220', drv[0] > 300 && drv[4] > 300 && drv[1] < 220 && drv[2] < 220, drv.map(Math.round).join(' / '));
+  check('Tank cannot putt: far more three-putts than anyone', three[0] > 2 * Math.max(...three.slice(1)), three.map(x => x.toFixed(2)).join(' / '));
+  check("Kenzie's weakness is the putter: more three-putts than Marge, Benny, Doc or Hal", three[4] > Math.max(three[1], three[2], three[3], three[5]), three.map(x => x.toFixed(2)).join(' / '));
+  check('Benny putts like a kid with no fear: fewest three-putts', three[2] <= Math.min(...three.filter((x, i) => i !== 2)) + 0.02, three.map(x => x.toFixed(2)).join(' / '));
 
   // the opponent list shows who they are
   await pg.tap('#matchBtn'); await pg.waitForTimeout(200);
   const list = await pg.$$eval('#oppList button', b => b.map(x => x.innerText.replace(/\s+/g, ' ')));
-  check('list shows each rival with a nickname', /tank/i.test(list[0]) && /long ball/i.test(list[0]) && /grandma marge/i.test(list[1]) && /doc/i.test(list[2]) && /spin doctor/i.test(list[2]), list.join(' | '));
+  check('list shows each rival with a nickname', /tank/i.test(list[0]) && /long ball/i.test(list[0]) && /grandma marge/i.test(list[1]) && /prodigy/i.test(list[2]) && /spin doctor/i.test(list[3]) && /sky ball/i.test(list[4]) && /the stick/i.test(list[5]) && /\+3 handicap/.test(list[5]) && list.length === 6, list.join(' | '));
   await shot('rivals-list.png');
 
   // picking one brings up the VS card, not the match
-  await pg.tap('#oppList button[data-opp="2"]'); await pg.waitForTimeout(800);
+  await pg.tap('#oppList button[data-opp="3"]'); await pg.waitForTimeout(800);
   const vs = await pg.evaluate(() => ({ shown: !document.querySelector('#vsCard').hidden, name: document.querySelector('#vsName').textContent, nick: document.querySelector('#vsNick').textContent, quote: document.querySelector('#vsQuote').textContent, bars: document.querySelectorAll('#vsStats .vs-bar').length, on: document.querySelectorAll('#vsStats i.on').length, tell: document.querySelector('#vsTell').textContent, mode: window.__pureStrike.state().mode }));
   check('VS card: name, nickname, quote, four stat bars', vs.shown && vs.name === 'Doc' && /spin doctor/i.test(vs.nick) && vs.quote.length > 10 && vs.bars === 4 && vs.on === 5 + 8 + 10 + 7, JSON.stringify(vs));
   check('VS card says how to beat him and the strokes', /How to beat Doc/.test(vs.tell) && /strokes?/.test(vs.tell), vs.tell);
@@ -39,7 +42,7 @@ const PAGE = 'file://' + path.join(__dirname, 'page.html');
   await pg.tap('#vsBack'); await pg.waitForTimeout(150);
   check('Back returns to the list', await pg.evaluate(() => document.querySelector('#vsCard').hidden && !document.querySelector('#matchSetup').hidden));
   await pg.evaluate(() => window.__pureStrike.setLen(3));
-  await pg.tap('#oppList button[data-opp="2"]'); await pg.tap('#vsGo'); await pg.waitForTimeout(300);
+  await pg.tap('#oppList button[data-opp="3"]'); await pg.tap('#vsGo'); await pg.waitForTimeout(300);
   check('Tee it up starts the match vs Doc', await pg.evaluate(() => !!window.__pureStrike.match() && document.querySelector('#vsCard').hidden));
 
   // talk: lines in a bubble under the match bar, from their own script

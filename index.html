@@ -402,7 +402,7 @@ button.nuke small{font:700 11px/1 var(--cond);letter-spacing:.06em;opacity:.85}
     </div>
     <button class="tee-card mode daily" id="dailyBtn"><span class="av">D</span><span class="tc-main"><b id="dailyTitle">Daily challenge</b><small id="dailySub">One hole, same for everyone today</small></span></button>
     <button class="tee-card mode" id="soloBtn"><span class="av">S</span><span class="tc-main"><b>Stroke play</b><small>Play 9 holes (or a quick 3) for your handicap, or Arcade with power-ups</small></span></button>
-    <button class="tee-card mode match" id="matchBtn"><span class="av">M</span><span class="tc-main"><b>Match play</b><small>Beat Tank, Grandma Marge and Doc hole by hole · power-ups on</small></span></button>
+    <button class="tee-card mode match" id="matchBtn"><span class="av">M</span><span class="tc-main"><b>Match play</b><small>Six rivals from Tank to the club pro · power-ups on</small></span></button>
     <button class="ghost" id="practiceBtn">Putting practice</button>
     <button class="ghost" id="howBtn">How to play (60-second warm-up)</button>
     <button class="ghost" id="labBtn">Sound lab: pick the best sounds</button>
@@ -955,6 +955,21 @@ const OPPONENTS = [
       loseHole: ["Well done, dear. Don't get used to it.", "Oh, aren't you clever."],
       winMatch: ['Thank you for the lovely game. Same time next week?', 'Fairways and greens, dear. Fairways and greens.'],
       loseMatch: ["Well! Nobody's beaten me since 1987.", "You've earned a cookie, dear."] } },
+  { id: 'benny', name: 'Benny', face: '🧒', nick: 'The Prodigy', hcp: 9, color: '#facc15', blurb: 'Eleven years old. Will chip in on you and laugh about it.',
+    tell: "He can't reach the long holes in two, so make him chip. Then hope: he holes everything from inside ten feet. Beat him off the tee and on the par 5s.",
+    stats: { power: 3, accuracy: 6, short: 10, putting: 9 }, voice: { pitch: 1.9, rate: 1.15 },
+    style: { drive: 212, sd: 10, lat: 10, approach: 160, green: 0.48, falloff: 0.7, prox: [4, 12], missR: 8, chip: [1, 4], chipIn: 0.1, spin: 0,
+      apexDrive: 20, speed: 250, layLeave: 70, putt: ft => clamp(1.06 - ft / 24, 0.08, 0.98), leave: ft => 1.8 + ft * 0.12 + Math.random() * 2 },
+    lines: {
+      intro: ["My dad says you're pretty good. For an old guy.", 'Do you want me to go easy on you?', "I'm missing recess for this."],
+      oppTee: ["It's not far but it's straight!", 'My coach says distance comes later.', 'Wheeee!'],
+      oppGreat: ['CHIP-IN! Did you see that?!', 'Easy peasy.', 'I do that all the time.'],
+      youTrouble: ['Ha! Splash!', "Do you need a mulligan? I won't tell."],
+      youGreat: ['Whoa. Can you teach me that?', 'Okay, that was pretty cool.'],
+      winHole: ['I beat a grown-up!', 'Bet you wish you were eleven.'],
+      loseHole: ['That was luck.', "I wasn't even trying."],
+      winMatch: ["Wait till I tell my friends I beat an adult!", 'Good game! You played... fine.'],
+      loseMatch: ['Rematch! Rematch!', "I'm telling my mom you cheated. Just kidding. Good game."] } },
   { id: 'ace', name: 'Doc', face: '🧐', nick: 'The Spin Doctor', hcp: 4, color: '#38bdf8', blurb: 'Crafty old pro. Spins it back to the hole.',
     tell: "He's not long, but his wedges are deadly and he'll chip in. Out-drive him, then hold your nerve on the greens.",
     stats: { power: 5, accuracy: 8, short: 10, putting: 7 }, voice: { pitch: 0.85, rate: 0.92 },
@@ -969,9 +984,40 @@ const OPPONENTS = [
       winHole: ['Experience, kid.', "That's a lesson. No charge."],
       loseHole: ['Enjoy it.', 'Even a blind squirrel finds a nut.'],
       winMatch: ["School's out. Come back when you've got some touch.", 'Forty years of practice, kid.'],
-      loseMatch: ["Well, I'll be. The student becomes the teacher.", "Hm. You'll do."] } }
+      loseMatch: ["Well, I'll be. The student becomes the teacher.", "Hm. You'll do."] } },
+  { id: 'kenzie', name: 'Kenzie', face: '🚀', nick: 'Sky Ball', hcp: 1, color: '#f472b6', blurb: 'Hits it farther than you. And straighter. Sorry.',
+    tell: "You won't out-drive her, so don't try. Her putter is the weak spot: she three-putts more than she should, so get on the green and make her putt.",
+    stats: { power: 10, accuracy: 8, short: 7, putting: 4 }, voice: { pitch: 1.15, rate: 1.05, female: true },
+    style: { drive: 332, sd: 8, lat: 9, approach: 230, green: 0.64, falloff: 0.3, prox: [3, 10], missR: 7, chip: [1.5, 4.5], chipIn: 0.03, spin: 0,
+      apexDrive: 44, speed: 330, layLeave: 80, putt: ft => clamp(1.0 - ft / 13, 0.06, 0.94), leave: ft => 1 + ft * 0.13 + Math.random() * 1.6 },
+    lines: {
+      intro: ['Want to play from the forward tees? No? Okay.', "I'll wait for you up there.", 'Bring your big stick. You will need it.'],
+      oppTee: ["Yeah, that's past you.", "Three thirty. Your turn.", 'Grip it and rip it.'],
+      oppFlub: ['Ugh. This putter.', 'Greens are slow today.', "That's the only thing you'll beat me at."],
+      youTrouble: ['Swing smooth. Not hard.', "Oof. Grab another ball."],
+      youGreat: ['Okay! Nice swing.', "Not bad. Still behind me though."],
+      winHole: ['Long and straight. Pretty simple game.', 'Got it.'],
+      loseHole: ['Fair. You putted better.', 'Hm. Okay.'],
+      winMatch: ['Good match. Hit the gym.', 'Next time, try keeping up.'],
+      loseMatch: ['Fine. You win this one. Watch your back.', "I'm taking this putter to the lake."] } },
+  { id: 'hal', name: 'Pro Hal', short: 'Hal', face: '😎', nick: 'The Stick', hcp: -3, color: '#14b8a6', blurb: 'The club pro. Plus three. Has never had a bad day.',
+    tell: 'Fairway, green, two putts, every hole: you need birdies. His only crack is a short putt that matters. Get close, keep it tight, and let him stand over a four-footer.',
+    stats: { power: 8, accuracy: 10, short: 9, putting: 6 }, voice: { pitch: 0.7, rate: 0.9 },
+    style: { drive: 288, sd: 5, lat: 5, approach: 215, green: 0.66, falloff: 0.22, prox: [4, 11], missR: 5, chip: [1, 3.5], chipIn: 0.04, spin: 2.5,
+      apexDrive: 32, speed: 310, layLeave: 95, putt: ft => ft > 2.6 && ft < 7 ? 0.7 : clamp(1.03 - ft / 24, 0.08, 0.99), leave: ft => 0.6 + ft * 0.07 + Math.random() * 1.6 },
+    lines: {
+      intro: ["I'll play it as it lies. You can tee it up in the fairway if you like.", "Lesson's sixty bucks. This one's free.", "Let's see if your game travels."],
+      oppTee: ['Middle of the fairway.', 'Center cut.', 'That works.'],
+      oppGreat: ['Textbook.', "That's why I'm the pro.", 'Feed it in there.'],
+      oppFlub: ['...', 'Hm. Spike mark.', "Don't say anything."],
+      youTrouble: ["That's a two-shot swing, my friend.", 'Tempo. Always tempo.'],
+      youGreat: ['Good swing.', "That one you'll remember."],
+      winHole: ['Par is a good score.', 'Fairways and greens. It adds up.'],
+      loseHole: ['Well played.', "Don't let it go to your head."],
+      winMatch: ['Good match. Book a lesson at the front desk.', "You'll get there. Maybe."],
+      loseMatch: ["Well. I'll be in the shop. Working on my short putts.", "That's golf. Good playing, really."] } }
 ];
-const oppName = o => o.short || o.name;
+const oppName = o => o.short || o.name, hcpTxt = h => h < 0 ? `+${-h}` : `${h}`;
 store.match = store.match || {};
 const rec = id => store.match[id] || (store.match[id] = { w: 0, l: 0, h: 0 });
 const oppOpen = i => i === 0 || store.allUnlocked || rec(OPPONENTS[i - 1].id).w > 0;
@@ -2852,7 +2898,7 @@ function showVS(i) {
   const o = OPPONENTS[i], my = handicap(), n = matchStrokes(my, o.hcp, G.len), r = rec(o.id);
   G.vs = i; const c = $('#vsCard .card'); c.style.setProperty('--oc', o.color);
   $('#vsMeta').textContent = `Match play · ${G.len} holes · ${G.msTee === 'black' ? 'Black' : 'Blue'} tees`;
-  $('#vsMyH').textContent = `${fmtH(my)} hcp`; $('#vsHcp').textContent = `${o.hcp} hcp`;
+  $('#vsMyH').textContent = `${fmtH(my)} hcp`; $('#vsHcp').textContent = `${hcpTxt(o.hcp)} hcp`;
   $('#vsAv').textContent = o.face; $('#vsName').textContent = o.name; $('#vsNick').textContent = o.nick;
   $('#vsStats').innerHTML = [['Power', 'power'], ['Accuracy', 'accuracy'], ['Short game', 'short'], ['Putting', 'putting']].map(([l, k]) =>
     `<span>${l}</span><span class="vs-bar" aria-label="${l} ${o.stats[k]} of 10">${Array.from({ length: 10 }, (_, j) => `<i${j < o.stats[k] ? ' class="on"' : ''}></i>`).join('')}</span>`).join('');
@@ -2879,7 +2925,7 @@ function renderMatchSetup() {
   $('#oppList').innerHTML = OPPONENTS.map((o, i) => {
     const open = oppOpen(i), n = matchStrokes(my, o.hcp, G.len), r = rec(o.id);
     const pops = n === 0 ? 'no strokes either way' : my > o.hcp ? `you get ${strokesTxt(n)}` : `${o.name} gets ${strokesTxt(n)}`;
-    const info = open ? `${o.hcp} handicap · ${pops}` : `Locked · beat ${OPPONENTS[i - 1].name} to unlock`;
+    const info = open ? `${hcpTxt(o.hcp)} handicap · ${pops}` : `Locked · beat ${OPPONENTS[i - 1].name} to unlock`;
     return `<button class="tee-card opp" data-opp="${i}" style="--oc:${o.color}"${open ? '' : ' disabled'}><span class="av">${open ? o.face : '?'}</span><span class="tc-main"><b>${o.name}</b><span class="nick">${o.nick}</span><small>${o.blurb}<br>${info}</small></span><span class="tag">${open ? `${r.w}–${r.l}${r.h ? '–' + r.h : ''}` : 'LOCKED'}</span></button>`;
   }).join('');
 }

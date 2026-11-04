@@ -226,14 +226,18 @@ Locked shot shapes are struck through; tapping one says how to unlock it. The me
 
 ## Match play vs. the computer
 
-- **Ladder:** Tank (28), Grandma Marge (14), Doc (4). Tank is always open; beating an opponent unlocks the next. Records (W–L–H) show on each card.
+- **Ladder:** Tank (28), Grandma Marge (14), Benny (9), Doc (4), Kenzie (1), Pro Hal (+3). Tank is always open; beating an opponent unlocks the next. Records (W–L–H) show on each card.
 - **Rivals with personality (Punch-Out style):** each one plays the hole in their own style, and that is how their score comes out:
   - **Tank, "The Long Ball"** bombs it 320+ (the call-out shows the yardage), sprays it into the trees and punches out, chunks chips, and three-putts almost half the time. Get it on the green and he gives shots back.
   - **Grandma Marge, "Fairways & Greens"** pokes it 190 down the middle every time, hits greens and two-putts. She never makes a mistake, so you have to make birdies.
+  - **Benny, "The Prodigy"** is eleven. He only hits it 210 and can't reach the long holes, but he chips in more than anyone and never three-putts.
   - **Doc, "The Spin Doctor"** isn't long, but his wedges land past the flag and suck back (SPIN BACK), he gets it up and down, and he chips in.
+  - **Kenzie, "Sky Ball"** hits it 320+ and straight, farther than you. Her putter is the crack: she three-putts more than anyone but Tank.
+  - **Pro Hal, "The Stick"** is the club pro (+3): fairway, green, two putts, everywhere. His one weakness is a short putt: from 3 to 7 feet he misses 3 in 10.
+  - Every rival has one big strength and one clear weakness, and the VS card's "How to beat" line says what it is.
   - Picking one opens a **VS card**: you vs them, name and nickname, a quote in their voice, power / accuracy / short game / putting bars, how to beat them, the strokes and your record. "Tee it up" starts the match.
   - **They talk:** a speech bubble under the match bar and their own voice (the phone's speech, with their own pitch and pace; the Announcer setting turns it off) on the intro, their tee shots, Tank's flubs, Doc's spin and chip-ins, your water balls and pure strikes, every hole won or lost and the end of the match. At most one line every few seconds.
-  - Tuned by simulation so each scores to their handicap: about +15, +9 and +3 over nine from the blue tees.
+  - Tuned by simulation so each scores to their handicap: about +15, +9, +6, +3, +2 and even par over nine from the blue tees (handicap/2 + 1.5).
 - **Pops:** the handicap gap scaled to the match length: `round(|myH − oppH| × holes / 18)` strokes to the higher handicap (a sixth over 3 holes, half over 9), spread by stroke index, one per hole before any hole gets a second. The scorecard shows them in their own row.
 - **Opponent scoring:** at the start of the match each rival plays every hole in their own style (`simHole`), and the shots are kept so what you watch is how they scored. A score that changes mid-match (a power-up, a test) is replayed in their style until it matches (`planFor`).
 - **Alternating shots, by the rules of golf:** the hole is played shot for shot. On the tee the **honor** goes first: a coin toss on hole 1, then the winner of the previous hole (a halve keeps the honor). After that, **whoever is farther from the hole plays next**, so a duffed shot that leaves you behind means you hit again. Once one player is in the hole, the other plays out.

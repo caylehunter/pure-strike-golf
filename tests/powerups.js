@@ -127,7 +127,7 @@ const PAGE = 'file://' + path.join(__dirname, 'page.html');
   await pg.evaluate(() => { Math.random = () => 0.1; window.__pureStrike.oppPU(1); window.__pureStrike.oppFinish(); window.__pureStrike.score(4, 2); });
   await pg.waitForTimeout(200); await pg.tap('#againBtn');
   const oppSeen = await pops(2200);
-  check('the computer plays a power-up it earned, and you see it', /DUSTY USES/.test(oppSeen), oppSeen.slice(0, 120));
+  check('the computer plays a power-up it earned, and you see it', /TANK USES/.test(oppSeen), oppSeen.slice(0, 120));
   // your turn (whoever won the toss), then play one
   await pg.evaluate(() => window.__pureStrike.oppFinish()); await pg.waitForTimeout(200);
   await pg.evaluate(() => { window.__pureStrike.givePU('calm'); window.__pureStrike.usePU(0); });
