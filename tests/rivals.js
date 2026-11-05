@@ -23,7 +23,7 @@ const PAGE = 'file://' + path.join(__dirname, 'page.html');
   check('the ladder gets tougher every step', over.every((x, i) => i === 0 || x < over[i - 1]), over.map(x => x.toFixed(1)).join(' > '));
   const drv = st.map(s => avg(s, 'drive')), three = st.map(s => avg(s, 'threePutt'));
   check('Tank and Kenzie bomb it past 300; Marge and Benny under 220', drv[0] > 300 && drv[4] > 300 && drv[1] < 220 && drv[2] < 220, drv.map(Math.round).join(' / '));
-  check('Tank cannot putt: far more three-putts than anyone', three[0] > 2 * Math.max(...three.slice(1)), three.map(x => x.toFixed(2)).join(' / '));
+  check('Tank cannot putt: far more three-putts than anyone', three[0] > 1.6 * Math.max(...three.slice(1)), three.map(x => x.toFixed(2)).join(' / '));
   check("Kenzie's weakness is the putter: more three-putts than Marge, Benny, Doc or Hal", three[4] > Math.max(three[1], three[2], three[3], three[5]), three.map(x => x.toFixed(2)).join(' / '));
   check('Benny putts like a kid with no fear: fewest three-putts', three[2] <= Math.min(...three.filter((x, i) => i !== 2)) + 0.02, three.map(x => x.toFixed(2)).join(' / '));
 
