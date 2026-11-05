@@ -202,6 +202,8 @@ Nine holes, par 36. A round plays **all 9 (default, about 20 minutes) or the fir
 - Rough −15%, bunker −30% (sand wedge −8%). OB: +1, replay. Pick up at 12.
 - **Water:** +1. The drop is beside the water when dry land is within about 15 yards; across the hole or around the island green it is behind the water, on the line back toward the tee.
 - Wind per hole: blue 0–7 mph, black 4–15 mph.
+- **Aiming you can trust (wind included):** the preview line shows where the ball really lands, wind and all, and the AIM/PIN mark on the power meter plays the wind for you: let go on it with a pure strike and the ball carries to the aim point (a pure strike flies 3% long, the reward). Into the wind the game hands you more club.
+- **The game never aims you into water:** a lay-up spot in a hazard or within a few yards short of one backs off until it's dry (or goes for the green instead). Over water, the club picked has to carry all the way to the pin, with no allowance for roll. Going at the green with a wood, the aim lands short and lets it run up. This fixed Pond Carry from the black tees, where the old lay-up aimed at the back edge of the pond and a perfect shot into any headwind splashed.
 
 ## Handicap
 

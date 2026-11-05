@@ -1451,28 +1451,53 @@ function flightPos(F, u) {
 }
 /* the aim point sets direction and distance; the preview flies to it at the power it needs */
 const fullCarry = () => { const c = club(); return c.carry * lieFactor(surface(b.x, b.y), c) * (G.shape === 'stinger' ? 0.9 : 1); };
-const aimPower = () => clamp(G.aimD / fullCarry(), 0.05, 1);
+/* the wind's effect on carry toward a direction: into it costs more than downwind gives (same factor as buildShot) */
+function windCarry(a = G.aimA) {
+  const w = G.wind, along = w.x * Math.sin(a) + w.y * Math.cos(a);
+  return 1 + (along > 0 ? 0.006 : 0.011) * along * (G.shape === 'stinger' ? 0.35 : 1);
+}
+/* the power marker plays the wind for you: release on it with a pure strike and the ball carries to the aim point */
+const aimPower = () => clamp(G.aimD / (fullCarry() * windCarry()), 0.05, 1);
+/* is there water or out of bounds on the straight line from the ball to (x, y)? (checked every 2 yards) */
+function wetLine(x, y) {
+  const d = hyp(x - b.x, y - b.y);
+  for (let t = 4; t < d; t += 2) { const f = t / d; if (/water|oob/.test(surface(lerp(b.x, x, f), lerp(b.y, y, f)))) return true; }
+  return false;
+}
+/* a target that isn't in a hazard or just short of one: a landing spot within a few yards of water is not a safe aim */
+const wetNear = (x, y, a) => [-8, -4, 0, 3].some(k => /water|oob/.test(surface(x + Math.sin(a) * k, y + Math.cos(a) * k)));
 const aimAtPin = () => hyp(b.x + Math.sin(G.aimA) * G.aimD - PIN.x, b.y + Math.cos(G.aimA) * G.aimD - PIN.y) < 3;
-const previewShot = nuke => buildShot(nuke ? 1.2 : aimPower(), 0, { nuke, perfect: false, wind: false });
+const previewShot = nuke => buildShot(nuke ? 1.2 : aimPower(), 0, { nuke, perfect: false, wind: true });
 
 function availableClubs() { return CLUBS.map((c, i) => i).filter(i => i > 0 || onTee()); }
 function autoClub() {
   if (onTee() && PAR > 3) { G.ci = 0; return; }
   const d = hyp(PIN.x - b.x, PIN.y - b.y), lie = surface(b.x, b.y), av = availableClubs();
+  /* the wind counts, and over water the club has to carry all the way (no allowance for roll) */
+  const wc = windCarry(Math.atan2(PIN.x - b.x, PIN.y - b.y)), need = wetLine(PIN.x, PIN.y) ? 1.0 : 0.93;
   let pick = av[0];
-  for (let k = av.length - 1; k >= 0; k--) { const c = CLUBS[av[k]]; if (c.carry * lieFactor(lie, c) >= d * 0.93) { pick = av[k]; break; } }
+  for (let k = av.length - 1; k >= 0; k--) { const c = CLUBS[av[k]]; if (c.carry * lieFactor(lie, c) * wc >= d * need) { pick = av[k]; break; } }
   G.ci = pick;
 }
 function defaultAim() {
   const c = club(), nuke = G.nukeArmed && canNuke();
   let carry = nuke ? c.carry * 1.62 : c.carry * lieFactor(surface(b.x, b.y), c);
   if (G.shape === 'stinger') carry *= 0.9;
+  if (!nuke) carry *= windCarry(Math.atan2(PIN.x - b.x, PIN.y - b.y));
   let tx = PIN.x, ty = PIN.y;
   if (hyp(PIN.x - b.x, PIN.y - b.y) > carry * 1.04) {
     let found = false;
     for (let y = b.y; y < FW1; y += 1) { const x = cx(y); if (hyp(x - b.x, y - b.y) >= carry) { tx = x; ty = y; found = true; break; } }
     /* the fairway runs out before the club's carry (a drivable par 4): lay up at its end rather than aim over trouble */
     if (!found && FW1 - 10 - 2 * c.roll > b.y + 40) { ty = FW1 - 10 - 2 * c.roll; tx = cx(ty); }
+    /* never lay up into water or just short of it: back off until the spot is dry, or go for the green if nothing is */
+    for (let k = 0; k < 120 && wetNear(tx, ty, Math.atan2(tx - b.x, ty - b.y)); k++) { ty -= 2; tx = cx(ty); }
+    if (ty < b.y + 30 || wetNear(tx, ty, Math.atan2(tx - b.x, ty - b.y))) { tx = PIN.x; ty = PIN.y; }
+  }
+  /* going at the green with a wood: land it short and let it run up, unless that spot is wet */
+  if (tx === PIN.x && ty === PIN.y && c.wood && !nuke) {
+    const a = Math.atan2(PIN.x - b.x, PIN.y - b.y), k = c.roll * 1.6, x2 = PIN.x - Math.sin(a) * k, y2 = PIN.y - Math.cos(a) * k;
+    if (!wetNear(x2, y2, a)) { tx = x2; ty = y2; }
   }
   /* some holes name the safe line off the tee (a cape hole's lake); going for more is the player's call */
   const TA = HOLE.teeAim && HOLE.teeAim[G.tee];
@@ -1775,7 +1800,7 @@ const HL = [
   { id: 'nuke', name: 'NUCLEAR', what: 'Black tees, nuke armed: the deepest slow motion and the tracer cam', tee: 'black', hole: 1, go: auto => { G.nukeArmed = true; defaultAim(); syncUI(); setupAimCam(); if (auto) later(1.4, () => autoSwing(1.05)); } },
   { id: 'stinger', name: 'Pure stinger', what: 'The tracer cam: down the line, red tracer, the rip', tee: 'blue', hole: 8, go: auto => { G.shape = 'stinger'; defaultAim(); syncUI(); if (auto) later(1.4, () => autoSwing(1)); } },
   { id: 'viaduct', name: 'Thread the Viaduct', what: 'A pure stinger through the arch, through the tracer cam', tee: 'blue', hole: 7, go: auto => { if (auto) later(1.6, () => autoSwing(1)); } },
-  { id: 'iron', name: 'Pure iron', what: 'Your iron recording, slow motion, onto the green', tee: 'blue', hole: 0, go: auto => { if (auto) later(1.4, () => autoSwing(Math.min(1, G.aimD / fullCarry()))); } },
+  { id: 'iron', name: 'Pure iron', what: 'Your iron recording, slow motion, onto the green', tee: 'blue', hole: 0, go: auto => { if (auto) later(1.4, () => autoSwing(aimPower())); } },
   { id: 'locked', name: 'Getting locked in', what: 'Two pure swings already: the next one makes "He\'s starting to feel it!"; one more and he\'s locked in', tee: 'blue', hole: 8, go: auto => { G.streak = 2; syncUI(); if (auto) later(1.4, () => autoSwing(1)); } },
   { id: 'putt', name: '30 ft putt that drops', what: 'The walk-in: slow motion, camera on the cup, the crowd rising, the roar', tee: 'blue', hole: 0, go: auto => {
       placeBall(PIN.x - 2, PIN.y - 9.5, 2);
@@ -1798,7 +1823,7 @@ const HL = [
       later(1.4, () => {
         if (G.mode !== 'aim') return;
         /* a pure shot whose flight is bent to land exactly in the cup */
-        autoSwing(Math.min(1, G.aimD / fullCarry()));
+        autoSwing(aimPower());
         const F = G.F; if (!F) return;
         const d = hyp(PIN.x - F.sx, PIN.y - F.sy); F.dx = (PIN.x - F.sx) / d; F.dy = (PIN.y - F.sy) / d; F.rx = F.dy; F.ry = -F.dx; F.carry = d; F.off = 0; F.curve = 0; F.dunk = undefined;
       }); } },
@@ -3405,6 +3430,8 @@ window.__pureStrike = { score: (strokes, putts) => { G.strokes = strokes; G.putt
   hl: () => ({ lab: G.lab, bar: !$('#hlBar').hidden, btn: !$('#hlBtn').hidden, auto: store.hlAuto !== false }),
   samples: () => Object.keys(SAMPLES).filter(hasSample),
   sound: () => ({ ctx: !!AC, state: AC && AC.state, session: navigator.audioSession ? navigator.audioSession.type : 'n/a', charging: !!charge.o, on: soundOn(), voice: voiceOn(), fireEdge: $('#fireEdge').className, confetti: $('#confetti').children.length }),
+  aimPower: () => aimPower(),
+  aimTarget: () => ({ x: b.x + Math.sin(G.aimA) * G.aimD, y: b.y + Math.cos(G.aimA) * G.aimD }),
   strikeP: (p, n) => { if (G.mode !== 'aim') return false; swingDown(); G.meter.p = p; swingUp(); strike(n); return true; },
   /* a text map of a hole, one character per `step` yards: T tee, = fairway, . rough, o sand, ~ water, G green, f fringe, # tree, space out of bounds */
   holeMap: (i, step = 6) => { const cur = HOLE_I, was = HOLES; HOLES = ALL_HOLES; loadHole(i); const ch = { tee: 'T', fairway: '=', rough: '.', sand: 'o', water: '~', green: 'G', fringe: 'f', oob: ' ' }, rows = [];
