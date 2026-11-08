@@ -263,6 +263,14 @@ button.nuke small{font:700 11px/1 var(--cond);letter-spacing:.06em;opacity:.85}
 .opp .tag{background:rgba(255,255,255,.14);color:var(--text)}
 .opp .av,.vs .av,#oppSay .av{background:var(--oc,#2c5a40);font-size:22px}
 .opp .nick{display:block;font:700 11px/1.2 var(--cond);letter-spacing:.14em;text-transform:uppercase;color:var(--oc,var(--gold));margin:2px 0 3px}
+#ldBtn .av{background:var(--oc);font-size:22px}
+.ld-rows{display:grid;grid-template-columns:auto 1fr auto;gap:6px 12px;align-items:center;font:700 14px/1.2 var(--cond);letter-spacing:.06em}
+.ld-rows .who{color:var(--muted);text-transform:uppercase;letter-spacing:.14em;font-size:12px}
+.ld-rows .balls{display:flex;flex-wrap:wrap;gap:5px}
+.ld-rows .balls span{padding:4px 7px;border-radius:8px;background:rgba(255,255,255,.1);font-variant-numeric:tabular-nums}
+.ld-rows .balls span.out{opacity:.45;text-decoration:line-through}
+.ld-rows .balls span.best{background:var(--gold);color:#251b00}
+.ld-rows .best-n{font:400 26px/1 var(--display);color:var(--gold)}
 #oppSay{position:fixed;left:50%;transform:translateX(-50%);z-index:12;width:max-content;max-width:calc(100% - 32px);display:flex;align-items:center;gap:10px;padding:8px 14px 8px 8px;border-radius:18px;background:#fff;color:#14201a;box-shadow:0 6px 18px rgba(0,0,0,.35),0 0 0 3px var(--oc,#fff);pointer-events:none;animation:sayIn .28s cubic-bezier(.2,1.6,.4,1)}
 #oppSay .av{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;box-shadow:0 0 0 2px #fff}
 #oppSay .txt{font:700 15px/1.25 var(--body)}
@@ -403,6 +411,7 @@ button.nuke small{font:700 11px/1 var(--cond);letter-spacing:.06em;opacity:.85}
     <button class="tee-card mode daily" id="dailyBtn"><span class="av">D</span><span class="tc-main"><b id="dailyTitle">Daily challenge</b><small id="dailySub">One hole, same for everyone today</small></span></button>
     <button class="tee-card mode" id="soloBtn"><span class="av">S</span><span class="tc-main"><b>Stroke play</b><small>Play 9 holes (or a quick 3) for your handicap, or Arcade with power-ups</small></span></button>
     <button class="tee-card mode match" id="matchBtn"><span class="av">M</span><span class="tc-main"><b>Match play</b><small>Six rivals from Tank to the club pro · power-ups on</small></span></button>
+    <button class="tee-card mode ld-card" id="ldBtn" style="--oc:#e0533b"><span class="av">💪</span><span class="tc-main"><b>Long Drive vs Tank</b><small id="ldInfo">Tank sets the mark with 3 balls. You get 6 to beat it. Stay in the grid.</small></span></button>
     <button class="ghost" id="practiceBtn">Putting practice</button>
     <button class="ghost" id="howBtn">How to play (60-second warm-up)</button>
     <button class="ghost" id="labBtn">Sound lab: pick the best sounds</button>
@@ -538,6 +547,18 @@ button.nuke small{font:700 11px/1 var(--cond);letter-spacing:.06em;opacity:.85}
     <div class="row"><span class="lbl">Tees</span><div class="seg" id="msTee"><button data-tee="blue">Blue</button><button data-tee="black">Black</button></div></div>
     <div id="oppList"></div>
     <button class="ghost" id="msBack">Back</button>
+  </div>
+</div>
+
+<div class="overlay" id="ldDone" hidden>
+  <div class="card ld-done">
+    <span class="eyebrow" id="ldEyebrow">Long Drive vs Tank</span>
+    <h2 class="dd-name" id="ldName"></h2>
+    <p class="ms-note" id="ldSub"></p>
+    <div class="ld-rows" id="ldRows"></div>
+    <div class="res-box" id="ldRec"></div>
+    <button class="primary" id="ldAgain">Rematch</button>
+    <button class="ghost" id="ldMenu">Menu</button>
   </div>
 </div>
 
@@ -939,7 +960,13 @@ const OPPONENTS = [
       winHole: ['Scoreboard, baby!', 'Too much horsepower!'],
       loseHole: ["I'm just warming up.", 'Lucky. Real lucky.'],
       winMatch: ['Never skip arm day.', 'Come back when you can hit it three thirty.'],
-      loseMatch: ['I want a rematch. Same time tomorrow.', 'Fine. FINE. You can putt. Whatever.'] } },
+      loseMatch: ['I want a rematch. Same time tomorrow.', 'Fine. FINE. You can putt. Whatever.'],
+      ldIntro: ['Long drive? Oh, you picked the WRONG guy.', 'Three balls. That is all I need.', "Grid's fifty wide. Try to hit it."],
+      ldBomb: ['BOOM! Go fetch that!', 'Somebody call NASA.', 'Four seventy. Easy. Write it down.'],
+      ldMark: ['Beat THAT, little hitter.', 'Go ahead. Swing out of your shoes.', "That's my number. Good luck."],
+      ldLead: ['WHAT?! Who taught you that?!', 'Okay. OKAY. That one was legit.', 'No way. Measure it again.'],
+      ldWin: ['Long ball wins. Every time.', 'Come back when you can hit it four ninety.'],
+      ldLose: ['I want a re-measure!', 'Fine. You out-bombed me. This time.'] } },
   { id: 'marge', name: 'Grandma Marge', short: 'Marge', face: '👵', nick: 'Fairways & Greens', hcp: 14, color: '#c084fc', blurb: 'Seventy-eight years old. Has never missed a fairway.',
     tell: "She won't make a mistake, so don't wait for one. You'll have to make birdies.",
     stats: { power: 2, accuracy: 10, short: 7, putting: 8 }, voice: { pitch: 1.5, rate: 0.85, female: true },
@@ -1601,6 +1628,165 @@ function startHole(i) {
   if (G.puQueue && G.puQueue.length) later(1.8, flushPU);
   renderPU();
 }
+/* ---------- rival challenges: Long Drive vs Tank ----------
+   a long, dead-straight grid 50 yards wide. Tank sets the mark with 3 balls, you get 6 to beat it; only balls that
+   finish in the grid count, measured straight down the line from the tee. The nuke is always on: it's a long drive. */
+const GRID_W = 25, LD_THEIRS = 3, LD_MINE = 6;
+const GRID_HOLE = {
+  name: 'The Grid', par: 4, rank: 1, fw: [150, 600], grid: true,
+  cx: () => 0, hw: () => GRID_W,
+  green: { x: 0, y: 660, rx: 14, ry: 11 }, pin: { x: 0, y: 662 },
+  tees: { black: { x: 0, y: 0 }, blue: { x: 0, y: 0 } },
+  water: [], bunkers: [], slope: () => 0, clumps: []
+};
+store.ld = store.ld || {};
+const ldRec = id => store.ld[id] || (store.ld[id] = { w: 0, l: 0, best: 0 });
+const inGrid = (x, y) => Math.abs(x) <= GRID_W && y >= GRID_HOLE.fw[0] && y <= GRID_HOLE.fw[1];
+function drawGrid(px) {
+  ctx.save(); ctx.font = `700 ${13 * px}px "Barlow Condensed", "Arial Narrow", sans-serif`; ctx.textBaseline = 'middle';
+  ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.lineWidth = Math.max(0.5, 2 * px);
+  ctx.beginPath(); ctx.moveTo(-GRID_W, 150); ctx.lineTo(-GRID_W, 600); ctx.moveTo(GRID_W, 150); ctx.lineTo(GRID_W, 600); ctx.stroke();
+  for (let y = 200; y <= 550; y += 25) {
+    ctx.strokeStyle = `rgba(255,255,255,${y % 50 ? 0.28 : 0.5})`; ctx.lineWidth = Math.max(0.4, (y % 50 ? 1 : 1.6) * px);
+    ctx.beginPath(); ctx.moveTo(-GRID_W, y); ctx.lineTo(GRID_W, y); ctx.stroke();
+  }
+  const L = G.ld;
+  if (L) {
+    const mark = (y, col, label) => { ctx.strokeStyle = col; ctx.lineWidth = Math.max(0.8, 3 * px); ctx.setLineDash([6 * px, 4 * px]); ctx.beginPath(); ctx.moveTo(-GRID_W - 6, y); ctx.lineTo(GRID_W + 6, y); ctx.stroke(); ctx.setLineDash([]);
+    };
+    const tb = ldBest(L.their), mb = ldBest(L.my);
+    if (tb) mark(tb, L.opp.color);
+    if (mb) mark(mb, '#ffcf3f');
+  }
+  ctx.restore();
+}
+/* the yard numbers and the marks' labels, drawn upright in screen space */
+function drawGridLabels() {
+  const lab = (x, y, t, col, align, dy = 0) => { let [sx, sy] = w2s(x, y); sy += dy; if (sy < -20 || sy > H + 20) return;
+    ctx.textAlign = align; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,.55)'; ctx.strokeText(t, sx, sy); ctx.fillStyle = col; ctx.fillText(t, sx, sy); };
+  ctx.font = '700 13px "Barlow Condensed", "Arial Narrow", sans-serif'; ctx.textBaseline = 'middle';
+  for (let y = 200; y <= 550; y += 50) lab(-GRID_W - 4, y, String(y), 'rgba(255,255,255,.92)', 'right');
+  const L = G.ld; if (!L) return;
+  ctx.font = '800 12px "Barlow Condensed", "Arial Narrow", sans-serif';
+  const tb = ldBest(L.their), mb = ldBest(L.my);
+  const near = tb && mb && Math.abs(w2s(GRID_W, tb)[1] - w2s(GRID_W, mb)[1]) < 14, up = mb > tb ? -1 : 1;
+  if (tb) lab(GRID_W + 8, tb, `${oppName(L.opp).toUpperCase()} ${Math.round(tb)}`, L.opp.color, 'left', near ? -7 * up : 0);
+  if (mb) lab(GRID_W + 8, mb, `YOU ${Math.round(mb)}`, '#ffcf3f', 'left', near ? 7 * up : 0);
+}
+const ldBest = arr => arr.filter(x => x.in).reduce((m, x) => Math.max(m, x.d), 0);
+function startLongDrive(oi = 0) {
+  audio(); primeVoice(); hideOverlays();
+  const o = OPPONENTS[oi];
+  HOLES = [GRID_HOLE]; loadHole(0);
+  G.round = null; G.match = null; G.practice = false; G.tutorial = null; G.tee = 'black'; G.shape = 'straight'; G.streak = 0; G.longest = 0;
+  G.pu = []; G.puQueue = []; G.grid = []; G.timers = []; G.trail = []; parts = []; rings = []; scorches = []; G.snap = null; G.windSaved = null;
+  /* a light breeze, mostly across: enough to matter at the edges of the grid */
+  const mph = 1 + Math.random() * 6, a = (Math.random() < 0.5 ? -1 : 1) * (0.9 + Math.random() * 1.2);
+  G.wind = { x: Math.sin(a) * mph, y: Math.cos(a) * mph, mph };
+  G.ld = { oi, opp: o, their: [], my: [] };
+  G.opp = { ball: { x: 0, y: 0, z: 0 }, trail: [], holed: false, moving: false, t: 0, k: 0, shots: [] };
+  G.strokes = 0; G.putts = 0; G.nukeArmed = false; G.ballHidden = true; G.holedOut = false;
+  b.x = 0; b.y = 0; b.z = 0; b.vx = b.vy = 0; b.inCup = false; b.lipped = false;
+  G.mode = 'rest'; camT.x = 0; camT.y = 200; camT.s = 1.5; camT.r = 0; cam.x = camT.x; cam.y = camT.y; cam.s = camT.s; cam.r = 0;
+  $('#result').hidden = true; $('#menu').hidden = true;
+  syncUI();
+  pop('LONG DRIVE', 'nuke', `${oppName(o)} sets the mark with ${LD_THEIRS} balls · you get ${LD_MINE} · stay in the grid`);
+  later(1.0, () => say(o, 'ldIntro', true));
+  later(2.6, ldOppNext);
+}
+/* Tank in a long drive swings out of his shoes: around 470, and about one in five leaves the grid.
+   An ordinary nuke goes about 485, a pure one about 500, and it has to stay in the grid */
+function ldOppShot() {
+  const total = 468 + gauss() * 15, lat = gauss() * 19, roll = 40 + Math.random() * 10;
+  const land = { x: lat * 0.9, y: total - roll }, to = { x: lat, y: total };
+  return { from: { x: 0, y: 0 }, land, to, apex: 44, T: 0.75 + land.y / 340, roll };
+}
+function ldOppNext() {
+  const L = G.ld; if (!L) return;
+  if (L.their.length >= LD_THEIRS) {
+    const tb = ldBest(L.their);
+    pop(tb ? `${oppName(L.opp).toUpperCase()}'S MARK: ${Math.round(tb)}` : 'NO MARK', 'yds', tb ? `you have ${LD_MINE} balls to beat it` : 'all three out of the grid: anything in the grid wins');
+    later(0.8, () => say(L.opp, 'ldMark', true));
+    later(2.4, ldMyTurn); return;
+  }
+  const O = G.opp; O.sh = ldOppShot(); O.t = -0.45; O.moving = true; O.trail = []; O.ball = { x: 0, y: 0, z: 0 };
+  G.mode = 'opp'; syncUI();
+}
+function ldStep(dt) {
+  const O = G.opp, sh = O.sh; if (!sh || !O.moving) return;
+  O.t += dt;
+  if (O.t >= 0 && !sh.started) { sh.started = true; strikeSound('driver', 1, 1.15, 'tee'); sfx('zip', 0.8); shake(4); }
+  const R = 0.9, u = clamp(O.t / sh.T, 0, 1);
+  if (u < 1) {
+    O.ball = { x: lerp(0, sh.land.x, u), y: lerp(0, sh.land.y, u), z: 4 * sh.apex * u * (1 - u) };
+    if (O.t > 0) { O.trail.push([O.ball.x, O.ball.y + O.ball.z * 0.6]); if (O.trail.length > 34) O.trail.shift(); }
+  } else {
+    if (!sh.landed) { sh.landed = true; sfx('land', 0.6); burst(sh.land.x, sh.land.y, 8, ['#7cc062', '#a8d98c'], 4, 4, 1.8, 0.5); O.trail = []; }
+    const v = clamp((O.t - sh.T) / R, 0, 1), e = 1 - (1 - v) * (1 - v);
+    O.ball = { x: lerp(sh.land.x, sh.to.x, e), y: lerp(sh.land.y, sh.to.y, e), z: 0 };
+  }
+  camT.x = O.ball.x * 0.5; camT.y = O.ball.y + 30; camT.s = 1.9; camT.r = 0;
+  if (O.t >= sh.T + R) {
+    O.moving = false; O.ball = { ...sh.to, z: 0 };
+    const L = G.ld, d = sh.to.y, ok = inGrid(sh.to.x, sh.to.y);
+    L.their.push({ d, in: ok });
+    if (ok) { countPop(Math.round(d), `${oppName(L.opp)} · ball ${L.their.length} of ${LD_THEIRS}`); if (d >= 470) say(L.opp, 'ldBomb'); }
+    else { pop('OUT OF THE GRID', 'miss', `${oppName(L.opp)} · ${Math.round(d)} yds doesn't count`); say(L.opp, 'oppFlub'); }
+    G.mode = 'rest'; syncUI();
+    later(2.0, ldOppNext);
+  }
+}
+function ldMyTurn() {
+  const L = G.ld; if (!L) return;
+  b.x = 0; b.y = 0; b.z = 0; b.vx = b.vy = 0; G.ballHidden = false; G.F = null; G.trail = []; G.strokes = L.my.length;
+  enterAim();
+  if (L.my.length === 0) pop(`BALL 1 OF ${LD_MINE}`, 'yds', 'arm the nuke: let go in the NUKE band');
+  else pop(`BALL ${L.my.length + 1} OF ${LD_MINE}`, 'small', L.my.length === LD_MINE - 1 ? 'last ball' : '');
+}
+function ldBallDone(ok, why = '') {
+  const L = G.ld; if (!L) return;
+  const d = Math.max(0, b.y), inside = ok && inGrid(b.x, b.y), was = ldBest(L.my), tb = ldBest(L.their);
+  L.my.push({ d, in: inside, why });
+  G.mode = 'rest'; G.shotFromTee = false;
+  if (inside) {
+    const lead = d > tb && was <= tb;
+    countPop(Math.round(d), lead ? 'you take the lead!' : d > was ? 'your best yet' : 'in the grid', d >= 380 ? 'nuke' : 'yds');
+    if (d > ldRec(L.opp.id).best) { ldRec(L.opp.id).best = d; save(); }
+    if (lead) { later(0.6, () => { sfx('crowd', 1); confetti(60); flash('#ffcf3f', 0.3, 260); }); later(1.2, () => say(L.opp, 'ldLead', true)); }
+  } else { pop(why || 'OUT OF THE GRID', 'miss', `${Math.round(d)} yds doesn't count`); later(1.0, () => say(L.opp, 'youTrouble')); }
+  syncUI();
+  /* already beaten him with balls to spare? keep swinging for a personal best; it's still 6 balls */
+  later(2.4, () => L.my.length >= LD_MINE ? ldFinish() : ldMyTurn());
+}
+function ldBar() {
+  const L = G.ld, tb = ldBest(L.their), mb = ldBest(L.my), mine = L.my.length;
+  $('#mbStatus').textContent = `LONG DRIVE VS ${oppName(L.opp).toUpperCase()}`;
+  $('#mbTarget').textContent = L.their.length < LD_THEIRS || G.mode === 'opp'
+    ? `${oppName(L.opp)}: ball ${Math.min(L.their.length + (G.mode === 'opp' ? 1 : 0), LD_THEIRS)} of ${LD_THEIRS}${tb ? ` · best ${Math.round(tb)}` : ''}`
+    : `Mark ${tb ? Math.round(tb) : '—'} · you: ${mb ? Math.round(mb) : '—'} · ball ${Math.min(mine + (G.mode === 'rest' ? 0 : 1), LD_MINE)} of ${LD_MINE}`;
+}
+function ldFinish() {
+  const L = G.ld; if (!L) return;
+  const tb = ldBest(L.their), mb = ldBest(L.my), win = mb > tb, r = ldRec(L.opp.id);
+  r[win ? 'w' : 'l']++; save();
+  G.mode = 'done'; syncUI();
+  if (win) { sfx('champ'); sfx('crowd', 1); confetti(140); } else sfx('sad');
+  later(0.6, () => say(L.opp, win ? 'ldLose' : 'ldWin', true));
+  const row = (who, arr, n) => { const best = ldBest(arr); let marked = false;
+    return `<span class="who">${who}</span><span class="balls">${arr.map(x => { const isB = x.in && x.d === best && !marked; if (isB) marked = true; return `<span class="${x.in ? (isB ? 'best' : '') : 'out'}">${Math.round(x.d)}</span>`; }).join('')}</span><span class="best-n">${best ? Math.round(best) : '—'}</span>`; };
+  $('#ldEyebrow').textContent = `Long Drive vs ${L.opp.name}`;
+  $('#ldName').textContent = win ? 'You out-bombed him!' : `${oppName(L.opp)} wins`;
+  const close = mb && tb && Math.round(mb) === Math.round(tb), f1 = x => x.toFixed(1);
+  $('#ldSub').textContent = close ? `By a hair: ${f1(Math.max(mb, tb))} to ${f1(Math.min(mb, tb))}. ${win ? 'Measured twice. You win.' : 'He gets it by a foot.'}` : win ? `${Math.round(mb)} beats ${tb ? Math.round(tb) : 'nothing in the grid'}${mb - tb >= 1 ? ` by ${Math.round(mb - tb)} yards` : ''}.` : mb ? `Your best in the grid was ${Math.round(mb)}, ${Math.round(tb - mb)} short of his ${Math.round(tb)}. ${mb < 440 ? 'You need a nuke: arm it, let go in the NUKE band, then strike it pure.' : 'So close. A pure strike flies farther.'}` : 'Nothing finished in the grid. Smooth it: a ball in the grid beats a bomb in the trees.';
+  $('#ldRows').innerHTML = row(oppName(L.opp), L.their) + row('You', L.my);
+  $('#ldRec').innerHTML = `<b>Record vs ${oppName(L.opp)}: ${r.w}–${r.l}</b><br>Your longest in the grid: ${r.best ? Math.round(r.best) + ' yds' : '—'}`;
+  later(1.4, () => { $('#ldDone').hidden = false; });
+}
+function endLongDrive() { if (!G.ld) return; G.ld = null; G.opp = null; setRoundHoles(G.len); loadHole(0); }
+$('#ldBtn').onclick = () => startLongDrive(0);
+$('#ldAgain').onclick = () => startLongDrive(G.ld ? G.ld.oi : 0);
+$('#ldMenu').onclick = () => showMenu();
+
 /* ---------- payoffs: slow motion, a camera punch, speed lines ---------- */
 /* slow motion: time runs at `scale` for `hold` seconds (real time), then eases back over `ramp` */
 function slowmo(scale, hold, ramp = 0.35) { G.slow = { s: scale, t: 0, hold, ramp }; }
@@ -2068,7 +2254,7 @@ function enterPutt() {
   G.mode = 'putt'; G.putting = true; G.drag = null; G.pred = null; G.trail = []; flows = [];
   syncUI(); setupPuttCam();
 }
-function hideOverlays() { ['#menu', '#hlLab', '#dailyDone', '#result', '#matchSetup', '#vsCard', '#soloSetup', '#pause', '#feedback', '#welcome', '#tutDone', '#soundLab'].forEach(q => $(q).hidden = true); G.paused = false; }
+function hideOverlays() { ['#menu', '#hlLab', '#dailyDone', '#result', '#matchSetup', '#vsCard', '#ldDone', '#soloSetup', '#pause', '#feedback', '#welcome', '#tutDone', '#soundLab'].forEach(q => $(q).hidden = true); G.paused = false; }
 const gauss = () => { let u = 0; for (let k = 0; k < 6; k++) u += Math.random(); return (u - 3) / 0.7071; };
 function startMatch(oi, tee, intro = true) {
   setRoundHoles(G.len);
@@ -2210,6 +2396,7 @@ function nextTurn() {
   else playerTurn();
 }
 function stepOpp(dt) {
+  if (G.ld) return ldStep(dt);
   const O = G.opp, sh = O.shots[O.k];
   if (!sh || !O.moving) return;
   O.t += dt;
@@ -2367,6 +2554,7 @@ function treeHit(F, p) {
 function penalty(kind) {
   G.mode = 'rest'; G.F = null; G.strokes += 1; G.shotFromTee = false; gridAdd(kind === 'water' ? '💧' : '🚫'); b.vx = b.vy = 0; b.z = 0; G.bounce = null;
   if (G.practice) { later(0.6, () => practiceResult(false)); return; }
+  if (G.ld) { sfx(kind === 'water' ? 'splash' : 'groan', 0.7); G.ballHidden = true; return ldBallDone(false, kind === 'water' ? 'SPLASH' : 'OUT OF BOUNDS'); }
   if (G.match) later(1.6, () => say(G.match.opp, 'youTrouble'));
   if (kind === 'water') {
     sfx('splash'); sfx('groan', 0.7); vib(30);
@@ -2400,6 +2588,7 @@ function afterPenalty() {
 function settle() {
   b.vx = b.vy = 0; b.z = 0; G.bounce = null;
   if (G.practice) return practiceResult(false);
+  if (G.ld) return ldBallDone(true);
   if (G.shotFromTee) {
     const t = TEES[G.tee], d = hyp(b.x - t.x, b.y - t.y);
     G.longest = Math.max(G.longest, d);
@@ -2600,8 +2789,9 @@ function syncUI() {
   const m = G.mode, putting = G.putting && m !== 'aim';
   renderCoach();
   const MB = G.match, mb = $('#matchBar');
-  mb.hidden = !MB || m === 'menu' || m === 'done';
-  if (!mb.hidden) {
+  mb.hidden = !(MB || G.ld) || m === 'menu' || m === 'done';
+  if (!mb.hidden && G.ld) ldBar();
+  else if (!mb.hidden) {
     const st = MB.res.reduce((x, y) => x + (y || 0), 0);
     $('#mbStatus').textContent = `VS ${oppName(MB.opp).toUpperCase()} · ${statusTxt(st)}`;
     if (m === 'opp') $('#mbTarget').textContent = `${oppName(MB.opp)} is hitting · tap the course to skip`;
@@ -2640,7 +2830,12 @@ function syncUI() {
     $('#strokeLbl').textContent = 'Shot'; $('#strokeVal').textContent = Math.min(G.strokes + 1, 12);
   }
   const d = hyp(PIN.x - b.x, PIN.y - b.y);
-  if (putting) { $('#pinLbl').textContent = 'To hole'; $('#pinVal').textContent = `${Math.round(d * 3)} ft`; }
+  if (G.ld) {
+    const L = G.ld, tb = ldBest(L.their);
+    $('#holeLbl').textContent = `Long Drive vs ${oppName(L.opp)}`; $('#holeVal').textContent = 'The Grid';
+    $('#strokeLbl').textContent = 'Ball'; $('#strokeVal').textContent = L.their.length < LD_THEIRS ? '—' : `${Math.min(L.my.length + (m === 'rest' || m === 'done' ? 0 : 1), LD_MINE)}/${LD_MINE}`;
+    $('#pinLbl').textContent = 'Mark'; $('#pinVal').textContent = tb ? Math.round(tb) : '—';
+  } else if (putting) { $('#pinLbl').textContent = 'To hole'; $('#pinVal').textContent = `${Math.round(d * 3)} ft`; }
   else { $('#pinLbl').textContent = 'To pin'; $('#pinVal').textContent = `${Math.round(d)}`; }
   $('#wind').hidden = G.practice;
   $('#windVal').textContent = Math.round(G.wind.mph);
@@ -2671,7 +2866,7 @@ function syncUI() {
   sb.classList.toggle('nukey', G.nukeArmed && cn && (aiming || m === 'power'));
   sb.textContent = m === 'power' ? 'Let go to set power' : m === 'accuracy' ? 'Tap!' : 'Hold to swing';
   const markName = aimAtPin() ? 'PIN' : 'AIM';
-  hint.textContent = m === 'opp' ? `${oppName(G.match.opp)} is playing · tap the course to skip` : aiming ? (G.nukeArmed && cn ? 'Nuke armed · hold swing, let go in the NUKE band' : 'Drag the course to aim · hold swing to power up')
+  hint.textContent = m === 'opp' ? `${oppName((G.match || G.ld).opp)} is playing · tap the course to skip` : aiming ? (G.nukeArmed && cn ? 'Nuke armed · hold swing, let go in the NUKE band' : 'Drag the course to aim · hold swing to power up')
     : m === 'power' ? (G.nukeArmed && cn ? 'Let go inside the NUKE band' : `Let go at the ${markName} mark to land on your target`)
     : m === 'accuracy' ? 'Tap when the shrinking ring meets the gold circle' : '\u00a0';
 
@@ -2855,8 +3050,8 @@ const canConcede = () => G.match && !G.match.decided && !G.practice && !['menu',
 $('#pauseBtn').onclick = () => {
   if (G.mode === 'menu' || G.mode === 'done') return;
   G.paused = true;
-  $('#pzEyebrow').textContent = G.practice ? 'Putting practice' : `${G.match ? `Match vs ${oppName(G.match.opp)} · ` : ''}Hole ${HOLE_I + 1} of ${HOLES.length}`;
-  $('#pzNote').textContent = G.practice ? 'Your putting stats are saved as you go.'
+  $('#pzEyebrow').textContent = G.ld ? `Long Drive vs ${oppName(G.ld.opp)}` : G.practice ? 'Putting practice' : `${G.match ? `Match vs ${oppName(G.match.opp)} · ` : ''}Hole ${HOLE_I + 1} of ${HOLES.length}`;
+  $('#pzNote').textContent = G.ld ? 'Quitting ends the contest without a result.' : G.practice ? 'Your putting stats are saved as you go.'
     : G.match ? `Conceding gives ${oppName(G.match.opp)} this hole and moves you to the next tee. Quitting ends the match without a result, and the round won't count toward your handicap.`
     : "Quitting ends this round. It won't count toward your handicap.";
   $('#pzConcede').hidden = !canConcede();
@@ -2962,6 +3157,7 @@ $('#resMenu').onclick = showMenu;
 $('#exitPractice').onclick = showMenu;
 function showMenu() {
   G.lab = null; if (typeof renderHL === 'function') renderHL();
+  endLongDrive();
   hideOverlays();
   if (G.tutorial) endTutorial();
   $('#oppSay').hidden = true;
@@ -3114,6 +3310,7 @@ function draw() {
   for (let y = FW0; y < FW1; y += 24) if (y + 12 > yB && y < yT) ctx.fillRect(-300, y, 600, 12);
   ctx.restore();
   ctx.strokeStyle = COL.fairEdge; ctx.lineWidth = Math.max(0.6, 3 * px); ctx.stroke(fwPath);
+  if (HOLE.grid) drawGrid(px);
 
   for (const k in TEES) { const t = TEES[k]; ctx.fillStyle = COL.tee; ctx.fillRect(t.x - 6, t.y - 4.5, 12, 9); ctx.fillStyle = 'rgba(255,255,255,.08)'; ctx.fillRect(t.x - 6, t.y - 1.5, 12, 3);
     ctx.fillStyle = k === 'blue' ? '#3d8bff' : '#111'; circle(t.x - 4, t.y + 2.5, Math.max(0.5, 3 * px)); circle(t.x + 4, t.y + 2.5, Math.max(0.5, 3 * px)); }
@@ -3209,12 +3406,13 @@ function draw() {
   }
   if (G.opp && !G.opp.holed && !G.opp.moving && G.mode !== 'done') {
     const [bx, by] = w2s(G.opp.ball.x, G.opp.ball.y), mx = bx, my = by - 16;
-    ctx.strokeStyle = G.match.opp.color; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(bx, by - 4); ctx.lineTo(mx, my + 8); ctx.stroke();
-    ctx.fillStyle = G.match.opp.color; ctx.beginPath(); ctx.arc(mx, my, 9, 0, TAU); ctx.fill();
+    const OO = (G.match || G.ld).opp; ctx.strokeStyle = OO.color; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(bx, by - 4); ctx.lineTo(mx, my + 8); ctx.stroke();
+    ctx.fillStyle = OO.color; ctx.beginPath(); ctx.arc(mx, my, 9, 0, TAU); ctx.fill();
     ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.5; ctx.stroke();
     ctx.fillStyle = '#ffffff'; ctx.font = '400 10px "Bowlby One", "Arial Black", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(oppName(G.match.opp)[0], mx, my + 0.5);
+    ctx.fillText(oppName(OO)[0], mx, my + 0.5);
   }
+  if (HOLE.grid) drawGridLabels();
   drawImpactLines();
   drawCine();
   if (!G.cine) drawTeeCam(); else $('#camBtn').hidden = true;
@@ -3371,6 +3569,10 @@ window.__pureStrike = { score: (strokes, putts) => { G.strokes = strokes; G.putt
   honor: who => { G.match.honor = who; },
   restartHole: () => { hideOverlays(); startHole(HOLE_I); },
   goHole: i => { hideOverlays(); startHole(i); },
+  ld: () => G.ld && { their: G.ld.their, my: G.ld.my, mode: G.mode, tb: ldBest(G.ld.their), mb: ldBest(G.ld.my), bar: $('#matchBar').innerText, done: !$('#ldDone').hidden, hole: HOLE.name, ball: { x: b.x, y: b.y }, canNuke: canNuke() },
+  ldSkip: () => { if (G.mode === 'opp') G.opp.t = 1e3; },
+  ldSample: n => { let t = 0, out = 0; for (let k = 0; k < n; k++) { const s = ldOppShot(); t += s.to.y; if (!inGrid(s.to.x, s.to.y)) out++; } return { mean: t / n, out: out / n }; },
+  ldRec: () => store.ld,
   replan: () => { G.match.plans = null; },
   sink: () => { G.strokes++; G.putting = true; gridAdd('🔵'); holed(false); },
   oppFinish: () => { const O = G.opp; if (!O) return; O.k = O.shots.length; O.ball = { x: PIN.x, y: PIN.y, z: 0 }; O.holed = true; O.moving = false; G.timers = []; if (!G.holedOut) playerTurn(); syncUI(); },
